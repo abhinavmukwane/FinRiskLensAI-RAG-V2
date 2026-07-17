@@ -114,130 +114,143 @@ namespace FinRiskLensAI.Data.Repositories.Onboarding
 
         public async Task<SaveMsmeResultModel> SaveMsmeData(string json)
         {
-            var model = JsonConvert.DeserializeObject<UdyamResponseModel>(json);
-
-            if (model == null)
-                return new SaveMsmeResultModel { Status = false, Message = "Invalid data." };
-
-            var existing = await _context.MsmeEnquiries.FirstOrDefaultAsync(x => x.Uan == model.uan);
-            if (existing != null)
+            try
             {
-                // User is already registered
-                if (existing.IsRegister == true)
+                var model = JsonConvert.DeserializeObject<UdyamResponseModel>(json);
+
+                if (model == null)
+                    return new SaveMsmeResultModel { Status = false, Message = "Invalid data." };
+
+                var existing = await _context.MsmeEnquiries.FirstOrDefaultAsync(x => x.Uan == model.uan);
+                if (existing != null)
                 {
+                    // User is already registered
+                    if (existing.IsRegister == true)
+                    {
+                        return new SaveMsmeResultModel
+                        {
+                            Status = true,
+                            AlreadyRegistered = true,
+                            MsmeEnquiryID = existing.MsmeEnquiryID,
+                            Message = "User is already registered. Kindly login."
+                        };
+                    }
+
+                    // MSME record exists but registration is pending
                     return new SaveMsmeResultModel
                     {
                         Status = true,
-                        AlreadyRegistered = true,
+                        AlreadyRegistered = false,
                         MsmeEnquiryID = existing.MsmeEnquiryID,
-                        Message = "User is already registered. Kindly login."
+                        Message = "MSME details found."
                     };
                 }
 
-                // MSME record exists but registration is pending
+                var enquiry = new MsmeEnquiry
+                {
+                    ClientId = model.client_id,
+                    Uan = model.uan,
+                    CertificateUrl = model.certificate_url,
+                    NameOfEnterprise = model.main_details.name_of_enterprise,
+                    MajorActivity = model.main_details.major_activity,
+                    SocialCategory = model.main_details.social_category,
+                    DateOfCommencement = model.main_details.date_of_commencement,
+                    DicName = model.main_details.dic_name,
+                    State = model.main_details.state,
+                    AppliedDate = model.main_details.applied_date,
+
+                    Flat = model.main_details.flat,
+                    NameOfBuilding = model.main_details.name_of_building,
+                    Road = model.main_details.road,
+                    Village = model.main_details.village,
+                    Block = model.main_details.block,
+                    City = model.main_details.city,
+                    Pin = model.main_details.pin,
+
+                    MobileNumber = model.main_details.mobile_number,
+                    Email = model.main_details.email,
+                    OrganizationType = model.main_details.organization_type,
+                    Gender = model.main_details.gender,
+                    DateOfIncorporation = model.main_details.date_of_incorporation,
+                    MsmeDfo = model.main_details.msme_dfo,
+                    RegistrationDate = model.main_details.registration_date,
+                    GstinNumber = model.main_details.gstin,
+                    PanNumber = model.main_details.Pan,
+
+                    Payload = JsonConvert.SerializeObject(model),
+
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.MsmeEnquiries.Add(enquiry);
+
+                await _context.SaveChangesAsync();
+
+                if (model.location_of_plant_details != null)
+                {
+                    foreach (var item in model.location_of_plant_details)
+                    {
+                        var location = new MsmeLocation
+                        {
+                            MsmeEnquiryID = enquiry.MsmeEnquiryID,
+
+                            UnitName = item.unit_name,
+                            Line1 = item.line_1,
+                            Building = item.building,
+                            Village = item.village,
+                            Street = item.street,
+                            Road = item.road,
+                            City = item.city,
+                            Pin = item.pin,
+                            State = item.state,
+                            District = item.district,
+
+                            CreatedAt = DateTime.Now
+                        };
+
+                        _context.MsmeLocations.Add(location);
+                    }
+                }
+                if (model.nic_code != null)
+                {
+                    foreach (var item in model.nic_code)
+                    {
+                        var nic = new MsmeNicCode
+                        {
+                            MsmeEnquiryID = enquiry.MsmeEnquiryID,
+
+                            Nic2Digit = item.nic_2_digit,
+                            Nic4Digit = item.nic_4_digit,
+                            Nic5Digit = item.nic_5_digit,
+                            ActivityType = item.activity_type,
+                            AddedOn = item.added_on,
+
+                            CreatedAt = DateTime.Now
+                        };
+
+                        _context.MsmeNicCodes.Add(nic);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
                 return new SaveMsmeResultModel
                 {
                     Status = true,
                     AlreadyRegistered = false,
-                    MsmeEnquiryID = existing.MsmeEnquiryID,
-                    Message = "MSME details found."
+                    MsmeEnquiryID = enquiry.MsmeEnquiryID
                 };
             }
-
-            var enquiry = new MsmeEnquiry
+            catch (Exception ex)
             {
-                ClientId = model.client_id,
-                Uan = model.uan,
-                CertificateUrl = model.certificate_url,
-                NameOfEnterprise = model.main_details.name_of_enterprise,
-                MajorActivity = model.main_details.major_activity,
-                SocialCategory = model.main_details.social_category,
-                DateOfCommencement = model.main_details.date_of_commencement,
-                DicName = model.main_details.dic_name,
-                State = model.main_details.state,
-                AppliedDate = model.main_details.applied_date,
-
-                Flat = model.main_details.flat,
-                NameOfBuilding = model.main_details.name_of_building,
-                Road = model.main_details.road,
-                Village = model.main_details.village,
-                Block = model.main_details.block,
-                City = model.main_details.city,
-                Pin = model.main_details.pin,
-
-                MobileNumber = model.main_details.mobile_number,
-                Email = model.main_details.email,
-                OrganizationType = model.main_details.organization_type,
-                Gender = model.main_details.gender,
-                DateOfIncorporation = model.main_details.date_of_incorporation,
-                MsmeDfo = model.main_details.msme_dfo,
-                RegistrationDate = model.main_details.registration_date,
-                GstinNumber = model.main_details.gstin,
-                PanNumber = model.main_details.Pan,
-
-                Payload = JsonConvert.SerializeObject(model),
-
-                CreatedAt = DateTime.Now
-            };
-
-            _context.MsmeEnquiries.Add(enquiry);
-
-            await _context.SaveChangesAsync();
-
-            if (model.location_of_plant_details != null)
-            {
-                foreach (var item in model.location_of_plant_details)
+                return new SaveMsmeResultModel
                 {
-                    var location = new MsmeLocation
-                    {
-                        MsmeEnquiryID = enquiry.MsmeEnquiryID,
-
-                        UnitName = item.unit_name,
-                        Line1 = item.line_1,
-                        Building = item.building,
-                        Village = item.village,
-                        Street = item.street,
-                        Road = item.road,
-                        City = item.city,
-                        Pin = item.pin,
-                        State = item.state,
-                        District = item.district,
-
-                        CreatedAt = DateTime.Now
-                    };
-
-                    _context.MsmeLocations.Add(location);
-                }
+                    Status = false,
+                    AlreadyRegistered = false,
+                    MsmeEnquiryID = 0,
+                    Message = ex.Message
+                };
             }
-            if (model.nic_code != null)
-            {
-                foreach (var item in model.nic_code)
-                {
-                    var nic = new MsmeNicCode
-                    {
-                        MsmeEnquiryID = enquiry.MsmeEnquiryID,
-
-                        Nic2Digit = item.nic_2_digit,
-                        Nic4Digit = item.nic_4_digit,
-                        Nic5Digit = item.nic_5_digit,
-                        ActivityType = item.activity_type,
-                        AddedOn = item.added_on,
-
-                        CreatedAt = DateTime.Now
-                    };
-
-                    _context.MsmeNicCodes.Add(nic);
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            return new SaveMsmeResultModel
-            {
-                Status = true,
-                AlreadyRegistered = false,
-                MsmeEnquiryID = enquiry.MsmeEnquiryID
-            };
         }
         public async Task<UdyamDetailsModel> GetUdyamDetails(string uan)
         {

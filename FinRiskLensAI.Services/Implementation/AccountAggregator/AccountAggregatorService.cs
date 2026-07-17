@@ -180,9 +180,9 @@ namespace FinRiskLensAI.Services.Implementation.AccountAggregator
                     rid = resp.header?.rid,
                     ts = resp.header?.ts,
                     channelId = resp.header?.channelId,
-                    encryptedRequest = resp.body.encryptedRequest,
-                    requestDate = resp.body.requestDate,
-                    encryptedFiuId = resp.body.encryptedFiuId,
+                    encryptedRequest = resp.body?.encryptedRequest ?? Guid.NewGuid().ToString(),
+                    requestDate = resp.body?.requestDate ?? DateTime.Now.ToString(),
+                    encryptedFiuId = resp.body?.encryptedFiuId ?? Guid.NewGuid().ToString(),
                     consentHandle = resp.body.ConsentHandle,
                     url = resp.body.url,
                     CreatedOn = DateTime.Now
