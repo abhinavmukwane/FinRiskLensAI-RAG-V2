@@ -95,4 +95,4 @@ Then open the printed `https://localhost:…` URL.
 
 ---
 
-© 2026 FinRiskLensAI · Team ASM FinTech Developer · IDBI Innovate 2026
+©2026 FinRiskLensAI · Team ASM FinTech Developer · IDBI Innovate 2026
