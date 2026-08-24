@@ -1,0 +1,227 @@
+@model FinRiskLensAI.Models.BankCustomersViewModel
+@{
+    ViewBag.Title = "Onboarded Customers";
+    Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
+    var q = Model.Query;
+    var p = Model.Page;
+
+    string Inr(decimal? v)
+    {
+        if (v is null || v == 0m) return "—";
+        var d = v.Value;
+        if (d >= 10000000m) return "₹" + (d / 10000000m).ToString("0.##") + " Cr";
+        if (d >= 100000m) return "₹" + (d / 100000m).ToString("0.##") + " L";
+        return "₹" + d.ToString("N0");
+    }
+
+    // Rebuilds the current query string with one value replaced
+    string Link(object? page = null, string? sortBy = null, bool? sortDesc = null) =>
+        Url.Action("Customers", "BankAdmin", new
+        {
+            search = q.Search, band = q.Band, state = q.State, status = q.Status,
+            sortBy = sortBy ?? q.SortBy,
+            sortDesc = sortDesc ?? q.SortDesc,
+            page = page ?? q.Page,
+            pageSize = q.PageSize
+        })!;
+
+    string SortIcon(string col) =>
+        !string.Equals(q.SortBy, col, StringComparison.OrdinalIgnoreCase) ? "bi-arrow-down-up bp-sort-idle"
+        : q.SortDesc ? "bi-sort-down" : "bi-sort-up";
+}
+
+<div class="bp-page-head">
+    <div>
+        <div class="bp-eyebrow">Portfolio</div>
+        <h1>Onboarded Customers</h1>
+        <div class="bp-welcome-meta">
+            <span><i class="bi bi-people"></i>@p.TotalCount enterprise@(p.TotalCount == 1 ? "" : "s") matching</span>
+        </div>
+    </div>
+    <a class="bp-btn bp-btn-ghost" href="@Url.Action("Dashboard", "BankAdmin")">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+</div>
+
+@if (Model.LoadError != null)
+{
+    <div class="bp-alert"><i class="bi bi-exclamation-triangle-fill"></i>@Model.LoadError</div>
+}
+else
+{
+    <!-- ===================== Filters ===================== -->
+    <form class="bp-filters" method="get" action="@Url.Action("Customers", "BankAdmin")">
+        <input type="hidden" name="sortBy" value="@q.SortBy" />
+        <input type="hidden" name="sortDesc" value="@q.SortDesc.ToString().ToLowerInvariant()" />
+        <input type="hidden" name="pageSize" value="@q.PageSize" />
+
+        <div class="bp-filter-search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="search" value="@q.Search"
+                   placeholder="Search name, Udyam, GSTIN, PAN, email or mobile…" />
+        </div>
+
+        <select name="band" class="bp-select">
+            <option value="">All bands</option>
+            @foreach (var b in new[] { "Excellent", "Good", "Fair", "AtRisk", "HighRisk" })
+            {
+                <option value="@b" selected="@(q.Band == b)">@b</option>
+            }
+        </select>
+
+        <select name="state" class="bp-select">
+            <option value="">All states</option>
+            @foreach (var st in Model.States)
+            {
+                <option value="@st" selected="@(q.State == st)">@st</option>
+            }
+        </select>
+
+        <select name="status" class="bp-select">
+            <option value="">All statuses</option>
+            <option value="scored" selected="@(q.Status == "scored")">Scored</option>
+            <option value="pending" selected="@(q.Status == "pending")">Pending analysis</option>
+        </select>
+
+        <button type="submit" class="bp-btn"><i class="bi bi-funnel"></i> Apply</button>
+
+        @if (!string.IsNullOrWhiteSpace(q.Search) || !string.IsNullOrWhiteSpace(q.Band)
+             || !string.IsNullOrWhiteSpace(q.State) || !string.IsNullOrWhiteSpace(q.Status))
+        {
+            <a class="bp-btn bp-btn-ghost" href="@Url.Action("Customers", "BankAdmin")">
+                <i class="bi bi-x-lg"></i> Clear
+            </a>
+        }
+    </form>
+
+    @if (p.Rows.Count == 0)
+    {
+        <div class="bp-empty">
+            <i class="bi bi-search"></i>
+            <h2>No customers match these filters</h2>
+            <p>Try clearing the search or widening the band, state and status filters.</p>
+        </div>
+    }
+    else
+    {
+        <div class="bp-card">
+            <div class="bp-table-wrap">
+                <table class="bp-table bp-table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <a class="bp-th-sort" href="@Link(page: 1, sortBy: "name", sortDesc: q.SortBy == "name" && !q.SortDesc)">
+                                    Enterprise <i class="bi @SortIcon("name")"></i>
+                                </a>
+                            </th>
+                            <th>Udyam / GSTIN</th>
+                            <th>Location</th>
+                            <th>Type</th>
+                            <th class="text-center">
+                                <a class="bp-th-sort" href="@Link(page: 1, sortBy: "score", sortDesc: !(q.SortBy == "score" && q.SortDesc))">
+                                    Score <i class="bi @SortIcon("score")"></i>
+                                </a>
+                            </th>
+                            <th class="text-center">Band</th>
+                            <th class="text-end">
+                                <a class="bp-th-sort" href="@Link(page: 1, sortBy: "eligibility", sortDesc: !(q.SortBy == "eligibility" && q.SortDesc))">
+                                    Eligibility <i class="bi @SortIcon("eligibility")"></i>
+                                </a>
+                            </th>
+                            <th>
+                                <a class="bp-th-sort" href="@Link(page: 1, sortBy: "onboarded", sortDesc: !(q.SortBy == "onboarded" && q.SortDesc))">
+                                    Onboarded <i class="bi @SortIcon("onboarded")"></i>
+                                </a>
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in p.Rows)
+                        {
+                            <tr onclick="location.href='@Url.Action("Customer", "BankAdmin", new { uan = c.Uan })'">
+                                <td>
+                                    <div class="bp-strong">@c.EnterpriseName</div>
+                                    @if (c.IsAnomalous)
+                                    {
+                                        <span class="bp-flag"><i class="bi bi-shield-exclamation"></i> Anomaly</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="bp-mono">@c.Uan</div>
+                                    <div class="bp-mono bp-muted">@(c.GstinNumber ?? "—")</div>
+                                </td>
+                                <td>
+                                    <div>@(c.City ?? "—")</div>
+                                    <div class="bp-muted">@(c.State ?? "—")</div>
+                                </td>
+                                <td class="bp-muted">@(c.OrganizationType ?? "—")</td>
+                                <td class="text-center">
+                                    @if (c.IsScored)
+                                    {
+                                        <span class="bp-score">@c.OverallScore!.Value.ToString("0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bp-muted">—</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (c.IsScored)
+                                    {
+                                        <span class="bp-band bp-band-@c.ScoreBand">@c.ScoreBand</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bp-band bp-band-Pending">Pending</span>
+                                    }
+                                </td>
+                                <td class="text-end bp-strong">@Inr(c.TotalIndicativeEligibility)</td>
+                                <td>@c.OnboardedOn.ToString("dd MMM yyyy")</td>
+                                <td class="text-end">
+                                    <a class="bp-link" href="@Url.Action("Customer", "BankAdmin", new { uan = c.Uan })"
+                                       onclick="event.stopPropagation()">
+                                        View <i class="bi bi-arrow-right-short"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===================== Pager ===================== -->
+        @if (p.TotalPages > 1)
+        {
+            <div class="bp-pager">
+                <div class="bp-pager-info">
+                    Showing @(((p.Page - 1) * p.PageSize) + 1)–@(Math.Min(p.Page * p.PageSize, p.TotalCount)) of @p.TotalCount
+                </div>
+                <div class="bp-pager-btns">
+                    @if (p.Page > 1)
+                    {
+                        <a class="bp-page-btn" href="@Link(page: 1)"><i class="bi bi-chevron-double-left"></i></a>
+                        <a class="bp-page-btn" href="@Link(page: p.Page - 1)"><i class="bi bi-chevron-left"></i></a>
+                    }
+
+                    @{
+                        var from = Math.Max(1, p.Page - 2);
+                        var to = Math.Min(p.TotalPages, from + 4);
+                        from = Math.Max(1, to - 4);
+                    }
+                    @for (var i = from; i <= to; i++)
+                    {
+                        <a class="bp-page-btn @(i == p.Page ? "active" : "")" href="@Link(page: i)">@i</a>
+                    }
+
+                    @if (p.Page < p.TotalPages)
+                    {
+                        <a class="bp-page-btn" href="@Link(page: p.Page + 1)"><i class="bi bi-chevron-right"></i></a>
+                        <a class="bp-page-btn" href="@Link(page: p.TotalPages)"><i class="bi bi-chevron-double-right"></i></a>
+                    }
+                </div>
+            </div>
+        }
+    }
+}

@@ -3,6 +3,7 @@ using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.Common;
 using FinRiskLensAI.Core.Models.GST;
 using FinRiskLensAI.Core.Models.Onboarding;
+using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Core.Models.Universal;
 using FinRiskLensAI.Core.Models.User_Activity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,8 @@ namespace FinRiskLensAI.Data.DbContextEDMX
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         public DbSet<AdmLogin> AdmLogins => Set<AdmLogin>();
+        public DbSet<AdmBankLogin> AdmBankLogins => Set<AdmBankLogin>();
+        public DbSet<MsmeScoreSummary> MsmeScoreSummaries => Set<MsmeScoreSummary>();
         public DbSet<MsmeEnquiry> MsmeEnquiries => Set<MsmeEnquiry>();
         public DbSet<MsmeLocation> MsmeLocations => Set<MsmeLocation>();
         public DbSet<MsmeNicCode> MsmeNicCodes => Set<MsmeNicCode>();

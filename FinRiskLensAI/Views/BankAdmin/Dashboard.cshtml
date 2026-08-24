@@ -1,0 +1,322 @@
+@model FinRiskLensAI.Models.BankDashboardViewModel
+@using FinRiskLensAI.Common
+@{
+    ViewBag.Title = "Portfolio Dashboard";
+    Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
+    var s = Model.Stats;
+    var bankUser = Context.Session.GetCurrentBankUser();
+}
+
+<div class="bp-page-head">
+    <div>
+        <div class="bp-eyebrow">Portfolio Overview</div>
+        <h1>Welcome, @(bankUser?.FullName ?? "Bank User")</h1>
+        <div class="bp-welcome-meta">
+            <span><i class="bi bi-bank2"></i>@(bankUser?.BankName ?? "—")</span>
+            <span><i class="bi bi-geo-alt"></i>@(bankUser?.BranchName ?? "—")</span>
+            <span><i class="bi bi-upc-scan"></i>@(bankUser?.IfscCode ?? "—")</span>
+        </div>
+    </div>
+    <div class="bp-head-actions">
+        <form method="post" action="@Url.Action("ResyncScores", "BankAdmin")" id="resyncForm">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="bp-btn bp-btn-ghost" id="resyncBtn"
+                    title="Rebuild the score index from stored analysis results">
+                <i class="bi bi-arrow-repeat"></i> <span>Sync scores</span>
+            </button>
+        </form>
+        <a class="bp-btn" href="@Url.Action("Customers", "BankAdmin")">
+            <i class="bi bi-people"></i> View all customers
+        </a>
+    </div>
+</div>
+
+<div class="bp-toast" id="resyncToast"><i class="bi bi-info-circle"></i><span></span></div>
+
+@if (Model.LoadError != null)
+{
+    <div class="bp-alert"><i class="bi bi-exclamation-triangle-fill"></i>@Model.LoadError</div>
+}
+else if (s.TotalOnboarded == 0)
+{
+    <div class="bp-empty">
+        <i class="bi bi-inbox"></i>
+        <h2>No onboarded MSMEs yet</h2>
+        <p>Once enterprises complete Udyam onboarding they will appear here with their Financial Health Score.</p>
+    </div>
+}
+else
+{
+    <!-- ===================== KPI tiles ===================== -->
+    <div class="bp-kpi-grid">
+        <div class="bp-kpi">
+            <div class="bp-kpi-ic"><i class="bi bi-buildings"></i></div>
+            <div class="bp-kpi-v">@s.TotalOnboarded</div>
+            <div class="bp-kpi-k">Onboarded MSMEs</div>
+        </div>
+        <div class="bp-kpi">
+            <div class="bp-kpi-ic"><i class="bi bi-check2-circle"></i></div>
+            <div class="bp-kpi-v">@s.TotalScored</div>
+            <div class="bp-kpi-k">Scored</div>
+            <div class="bp-kpi-d">@s.PendingAnalysis pending analysis</div>
+        </div>
+        <div class="bp-kpi bp-kpi-good">
+            <div class="bp-kpi-ic"><i class="bi bi-hand-thumbs-up"></i></div>
+            <div class="bp-kpi-v">@s.LendableCount</div>
+            <div class="bp-kpi-k">Lendable Now</div>
+            <div class="bp-kpi-d">Excellent or Good band</div>
+        </div>
+        <div class="bp-kpi">
+            <div class="bp-kpi-ic"><i class="bi bi-calendar-plus"></i></div>
+            <div class="bp-kpi-v">@s.NewThisMonth</div>
+            <div class="bp-kpi-k">New This Month</div>
+            <div class="bp-kpi-d">@DateTime.UtcNow.ToString("MMMM yyyy")</div>
+        </div>
+        <div class="bp-kpi bp-kpi-warn">
+            <div class="bp-kpi-ic"><i class="bi bi-exclamation-triangle"></i></div>
+            <div class="bp-kpi-v">@s.HighRiskCount</div>
+            <div class="bp-kpi-k">At Risk / High Risk</div>
+        </div>
+        <div class="bp-kpi bp-kpi-warn">
+            <div class="bp-kpi-ic"><i class="bi bi-shield-exclamation"></i></div>
+            <div class="bp-kpi-v">@s.AnomalyCount</div>
+            <div class="bp-kpi-k">Anomaly Flags</div>
+            <div class="bp-kpi-d">cross-source mismatch</div>
+        </div>
+    </div>
+
+    <!-- ===================== Charts ===================== -->
+    <div class="bp-chart-grid">
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-pie-chart"></i>Score Band Distribution</div>
+            <div class="bp-chart-box"><canvas id="bandChart"></canvas></div>
+        </div>
+
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-graph-up"></i>Onboarding Trend &mdash; last 12 months</div>
+            <div class="bp-chart-box"><canvas id="trendChart"></canvas></div>
+        </div>
+
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-bar-chart"></i>Score Distribution</div>
+            <div class="bp-chart-box"><canvas id="histChart"></canvas></div>
+        </div>
+
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-geo-alt"></i>Top States</div>
+            <div class="bp-chart-box"><canvas id="stateChart"></canvas></div>
+        </div>
+
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-diagram-3"></i>Industry Mix</div>
+            <div class="bp-chart-box"><canvas id="activityChart"></canvas></div>
+        </div>
+
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-lightbulb"></i>Recommended Product Mix</div>
+            <div class="bp-chart-box"><canvas id="productChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ===================== Recent customers ===================== -->
+    <div class="bp-card mt-3">
+        <div class="bp-card-label"><i class="bi bi-clock-history"></i>Recently Onboarded</div>
+        <div class="bp-table-wrap">
+            <table class="bp-table">
+                <thead>
+                    <tr>
+                        <th>Enterprise</th>
+                        <th>Udyam Number</th>
+                        <th>State</th>
+                        <th class="text-center">Score</th>
+                        <th class="text-center">Band</th>
+                        <th>Onboarded</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in s.RecentCustomers)
+                    {
+                        <tr>
+                            <td class="bp-strong">@c.EnterpriseName</td>
+                            <td class="bp-mono">@c.Uan</td>
+                            <td>@(c.State ?? "—")</td>
+                            <td class="text-center">
+                                @if (c.IsScored)
+                                {
+                                    <span class="bp-score">@c.OverallScore!.Value.ToString("0")</span>
+                                }
+                                else
+                                {
+                                    <span class="bp-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (c.IsScored)
+                                {
+                                    <span class="bp-band bp-band-@c.ScoreBand">@c.ScoreBand</span>
+                                }
+                                else
+                                {
+                                    <span class="bp-band bp-band-Pending">Pending</span>
+                                }
+                            </td>
+                            <td>@c.OnboardedOn.ToString("dd MMM yyyy")</td>
+                            <td class="text-end">
+                                <a class="bp-link" href="@Url.Action("Customer", "BankAdmin", new { uan = c.Uan })">
+                                    View <i class="bi bi-arrow-right-short"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Score backfill — posts, reports the count, then reloads so the tiles refresh
+        (function () {
+            var form = document.getElementById('resyncForm');
+            if (!form) return;
+            var btn = document.getElementById('resyncBtn');
+            var toast = document.getElementById('resyncToast');
+
+            function say(msg, ok) {
+                toast.querySelector('span').textContent = msg;
+                toast.classList.toggle('bad', !ok);
+                toast.classList.add('show');
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                btn.disabled = true;
+                btn.querySelector('span').textContent = 'Syncing…';
+                btn.querySelector('i').classList.add('bp-spin');
+
+                fetch(form.action, { method: 'POST', body: new FormData(form) })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        say(res.message, res.status);
+                        if (res.status) { setTimeout(function () { location.reload(); }, 1200); return; }
+                        btn.disabled = false;
+                        btn.querySelector('span').textContent = 'Sync scores';
+                        btn.querySelector('i').classList.remove('bp-spin');
+                    })
+                    .catch(function () {
+                        say('Could not reach the server.', false);
+                        btn.disabled = false;
+                        btn.querySelector('span').textContent = 'Sync scores';
+                        btn.querySelector('i').classList.remove('bp-spin');
+                    });
+            });
+        })();
+    </script>
+
+    @if (Model.LoadError == null && s.TotalOnboarded > 0)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+        <script>
+            // Brand colours follow the active theme (see ~/css/theme.css)
+            const css = getComputedStyle(document.documentElement);
+            const BRAND = (css.getPropertyValue('--brand-btn-bg') || '#F58220').trim();
+            const PRIMARY = (css.getPropertyValue('--brand-primary') || '#117A8B').trim();
+            const TINT = (css.getPropertyValue('--brand-tint-bg-2') || '#E8F3F5').trim();
+
+            // Band colours stay semantic — red means risk in any theme
+            const BAND_COLORS = ['#2e7d4f', '#7fae5e', '#e6c34c', '#e08a3c', '#c22f3e'];
+
+            const bands = @Html.Raw(Json.Serialize(s.BandDistribution));
+            const trend = @Html.Raw(Json.Serialize(s.OnboardingTrend));
+            const hist = @Html.Raw(Json.Serialize(s.ScoreHistogram));
+            const states = @Html.Raw(Json.Serialize(s.TopStates));
+            const activity = @Html.Raw(Json.Serialize(s.ActivityMix));
+            const products = @Html.Raw(Json.Serialize(s.ProductMix));
+
+            const noLegend = { legend: { display: false } };
+            const intAxis = { y: { beginAtZero: true, ticks: { precision: 0 } } };
+
+            new Chart(document.getElementById('bandChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(bands),
+                    datasets: [{ data: Object.values(bands), backgroundColor: BAND_COLORS, borderColor: '#fff', borderWidth: 2 }]
+                },
+                options: {
+                    maintainAspectRatio: false, cutout: '58%',
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }
+                }
+            });
+
+            const monthLabel = k => {
+                const [y, m] = k.split('-');
+                return new Date(y, m - 1).toLocaleString('en', { month: 'short' }) + " '" + y.slice(2);
+            };
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(trend).map(monthLabel),
+                    datasets: [{
+                        data: Object.values(trend), borderColor: BRAND, backgroundColor: BRAND + '25',
+                        fill: true, tension: .35, pointRadius: 3
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: noLegend, scales: intAxis }
+            });
+
+            new Chart(document.getElementById('histChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(hist),
+                    datasets: [{ data: Object.values(hist), backgroundColor: BAND_COLORS, borderRadius: 6 }]
+                },
+                options: { maintainAspectRatio: false, plugins: noLegend, scales: intAxis }
+            });
+
+            new Chart(document.getElementById('stateChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(states),
+                    datasets: [{ data: Object.values(states), backgroundColor: PRIMARY, borderRadius: 6 }]
+                },
+                options: {
+                    indexAxis: 'y', maintainAspectRatio: false, plugins: noLegend,
+                    scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+
+            new Chart(document.getElementById('activityChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(activity),
+                    datasets: [{
+                        data: Object.values(activity),
+                        backgroundColor: [PRIMARY, BRAND, '#7fae5e', '#c98a2b', '#8a6d00', '#5c8a99'],
+                        borderColor: '#fff', borderWidth: 2
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false, cutout: '58%',
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }
+                }
+            });
+
+            const pKeys = Object.keys(products);
+            if (pKeys.length === 0) {
+                document.getElementById('productChart').closest('.bp-chart-box').innerHTML =
+                    '<div class="bp-chart-empty">No scored customers with a recommended product yet.</div>';
+            } else {
+                new Chart(document.getElementById('productChart'), {
+                    type: 'bar',
+                    data: { labels: pKeys, datasets: [{ data: Object.values(products), backgroundColor: BRAND, borderRadius: 6 }] },
+                    options: {
+                        indexAxis: 'y', maintainAspectRatio: false, plugins: noLegend,
+                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 10 } } } }
+                    }
+                });
+            }
+        </script>
+    }
+}

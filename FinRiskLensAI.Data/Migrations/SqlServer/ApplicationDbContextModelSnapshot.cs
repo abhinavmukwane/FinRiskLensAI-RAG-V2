@@ -128,6 +128,139 @@ namespace FinRiskLensAI.Data.Migrations.SqlServer
                     b.ToTable("t_AccAggreToken", (string)null);
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Admin.AdmBankLogin", b =>
+                {
+                    b.Property<int>("AdmBankLoginID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdmBankLoginID"));
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("BranchAddress")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("BranchCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("BranchName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Designation")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("FailedLoginCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("IfscCode")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("nvarchar(11)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MobileNumber")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Pin")
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("AdmBankLoginID");
+
+                    b.HasIndex("IfscCode");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ADM_BankLogin", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            AdmBankLoginID = 1,
+                            BankName = "IDBI Bank",
+                            BranchAddress = "IDBI Bank Ltd, Sitabuldi Main Road, Nagpur",
+                            BranchCode = "000472",
+                            BranchName = "Sitabuldi, Nagpur",
+                            City = "Nagpur",
+                            CreatedAt = new DateTime(2026, 8, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "seed",
+                            Designation = "Credit Manager",
+                            Email = "bankadmin@idbi.co.in",
+                            FailedLoginCount = 0,
+                            FullName = "IDBI Bank Administrator",
+                            IfscCode = "IBKL0000472",
+                            IsActive = true,
+                            MobileNumber = "9000000001",
+                            PasswordHash = "AQAAAAIAAYagAAAAEIPBkSkagDEeRELmgDgCxJZinAKg/KQmO6hPeDdLe8u4haJi+IM8JF0dUZEbZgkqkA==",
+                            Pin = "440012",
+                            Role = "BankAdmin",
+                            State = "Maharashtra",
+                            UpdatedAt = new DateTime(2026, 8, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = "bankadmin"
+                        });
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Admin.AdmLogin", b =>
                 {
                     b.Property<int>("AdmLoginID")
@@ -586,6 +719,104 @@ namespace FinRiskLensAI.Data.Migrations.SqlServer
                     b.HasIndex("UdyamNumber");
 
                     b.ToTable("t_UserRegistration", (string)null);
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Scoring.MsmeScoreSummary", b =>
+                {
+                    b.Property<int>("MsmeScoreSummaryID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MsmeScoreSummaryID"));
+
+                    b.Property<decimal>("AnnualTurnover")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<double>("CashflowTrendSlope")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("DimensionsExcludedCount")
+                        .HasColumnType("int");
+
+                    b.Property<double>("HeuristicScore")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("IsAnomalous")
+                        .HasColumnType("bit");
+
+                    b.Property<double>("MlCalibratedScore")
+                        .HasColumnType("float");
+
+                    b.Property<string>("ModelVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("MonthlySurplus")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<double>("OverallScore")
+                        .HasColumnType("float");
+
+                    b.Property<string>("ScoreBand")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("TermLoanCapacity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TopProductName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("TopProductScheme")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("TotalIndicativeEligibility")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Uan")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("WorkingCapitalLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("MsmeScoreSummaryID");
+
+                    b.HasIndex("OverallScore");
+
+                    b.HasIndex("ScoreBand");
+
+                    b.HasIndex("Uan")
+                        .IsUnique();
+
+                    b.ToTable("t_MsmeScoreSummary", (string)null);
                 });
 
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Universal.StaticResponseModel", b =>

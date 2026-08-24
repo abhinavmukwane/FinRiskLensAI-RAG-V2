@@ -1,4 +1,5 @@
 using FinRiskLensAI.Core.Interfaces;
+using FinRiskLensAI.Core.Interfaces.IServices.Admin;
 using FinRiskLensAI.Core.Models.Storage;
 using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.ML.Storage;
@@ -18,12 +19,15 @@ namespace FinRiskLensAI.ML.Services
     {
         private readonly IMsmeDataStore _store;
         private readonly IRiskScoringService _scoring;
+        private readonly IBankAdminService _bankAdmin;
         private readonly ILogger<BlobAnalysisService> _logger;
 
-        public BlobAnalysisService(IMsmeDataStore store, IRiskScoringService scoring, ILogger<BlobAnalysisService> logger)
+        public BlobAnalysisService(IMsmeDataStore store, IRiskScoringService scoring,
+            IBankAdminService bankAdmin, ILogger<BlobAnalysisService> logger)
         {
             _store = store;
             _scoring = scoring;
+            _bankAdmin = bankAdmin;
             _logger = logger;
         }
 
@@ -157,6 +161,21 @@ namespace FinRiskLensAI.ML.Services
 
                 await _store.UploadAsync(uan, MsmeDataFiles.Result,
                     JsonConvert.SerializeObject(result, Formatting.Indented), ct);
+
+                // Mirror the headline figures into t_MsmeScoreSummary so the bank
+                // portal can list, sort and chart every MSME from one SQL query
+                // instead of reading each result.json. The blob stays the source of
+                // truth — a DB hiccup must not fail an otherwise good analysis.
+                try
+                {
+                    await _bankAdmin.SaveScoreSummaryAsync(uan, result, ct);
+                }
+                catch (Exception summaryEx)
+                {
+                    _logger.LogError(summaryEx,
+                        "Analyze {Uan}: score computed and result.json written, but the "
+                        + "t_MsmeScoreSummary upsert failed — the bank portal list may be stale.", uan);
+                }
 
                 manifest.Status = MsmeDataStatus.Completed;
                 manifest.CompletedAt = DateTime.UtcNow;

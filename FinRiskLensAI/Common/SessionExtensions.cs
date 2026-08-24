@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.User_Activity;
 
 namespace FinRiskLensAI.Common
@@ -10,6 +11,9 @@ namespace FinRiskLensAI.Common
     public static class SessionKeys
     {
         public const string CurrentUser = "CurrentUser";
+
+        /// <summary>Logged-in bank-portal user — a separate slot from the MSME user.</summary>
+        public const string CurrentBankUser = "CurrentBankUser";
     }
 
     /// <summary>
@@ -33,5 +37,12 @@ namespace FinRiskLensAI.Common
 
         public static void SetCurrentUser(this ISession session, UserSessionModel user)
             => session.SetObject(SessionKeys.CurrentUser, user);
+
+        /// <summary>The logged-in bank-portal user, or null if not signed in.</summary>
+        public static BankUserSessionModel? GetCurrentBankUser(this ISession session)
+            => session.GetObject<BankUserSessionModel>(SessionKeys.CurrentBankUser);
+
+        public static void SetCurrentBankUser(this ISession session, BankUserSessionModel user)
+            => session.SetObject(SessionKeys.CurrentBankUser, user);
     }
 }

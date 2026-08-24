@@ -1,0 +1,129 @@
+@{
+    ViewBag.Title = "Bank Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bank Portal Login | FinRiskLens AI</title>
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link href="~/css/theme.css" rel="stylesheet" />
+    <script src="~/js/theme.js"></script>
+    <link href="~/css/BankAdmin.css" rel="stylesheet" />
+</head>
+<body class="bank-login-page">
+
+    <div class="bank-login-shell">
+
+        <!-- ============ Left: brand panel ============ -->
+        <aside class="bank-login-brand">
+            <div class="blb-inner">
+                <div class="blb-logo">
+                    <img src="~/Logo.png" alt="FinRiskLens AI" />
+                    <div>
+                        <div class="blb-name">FinRiskLens <span>AI</span></div>
+                        <div class="blb-sub">Bank Portal</div>
+                    </div>
+                </div>
+
+                <h1 class="blb-headline">
+                    MSME Credit Risk<br />Intelligence
+                </h1>
+                <p class="blb-copy">
+                    Review onboarded MSMEs, their AI-computed Financial Health Score and
+                    indicative credit eligibility — all in one underwriting workspace.
+                </p>
+
+                <ul class="blb-points">
+                    <li><i class="bi bi-people-fill"></i><span>Portfolio view of every onboarded enterprise</span></li>
+                    <li><i class="bi bi-graph-up-arrow"></i><span>Six-dimension score with full explainability</span></li>
+                    <li><i class="bi bi-cash-coin"></i><span>Indicative limits and recommended credit products</span></li>
+                    <li><i class="bi bi-shield-check"></i><span>Consent-backed, fully auditable data sources</span></li>
+                </ul>
+
+                <div class="blb-foot">
+                    IDBI Innovate 2026 &middot; Team ASM FinTech
+                </div>
+            </div>
+        </aside>
+
+        <!-- ============ Right: login form ============ -->
+        <main class="bank-login-form">
+            <div class="blf-theme">
+                @await Html.PartialAsync("_ThemeSwitch")
+            </div>
+
+            <div class="blf-card">
+
+                <div class="blf-head">
+                    <div class="blf-badge"><i class="bi bi-bank2"></i></div>
+                    <h2>Bank Officer Sign In</h2>
+                    <p>Use your branch-issued User ID to continue.</p>
+                </div>
+
+                <form id="bankLoginForm" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div class="blf-group">
+                        <label for="userId">User ID</label>
+                        <div class="blf-input">
+                            <i class="bi bi-person-badge"></i>
+                            <input type="text" id="userId" name="userId" autocomplete="username"
+                                   placeholder="e.g. bankadmin" spellcheck="false" autofocus />
+                        </div>
+                        <div class="blf-error" id="userIdError"></div>
+                    </div>
+
+                    <div class="blf-group">
+                        <label for="password">Password</label>
+                        <div class="blf-input">
+                            <i class="bi bi-lock"></i>
+                            <input type="password" id="password" name="password"
+                                   autocomplete="current-password" placeholder="Enter your password" />
+                            <button type="button" class="blf-eye" id="togglePassword"
+                                    aria-label="Show password" tabindex="-1">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="blf-error" id="passwordError"></div>
+                    </div>
+
+                    <div class="blf-alert" id="loginAlert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span id="loginAlertText"></span>
+                    </div>
+
+                    <button type="submit" class="blf-submit" id="loginBtn">
+                        <span class="blf-btn-label">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In to Portal
+                        </span>
+                        <span class="blf-spinner" aria-hidden="true"></span>
+                    </button>
+                </form>
+
+                <div class="blf-divider"><span>Secure access</span></div>
+
+                <p class="blf-note">
+                    <i class="bi bi-shield-lock"></i>
+                    Access is restricted to authorised bank personnel. All activity is logged
+                    against your User ID and branch IFSC.
+                </p>
+
+                <div class="blf-back">
+                    <a href="/"><i class="bi bi-arrow-left"></i> Back to main site</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/frlscripts/bankadmin/banklogin.js" asp-append-version="true"></script>
+</body>
+</html>

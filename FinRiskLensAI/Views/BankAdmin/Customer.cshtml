@@ -1,0 +1,134 @@
+@model FinRiskLensAI.Models.BankCustomerDetailViewModel
+@{
+    ViewBag.Title = "Customer 360";
+    Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
+    var c = Model.Customer;
+
+    string Inr(decimal? v)
+    {
+        if (v is null || v == 0m) return "—";
+        var d = v.Value;
+        if (d >= 10000000m) return "₹" + (d / 10000000m).ToString("0.##") + " Cr";
+        if (d >= 100000m) return "₹" + (d / 100000m).ToString("0.##") + " L";
+        return "₹" + d.ToString("N0");
+    }
+}
+
+@section Styles {
+    <link href="~/css/FinancialHealthCard.css" rel="stylesheet" />
+}
+
+<div class="bp-crumb">
+    <a href="@Url.Action("Customers", "BankAdmin")"><i class="bi bi-arrow-left"></i> All customers</a>
+</div>
+
+@if (Model.LoadError != null)
+{
+    <div class="bp-alert"><i class="bi bi-exclamation-triangle-fill"></i>@Model.LoadError</div>
+}
+else if (c != null)
+{
+    <!-- ===================== Profile header ===================== -->
+    <div class="bp-profile">
+        <div class="bp-profile-main">
+            <div class="bp-profile-avatar">
+                @(string.IsNullOrWhiteSpace(c.EnterpriseName) ? "?" : c.EnterpriseName.Trim()[..1].ToUpperInvariant())
+            </div>
+            <div>
+                <h1>@c.EnterpriseName</h1>
+                <div class="bp-profile-meta">
+                    <span><i class="bi bi-patch-check"></i>@c.Uan</span>
+                    @if (!string.IsNullOrWhiteSpace(c.GstinNumber))
+                    {
+                        <span><i class="bi bi-receipt"></i>@c.GstinNumber</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(c.PanNumber))
+                    {
+                        <span><i class="bi bi-card-text"></i>@c.PanNumber</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(c.City) || !string.IsNullOrWhiteSpace(c.State))
+                    {
+                        <span><i class="bi bi-geo-alt"></i>@(c.City ?? "")@(!string.IsNullOrWhiteSpace(c.City) && !string.IsNullOrWhiteSpace(c.State) ? ", " : "")@(c.State ?? "")</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(c.OrganizationType))
+                    {
+                        <span><i class="bi bi-diagram-2"></i>@c.OrganizationType</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="bp-profile-side">
+            @if (c.IsScored)
+            {
+                <div class="bp-profile-score">
+                    <div class="v">@c.OverallScore!.Value.ToString("0")</div>
+                    <div class="k">Score / 1000</div>
+                    <span class="bp-band bp-band-@c.ScoreBand">@c.ScoreBand</span>
+                </div>
+            }
+            else
+            {
+                <div class="bp-profile-score">
+                    <div class="v bp-muted">—</div>
+                    <div class="k">Not scored</div>
+                    <span class="bp-band bp-band-Pending">Pending</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ===================== Quick facts ===================== -->
+    <div class="bp-fact-grid">
+        <div class="bp-fact">
+            <div class="k">Indicative Eligibility</div>
+            <div class="v">@Inr(c.TotalIndicativeEligibility)</div>
+        </div>
+        <div class="bp-fact">
+            <div class="k">Recommended Product</div>
+            <div class="v bp-fact-sm">@(c.TopProductName ?? "—")</div>
+        </div>
+        <div class="bp-fact">
+            <div class="k">Major Activity</div>
+            <div class="v bp-fact-sm">@(c.MajorActivity ?? "—")</div>
+        </div>
+        <div class="bp-fact">
+            <div class="k">Incorporated</div>
+            <div class="v bp-fact-sm">@(c.DateOfIncorporation?.ToString("dd MMM yyyy") ?? "—")</div>
+        </div>
+        <div class="bp-fact">
+            <div class="k">Onboarded</div>
+            <div class="v bp-fact-sm">@c.OnboardedOn.ToString("dd MMM yyyy")</div>
+        </div>
+        <div class="bp-fact">
+            <div class="k">Score Computed</div>
+            <div class="v bp-fact-sm">@(c.ComputedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+        </div>
+    </div>
+
+    @if (c.IsAnomalous)
+    {
+        <div class="bp-alert bp-alert-warn">
+            <i class="bi bi-shield-exclamation"></i>
+            Cross-source anomaly flagged for this MSME — GST turnover, ITR income and bank
+            credits disagree materially. Review the data-integrity note on the score card below.
+        </div>
+    }
+
+    <!-- ===================== Contact ===================== -->
+    <div class="bp-card mb-3">
+        <div class="bp-card-label"><i class="bi bi-person-lines-fill"></i>Contact</div>
+        <div class="bp-contact">
+            <div><span class="k">Email</span><span class="v">@(c.Email ?? "—")</span></div>
+            <div><span class="k">Mobile</span><span class="v">@(c.MobileNumber ?? "—")</span></div>
+        </div>
+    </div>
+
+    <!-- ===================== Shared Financial Health Card ===================== -->
+    <div class="fhc-wrap bp-fhc">
+        @if (Model.Card != null)
+        {
+            @await Html.PartialAsync("_FinancialHealthCardBody", Model.Card)
+        }
+    </div>
+}
