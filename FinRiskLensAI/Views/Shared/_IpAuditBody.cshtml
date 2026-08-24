@@ -1,0 +1,124 @@
+@model FinRiskLensAI.Models.IpVerificationViewModel
+@*
+    Source-IP security audit, rendered server-side from the same
+    IpVerificationViewModel the customer's popup binds via
+    /Dashboard/GetIpVerificationDetail — identical data, no fetch needed.
+*@
+@{
+    var score = Math.Max(0, Math.Min(100, Model.FraudScore));
+    // Low fraud score is best: green under 25, amber to 60, red above.
+    var scoreClass = score < 25 ? "ok" : score < 60 ? "warn" : "bad";
+
+    (string Label, string Css, string Icon) Flag(bool on, string offText, string onText) =>
+        on ? (onText, "bad", "bi-x-circle-fill") : (offText, "ok", "bi-check-circle-fill");
+
+    var vpn = Flag(Model.Vpn, "No VPN", "VPN detected");
+    var proxy = Flag(Model.Proxy, "No Proxy", "Proxy detected");
+    var tor = Flag(Model.Tor, "No Tor", "Tor exit node");
+    var bot = Flag(Model.Bot, "Human traffic", "Bot suspected");
+}
+
+<div class="ipa">
+
+    <!-- ===================== Verdict ===================== -->
+    <div class="ipa-verdict ipa-@(Model.IsSecure ? "secure" : "review")">
+        <div class="ipa-verdict-ic">
+            <i class="bi @(Model.IsSecure ? "bi-shield-check" : "bi-shield-exclamation")"></i>
+        </div>
+        <div>
+            <div class="ipa-verdict-title">
+                @(Model.IsSecure ? "Trusted connection origin" : "Connection origin needs review")
+            </div>
+            <div class="ipa-verdict-sub">
+                @if (Model.IsSecure)
+                {
+                    <text>
+                        Low fraud score with no anonymising network detected. The session
+                        originated from a clean, attributable address.
+                    </text>
+                }
+                else
+                {
+                    <text>
+                        Either the fraud score is elevated or an anonymising network was
+                        detected. Verify the applicant's identity through another channel.
+                    </text>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="ipa-grid">
+
+        <!-- ===================== Fraud score ===================== -->
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-speedometer2"></i>Fraud Risk Score</div>
+
+            <div class="ipa-score ipa-score-@scoreClass">
+                <div class="ipa-score-v">@score<span>/100</span></div>
+                <div class="ipa-score-bar"><div class="ipa-score-fill" style="width:@(score)%;"></div></div>
+                <div class="ipa-score-scale">
+                    <span>0 · Clean</span><span>50</span><span>100 · High risk</span>
+                </div>
+            </div>
+
+            <p class="ipa-note">
+                <i class="bi bi-info-circle"></i>
+                A <strong>lower</strong> score is better. Below 25 with no VPN, proxy, Tor
+                or bot signal is treated as a trusted origin.
+            </p>
+        </div>
+
+        <!-- ===================== Integrity checks ===================== -->
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-list-check"></i>Anonymising Network Checks</div>
+
+            <div class="ipa-checks">
+                <div class="ipa-check @vpn.Css"><i class="bi @vpn.Icon"></i><span>@vpn.Label</span></div>
+                <div class="ipa-check @proxy.Css"><i class="bi @proxy.Icon"></i><span>@proxy.Label</span></div>
+                <div class="ipa-check @tor.Css"><i class="bi @tor.Icon"></i><span>@tor.Label</span></div>
+                <div class="ipa-check @bot.Css"><i class="bi @bot.Icon"></i><span>@bot.Label</span></div>
+            </div>
+        </div>
+
+        <!-- ===================== Network ===================== -->
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-hdd-network"></i>Network</div>
+            <dl class="ipa-dl">
+                <dt>IP Address</dt><dd class="bp-mono">@Model.Ip</dd>
+                <dt>ISP</dt><dd>@Model.Isp</dd>
+                <dt>Organisation</dt><dd>@Model.Organization</dd>
+                <dt>ASN</dt><dd class="bp-mono">@Model.Asn</dd>
+                <dt>Connection</dt><dd>@Model.ConnectionType</dd>
+            </dl>
+        </div>
+
+        <!-- ===================== Geolocation ===================== -->
+        <div class="bp-card">
+            <div class="bp-card-label"><i class="bi bi-geo-alt"></i>Geolocation</div>
+            <dl class="ipa-dl">
+                <dt>Country</dt>
+                <dd>
+                    @Model.CountryName
+                    @if (!string.IsNullOrWhiteSpace(Model.CountryCode))
+                    {
+                        <span class="ipa-cc">@Model.CountryCode</span>
+                    }
+                </dd>
+                <dt>Region</dt><dd>@Model.Region</dd>
+                <dt>City</dt><dd>@Model.City</dd>
+                <dt>Coordinates</dt><dd class="bp-mono">@(Model.Coordinates ?? "—")</dd>
+            </dl>
+
+            @if (!string.IsNullOrWhiteSpace(Model.CountryCode)
+                 && !Model.CountryCode.Equals("IN", StringComparison.OrdinalIgnoreCase))
+            {
+                <div class="ipa-offshore">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Connection originated outside India — confirm this is expected for
+                    this applicant.
+                </div>
+            }
+        </div>
+    </div>
+</div>

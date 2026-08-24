@@ -12,10 +12,15 @@
         if (d >= 100000m) return "₹" + (d / 100000m).ToString("0.##") + " L";
         return "₹" + d.ToString("N0");
     }
+
+    string Tab(string key) => Model.ActiveTab == key ? "bp-tab active" : "bp-tab";
+    string Pane(string key) => Model.ActiveTab == key ? "bp-pane active" : "bp-pane";
 }
 
 @section Styles {
     <link href="~/css/FinancialHealthCard.css" rel="stylesheet" />
+    <link href="~/css/Dashboard.css" rel="stylesheet" />
+    <link href="~/css/GstAnalysis.css" rel="stylesheet" />
 }
 
 <div class="bp-crumb">
@@ -59,22 +64,20 @@ else if (c != null)
         </div>
 
         <div class="bp-profile-side">
-            @if (c.IsScored)
-            {
-                <div class="bp-profile-score">
+            <div class="bp-profile-score">
+                @if (c.IsScored)
+                {
                     <div class="v">@c.OverallScore!.Value.ToString("0")</div>
                     <div class="k">Score / 1000</div>
                     <span class="bp-band bp-band-@c.ScoreBand">@c.ScoreBand</span>
-                </div>
-            }
-            else
-            {
-                <div class="bp-profile-score">
+                }
+                else
+                {
                     <div class="v bp-muted">—</div>
                     <div class="k">Not scored</div>
                     <span class="bp-band bp-band-Pending">Pending</span>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 
@@ -104,31 +107,110 @@ else if (c != null)
             <div class="k">Score Computed</div>
             <div class="v bp-fact-sm">@(c.ComputedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
         </div>
+        <div class="bp-fact">
+            <div class="k">Email</div>
+            <div class="v bp-fact-sm">@(c.Email ?? "—")</div>
+        </div>
+        <div class="bp-fact">
+            <div class="k">Mobile</div>
+            <div class="v bp-fact-sm">@(c.MobileNumber ?? "—")</div>
+        </div>
     </div>
 
     @if (c.IsAnomalous)
     {
         <div class="bp-alert bp-alert-warn">
             <i class="bi bi-shield-exclamation"></i>
-            Cross-source anomaly flagged for this MSME — GST turnover, ITR income and bank
-            credits disagree materially. Review the data-integrity note on the score card below.
+            Cross-source anomaly flagged — GST turnover, ITR income and bank credits
+            disagree materially. Review the data-integrity note on the score card.
         </div>
     }
 
-    <!-- ===================== Contact ===================== -->
-    <div class="bp-card mb-3">
-        <div class="bp-card-label"><i class="bi bi-person-lines-fill"></i>Contact</div>
-        <div class="bp-contact">
-            <div><span class="k">Email</span><span class="v">@(c.Email ?? "—")</span></div>
-            <div><span class="k">Mobile</span><span class="v">@(c.MobileNumber ?? "—")</span></div>
-        </div>
+    <!-- ===================== Tabs ===================== -->
+    <div class="bp-tabs" role="tablist">
+        <button type="button" class="@Tab("score")" data-pane="score" role="tab">
+            <i class="bi bi-speedometer2"></i><span>Financial Score</span>
+        </button>
+        <button type="button" class="@Tab("udyam")" data-pane="udyam" role="tab">
+            <i class="bi bi-grid-3x3-gap"></i><span>Udyam Identity</span>
+        </button>
+        <button type="button" class="@Tab("gst")" data-pane="gst" role="tab">
+            <i class="bi bi-receipt"></i><span>GST Analysis</span>
+        </button>
+        <button type="button" class="@Tab("mca")" data-pane="mca" role="tab">
+            <i class="bi bi-building-check"></i><span>Corporate (MCA)</span>
+        </button>
+        <button type="button" class="@Tab("security")" data-pane="security" role="tab">
+            <i class="bi bi-shield-lock"></i><span>Security Audit</span>
+        </button>
     </div>
 
-    <!-- ===================== Shared Financial Health Card ===================== -->
-    <div class="fhc-wrap bp-fhc">
-        @if (Model.Card != null)
-        {
-            @await Html.PartialAsync("_FinancialHealthCardBody", Model.Card)
-        }
+    <!-- ===================== Panes ===================== -->
+    <div class="bp-panes">
+
+        <section class="@Pane("score")" data-pane="score">
+            <div class="fhc-wrap bp-fhc">
+                @if (Model.Card != null)
+                {
+                    @await Html.PartialAsync("_FinancialHealthCardBody", Model.Card)
+                }
+            </div>
+        </section>
+
+        <section class="@Pane("udyam")" data-pane="udyam">
+            @if (Model.Udyam != null)
+            {
+                @await Html.PartialAsync("_UdyamDetailsBody", Model.Udyam)
+            }
+        </section>
+
+        <section class="@Pane("gst")" data-pane="gst">
+            @if (Model.Gst != null)
+            {
+                @await Html.PartialAsync("_GstAnalysisBody", Model.Gst)
+            }
+        </section>
+
+        <section class="@Pane("mca")" data-pane="mca">
+            @if (Model.Mca != null)
+            {
+                @await Html.PartialAsync("_McaDetailsBody", Model.Mca)
+            }
+        </section>
+
+        <section class="@Pane("security")" data-pane="security">
+            @if (Model.IpAudit != null)
+            {
+                @await Html.PartialAsync("_IpAuditBody", Model.IpAudit)
+            }
+        </section>
     </div>
+}
+
+@section Scripts {
+    <script>
+        // Tab switching. Every pane is rendered server-side, so switching is purely
+        // show/hide — no refetch, and charts inside a pane keep their state.
+        (function () {
+            var tabs = document.querySelectorAll('.bp-tab');
+            var panes = document.querySelectorAll('.bp-pane');
+
+            function activate(key) {
+                tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.pane === key); });
+                panes.forEach(function (p) { p.classList.toggle('active', p.dataset.pane === key); });
+
+                // Keep the tab in the URL so a refresh or shared link lands in place
+                var u = new URL(window.location.href);
+                u.searchParams.set('tab', key);
+                history.replaceState(null, '', u);
+
+                // Charts laid out while hidden measure 0px — nudge them once visible
+                window.dispatchEvent(new Event('resize'));
+            }
+
+            tabs.forEach(function (t) {
+                t.addEventListener('click', function () { activate(this.dataset.pane); });
+            });
+        })();
+    </script>
 }

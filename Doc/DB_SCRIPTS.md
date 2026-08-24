@@ -180,25 +180,20 @@ GO
 ### Backfill note
 
 MSMEs scored before this table existed have a `result.json` in blob storage but
-no row here, so the bank portal shows them as *Pending*. Two ways to populate:
-
-**Bulk (preferred)** — the **Sync scores** button on the bank portal dashboard,
-or the endpoint behind it. It walks every onboarded UAN, reads the stored
-`result.json` and upserts a row. Safe to re-run; it never recomputes a score.
-
-```
-POST /BankAdmin/ResyncScores        (bank session + antiforgery token required)
-```
-
-**Single MSME** — re-running the analysis writes both the blob and this table:
+no row here, so the bank portal lists them as *Pending*. Re-running the analysis
+writes both the blob and this table:
 
 ```
 POST /api/msme-data/{uan}/analyze?force=true
 ```
 
-After the initial backfill no manual step is needed: `AnalyzeAsync` upserts here
-on every run. A failed upsert is logged but never fails the analysis — the blob
-stays the source of truth.
+After that no manual step is needed: `AnalyzeAsync` upserts here on every run.
+A failed upsert is logged but never fails the analysis — the blob stays the
+source of truth.
+
+> A bulk "Sync scores" button existed briefly on the bank dashboard and was
+> removed on request. To backfill several MSMEs, call the analyse endpoint above
+> once per UAN.
 
 ---
 

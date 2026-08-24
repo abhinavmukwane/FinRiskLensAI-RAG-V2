@@ -25,10 +25,11 @@ namespace FinRiskLensAI.Controllers
         private readonly IIpRiskService _ipRisk;
         private readonly IGSTR2And3BResponceService _gstResponces;
         private readonly IDummyDataService _dummyData;
+        private readonly CustomerProfileBuilder _profile;
         private readonly IEmailService _emailService;
         public DashboardController(IBlobAnalysisService analysis, IMsmeDataStore store, ILogger<DashboardController> logger, 
             IAccountAggregatorService AAService, IIpRiskService ipRisk, IGSTR2And3BResponceService gstResponces, 
-            IDummyDataService dummyData, IEmailService emailService)
+            IDummyDataService dummyData, IEmailService emailService, CustomerProfileBuilder profile)
         {
             _analysis = analysis;
             _store = store;
@@ -37,6 +38,7 @@ namespace FinRiskLensAI.Controllers
             _ipRisk = ipRisk;
             _gstResponces = gstResponces;
             _dummyData = dummyData;
+            _profile = profile;
             _emailService = emailService;
         }
 
@@ -51,30 +53,7 @@ namespace FinRiskLensAI.Controllers
         public async Task<IActionResult> GetIpVerificationDetail()
         {
             var user = HttpContext.Session.GetCurrentUser();
-            var ip = user?.ClientIP;
-            var uan = user?.UdyamNumber;
-
-            var vm = new IpVerificationViewModel();
-            try
-            {
-                var json = await _ipRisk.GetIpRiskScoreAsync(ip ?? string.Empty, uan ?? string.Empty, HttpContext.RequestAborted);
-                if (!string.IsNullOrWhiteSpace(json))
-                    vm = IpVerificationViewModel.FromJson(json);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed loading IP risk score");
-            }
-
-            // Until the production key is live, always show the static/demo data
-            // so the badge and popup never fall back to an empty "no data" state.
-            if (!vm.HasData)
-                vm = IpVerificationViewModel.Demo();
-
-            // Prefer the client IP captured at login; otherwise keep the static IP.
-            if (!string.IsNullOrWhiteSpace(ip))
-                vm.Ip = ip;
-
+            var vm = await _profile.GetIpAuditAsync(user?.UdyamNumber, user?.ClientIP, HttpContext.RequestAborted);
             return Json(new { status = vm.HasData, data = vm });
         }
 
@@ -123,35 +102,8 @@ namespace FinRiskLensAI.Controllers
         [HttpGet]
         public async Task<IActionResult> GSTAnalysis()
         {
-            var model = new GSTAnalysisViewModel
-            {
-                Uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim()
-            };
-
-            try
-            {
-                var data = await _gstResponces.GetResponces();
-                if (data != null)
-                {
-                    model.HasData = true;
-                    model.Gstin = data.GSTINNumber;
-                    model.FilingPeriod = data.FilingPeriod;
-                    model.CreatedDate = data.CreatedDate;
-                    model.GSTR2BResponseData = data.GSTR2BResponseData;
-                    model.GSTR3BResponseData = data.GSTR3BResponseData;
-                }
-                else
-                {
-                    model.LoadError = "No GST return data is stored for your account yet. Please fetch your GSTR details from the Dashboard first.";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed loading GST analysis for {Uan}", model.Uan);
-                model.LoadError = "Could not load your GST analysis right now. Please try again later.";
-            }
-
-            return View(model);
+            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
+            return View(await _profile.GetGstAsync(uan));
         }
 
         /// <summary>

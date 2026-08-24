@@ -137,9 +137,6 @@ namespace FinRiskLensAI.Services.Implementation.Admin
         public Task<List<string>> GetStatesAsync(CancellationToken ct = default)
             => _repo.GetStatesAsync(ct);
 
-        public Task<List<string>> GetAllUansAsync(CancellationToken ct = default)
-            => _repo.GetAllUansAsync(ct);
-
         /// <summary>
         /// double → decimal for the money columns. Guards NaN/Infinity and values
         /// outside decimal's range, which would otherwise throw on SaveChanges.

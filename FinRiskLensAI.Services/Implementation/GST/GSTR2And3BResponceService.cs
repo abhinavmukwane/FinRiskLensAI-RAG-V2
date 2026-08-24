@@ -27,13 +27,21 @@ namespace FinRiskLensAI.Services.Implementation.GST
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<GSTR2And3BResponceResult?> GetResponces()
+        public Task<GSTR2And3BResponceResult?> GetResponces()
         {
             // UdyamNumber comes from the authenticated session, never from the caller.
             var udyamNumber = GetSessionUdyamNumber();
+            return string.IsNullOrWhiteSpace(udyamNumber)
+                ? Task.FromResult<GSTR2And3BResponceResult?>(null)
+                : GetResponcesByUan(udyamNumber);
+        }
+
+        public async Task<GSTR2And3BResponceResult?> GetResponcesByUan(string udyamNumber)
+        {
             if (string.IsNullOrWhiteSpace(udyamNumber))
                 return null;
 
+            udyamNumber = udyamNumber.Trim();
             var records = await _repository.FindAsync(x => x.UdyamNumber == udyamNumber);
 
             var latest = records

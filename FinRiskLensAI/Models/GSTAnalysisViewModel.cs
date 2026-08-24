@@ -13,6 +13,13 @@ namespace FinRiskLensAI.Models
         public string? LoadError { get; set; }
         public bool HasData { get; set; }
 
+        /// <summary>
+        /// Enterprise identity carried on the model rather than read from session,
+        /// so the same view renders for a bank officer reviewing another MSME's file.
+        /// </summary>
+        public string? EnterpriseName { get; set; }
+        public string? PanNumber { get; set; }
+
         public string? Gstin { get; set; }
         public string? FilingPeriod { get; set; }
         public DateTime CreatedDate { get; set; }

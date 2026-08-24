@@ -26,10 +26,14 @@ namespace FinRiskLensAI.Controllers
         private readonly IMsmeDataStore _store;
         private readonly ILogger<McaController> _logger;
 
-        public McaController(IStaticResponseService staticResponses, IMsmeDataStore store, ILogger<McaController> logger)
+        private readonly CustomerProfileBuilder _profile;
+
+        public McaController(IStaticResponseService staticResponses, IMsmeDataStore store,
+            CustomerProfileBuilder profile, ILogger<McaController> logger)
         {
             _staticResponses = staticResponses;
             _store = store;
+            _profile = profile;
             _logger = logger;
         }
 
@@ -38,33 +42,7 @@ namespace FinRiskLensAI.Controllers
         public async Task<IActionResult> MCADetails(CancellationToken ct)
         {
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
-            var model = new McaDetailsViewModel { Uan = uan };
-
-            if (string.IsNullOrWhiteSpace(uan))
-            {
-                model.LoadError = "No Udyam number is linked to your account yet, so there are no MCA details to display.";
-                return View(model);
-            }
-
-            try
-            {
-                var json = await LoadMcaJsonAsync(uan, ct);
-                var mca = string.IsNullOrWhiteSpace(json)
-                    ? null
-                    : JsonConvert.DeserializeObject<McaResponseModel>(json);
-
-                if (mca?.message?.details == null)
-                    model.LoadError = $"No stored MCA response was found for {uan}.";
-                else
-                    model = BuildAnalysis(mca, uan);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed loading MCA details for {Uan}", uan);
-                model.LoadError = "Could not load your MCA details right now. Please try again later.";
-            }
-
-            return View(model);
+            return View(await _profile.GetMcaAsync(uan, ct));
         }
 
         /// <summary>
@@ -97,7 +75,7 @@ namespace FinRiskLensAI.Controllers
                 // Fallback / fill gaps: the director's basics from the MCA response.
                 if (!vm.Found || vm.FullName == "-")
                 {
-                    var mcaJson = await LoadMcaJsonAsync(uan, ct);
+                    var mcaJson = await _profile.LoadMcaJsonAsync(uan, ct);
                     var mca = string.IsNullOrWhiteSpace(mcaJson)
                         ? null
                         : JsonConvert.DeserializeObject<McaResponseModel>(mcaJson);
@@ -128,20 +106,6 @@ namespace FinRiskLensAI.Controllers
         // ─────────────────────────────────────────────────────────────────
         //  Data access
         // ─────────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// MCA JSON for the UAN — primary source is m_StaticResponces.MCAResponce
-        /// (the common static-response service); until that column is populated,
-        /// falls back to the seeded mca.json in the UAN's blob folder.
-        /// </summary>
-        private async Task<string?> LoadMcaJsonAsync(string uan, CancellationToken ct)
-        {
-            var json = await _staticResponses.GetStaticCommonResponce(uan, StaticResponseType.Mca);
-            if (!string.IsNullOrWhiteSpace(json))
-                return json;
-
-            return await _store.DownloadAsync(uan, MsmeDataFiles.Mca, ct);
-        }
 
         /// <summary>
         /// Locates the DIN entry matching <paramref name="din"/> inside the stored
@@ -212,7 +176,7 @@ namespace FinRiskLensAI.Controllers
         //  Business-identity analysis (moved out of the view, Udyam-style)
         // ─────────────────────────────────────────────────────────────────
 
-        private static McaDetailsViewModel BuildAnalysis(McaResponseModel mca, string uan)
+        internal static McaDetailsViewModel BuildAnalysis(McaResponseModel mca, string uan)
         {
             var info = mca.message!.details!.company_info ?? new McaResponseModel.McaCompanyInfoModel();
             var directors = mca.message.details.directors ?? new List<McaResponseModel.McaDirectorModel>();

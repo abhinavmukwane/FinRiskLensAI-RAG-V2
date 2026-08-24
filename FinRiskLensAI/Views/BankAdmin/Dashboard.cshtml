@@ -17,21 +17,10 @@
             <span><i class="bi bi-upc-scan"></i>@(bankUser?.IfscCode ?? "—")</span>
         </div>
     </div>
-    <div class="bp-head-actions">
-        <form method="post" action="@Url.Action("ResyncScores", "BankAdmin")" id="resyncForm">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="bp-btn bp-btn-ghost" id="resyncBtn"
-                    title="Rebuild the score index from stored analysis results">
-                <i class="bi bi-arrow-repeat"></i> <span>Sync scores</span>
-            </button>
-        </form>
-        <a class="bp-btn" href="@Url.Action("Customers", "BankAdmin")">
-            <i class="bi bi-people"></i> View all customers
-        </a>
-    </div>
+    <a class="bp-btn" href="@Url.Action("Customers", "BankAdmin")">
+        <i class="bi bi-people"></i> View all customers
+    </a>
 </div>
-
-<div class="bp-toast" id="resyncToast"><i class="bi bi-info-circle"></i><span></span></div>
 
 @if (Model.LoadError != null)
 {
@@ -176,45 +165,6 @@ else
 }
 
 @section Scripts {
-    <script>
-        // Score backfill — posts, reports the count, then reloads so the tiles refresh
-        (function () {
-            var form = document.getElementById('resyncForm');
-            if (!form) return;
-            var btn = document.getElementById('resyncBtn');
-            var toast = document.getElementById('resyncToast');
-
-            function say(msg, ok) {
-                toast.querySelector('span').textContent = msg;
-                toast.classList.toggle('bad', !ok);
-                toast.classList.add('show');
-            }
-
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                btn.disabled = true;
-                btn.querySelector('span').textContent = 'Syncing…';
-                btn.querySelector('i').classList.add('bp-spin');
-
-                fetch(form.action, { method: 'POST', body: new FormData(form) })
-                    .then(function (r) { return r.json(); })
-                    .then(function (res) {
-                        say(res.message, res.status);
-                        if (res.status) { setTimeout(function () { location.reload(); }, 1200); return; }
-                        btn.disabled = false;
-                        btn.querySelector('span').textContent = 'Sync scores';
-                        btn.querySelector('i').classList.remove('bp-spin');
-                    })
-                    .catch(function () {
-                        say('Could not reach the server.', false);
-                        btn.disabled = false;
-                        btn.querySelector('span').textContent = 'Sync scores';
-                        btn.querySelector('i').classList.remove('bp-spin');
-                    });
-            });
-        })();
-    </script>
-
     @if (Model.LoadError == null && s.TotalOnboarded > 0)
     {
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>

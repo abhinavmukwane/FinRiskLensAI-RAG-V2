@@ -947,36 +947,180 @@
     .bp-profile-score { min-width: 100%; text-align: left; }
 }
 
-/* =====================================================================
-   Head actions + resync toast
-   ===================================================================== */
-.bp-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.bp-head-actions form { margin: 0; }
-
-.bp-spin { display: inline-block; animation: bp-rotate .9s linear infinite; }
-
-@keyframes bp-rotate { to { transform: rotate(360deg); } }
-
-.bp-toast {
-    display: none;
-    align-items: center;
-    gap: 9px;
-    background: #e9f6f0;
-    border: 1px solid #b9e2d1;
-    color: #17694a;
-    border-radius: 11px;
-    padding: 11px 15px;
-    font-size: .86rem;
-    margin-bottom: 16px;
-}
-
-.bp-toast.show { display: flex; }
-
-.bp-toast.bad {
-    background: #fdf0ef;
-    border-color: #f3c9c6;
-    color: #a5342f;
-}
-
 /* Positive-signal KPI tile — counterpart to .bp-kpi-warn */
 .bp-kpi-good .bp-kpi-ic { background: #e6f4ea; color: #1a6e43; }
+
+/* =====================================================================
+   Customer 360 — tabs
+   ===================================================================== */
+.bp-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    border-bottom: 2px solid var(--brand-tint-border);
+    margin: 4px 0 18px;
+    padding-bottom: 0;
+}
+
+.bp-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #6b7c86;
+    font-family: 'Inter', sans-serif;
+    font-size: .87rem;
+    font-weight: 600;
+    padding: 11px 18px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    position: relative;
+    bottom: -2px;
+    border-bottom: 2px solid transparent;
+    transition: color .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.bp-tab:hover { color: var(--brand-primary); background: var(--brand-tint-bg); }
+
+.bp-tab.active {
+    color: var(--brand-primary-dark);
+    border-bottom-color: var(--brand-btn-bg);
+    background: #fff;
+}
+
+.bp-tab i { font-size: 1rem; }
+
+.bp-pane { display: none; }
+.bp-pane.active { display: block; }
+
+/* The shared customer partials assume the MSME dashboard shell; inside the
+   bank portal they sit directly on the page background. */
+.bp-pane .fhc-wrap,
+.bp-pane .udyam-dashboard,
+.bp-pane .gst-analysis { background: transparent; }
+
+/* =====================================================================
+   Customer 360 — source-IP security audit
+   ===================================================================== */
+.ipa-verdict {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    border: 1px solid;
+}
+
+.ipa-secure { background: #e9f6f0; border-color: #b9e2d1; color: #17694a; }
+.ipa-review { background: #fff8ec; border-color: #f3ddb5; color: #8a5a12; }
+
+.ipa-verdict-ic {
+    width: 40px; height: 40px; flex-shrink: 0;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, .65);
+}
+
+.ipa-verdict-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 3px; }
+.ipa-verdict-sub { font-size: .85rem; line-height: 1.6; opacity: .92; }
+
+.ipa-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+/* ── Fraud score ─────────────────────────────────────────── */
+.ipa-score-v {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 2.4rem;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.ipa-score-v span { font-size: .95rem; font-weight: 600; color: #93a4ae; margin-left: 3px; }
+
+.ipa-score-ok  .ipa-score-v { color: #1a6e43; }
+.ipa-score-warn .ipa-score-v { color: #9c4a00; }
+.ipa-score-bad .ipa-score-v { color: #8b1020; }
+
+.ipa-score-bar {
+    height: 9px;
+    border-radius: 999px;
+    background: var(--brand-tint-bg-2);
+    overflow: hidden;
+}
+
+.ipa-score-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
+.ipa-score-ok  .ipa-score-fill { background: #2e7d4f; }
+.ipa-score-warn .ipa-score-fill { background: #e08a3c; }
+.ipa-score-bad .ipa-score-fill { background: #c22f3e; }
+
+.ipa-score-scale {
+    display: flex; justify-content: space-between;
+    font-size: .7rem; color: #93a4ae; margin-top: 6px;
+}
+
+.ipa-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: .79rem; line-height: 1.6; color: #6b7c86;
+    margin: 16px 0 0;
+}
+
+.ipa-note i { color: var(--brand-primary); margin-top: 2px; flex-shrink: 0; }
+
+/* ── Checks ──────────────────────────────────────────────── */
+.ipa-checks { display: grid; gap: 9px; }
+
+.ipa-check {
+    display: flex; align-items: center; gap: 10px;
+    font-size: .86rem; font-weight: 500;
+    border-radius: 10px;
+    padding: 11px 13px;
+}
+
+.ipa-check.ok  { background: #eaf6ee; color: #1a6e43; }
+.ipa-check.bad { background: #fdf0ef; color: #a5342f; }
+.ipa-check i { font-size: 1rem; flex-shrink: 0; }
+
+/* ── Definition lists ────────────────────────────────────── */
+.ipa-dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; margin: 0; }
+
+.ipa-dl dt {
+    font-size: .72rem; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: #93a4ae; align-self: center;
+}
+
+.ipa-dl dd {
+    margin: 0; font-size: .87rem; color: #24303a;
+    font-weight: 500; text-align: right; word-break: break-word;
+}
+
+.ipa-cc {
+    display: inline-block;
+    font-size: .68rem; font-weight: 700;
+    background: var(--brand-tint-bg-2);
+    color: var(--brand-primary);
+    border-radius: 5px; padding: 2px 6px; margin-left: 6px;
+}
+
+.ipa-offshore {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: #fff8ec; border: 1px solid #f3ddb5; color: #8a5a12;
+    border-radius: 9px; padding: 10px 12px;
+    font-size: .79rem; line-height: 1.55; margin-top: 14px;
+}
+
+.ipa-offshore i { margin-top: 2px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+    .bp-tab span { display: none; }
+    .bp-tab { padding: 11px 15px; }
+    .ipa-dl dd { text-align: left; }
+}

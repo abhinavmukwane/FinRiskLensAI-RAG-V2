@@ -114,6 +114,7 @@ namespace FinRiskLensAI.Data.Repositories.Admin
                    OrganizationType = enq != null ? enq.OrganizationType : null,
                    MajorActivity = enq != null ? enq.MajorActivity : null,
                    DateOfIncorporation = enq != null ? enq.DateOfIncorporation : null,
+                   IPAddress = reg.IPAddress,
                    OnboardedOn = reg.CreatedAt,
                    OverallScore = sum != null ? sum.OverallScore : (double?)null,
                    ScoreBand = sum != null ? sum.ScoreBand : null,
@@ -181,13 +182,6 @@ namespace FinRiskLensAI.Data.Repositories.Admin
                 .Select(x => x.State!)
                 .Distinct()
                 .OrderBy(x => x)
-                .ToListAsync(ct);
-
-        public async Task<List<string>> GetAllUansAsync(CancellationToken ct = default)
-            => await _context.UserRegistration.AsNoTracking()
-                .Where(x => x.UdyamNumber != null && x.UdyamNumber != "")
-                .Select(x => x.UdyamNumber!)
-                .Distinct()
                 .ToListAsync(ct);
 
         public async Task<BankPortfolioStats> GetPortfolioStatsAsync(CancellationToken ct = default)

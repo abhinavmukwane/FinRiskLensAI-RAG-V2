@@ -19,6 +19,9 @@ namespace FinRiskLensAI.Core.Models.Admin
         public string? MajorActivity { get; set; }
         public DateTime? DateOfIncorporation { get; set; }
 
+        /// <summary>Client IP captured when the MSME registered — feeds the security audit.</summary>
+        public string? IPAddress { get; set; }
+
         public DateTime OnboardedOn { get; set; }
 
         // ── From t_MsmeScoreSummary; null when the MSME has not been scored yet

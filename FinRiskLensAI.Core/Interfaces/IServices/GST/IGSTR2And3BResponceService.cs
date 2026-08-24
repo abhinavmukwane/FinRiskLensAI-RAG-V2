@@ -15,5 +15,12 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.GST
         /// or null when the user isn't signed in or has no stored record.
         /// </summary>
         Task<GSTR2And3BResponceResult?> GetResponces();
+
+        /// <summary>
+        /// Latest t_GSTR2And3BResponce row for an explicit UdyamNumber. Used by the
+        /// bank portal, which looks up a customer by UAN rather than by session.
+        /// Callers must authorise the UAN themselves — this method does not.
+        /// </summary>
+        Task<GSTR2And3BResponceResult?> GetResponcesByUan(string udyamNumber);
     }
 }

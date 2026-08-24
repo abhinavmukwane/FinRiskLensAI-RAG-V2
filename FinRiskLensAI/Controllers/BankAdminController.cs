@@ -18,13 +18,15 @@ namespace FinRiskLensAI.Controllers
     {
         private readonly IBankAdminService _bankAdmin;
         private readonly IBlobAnalysisService _analysis;
+        private readonly CustomerProfileBuilder _profile;
         private readonly ILogger<BankAdminController> _logger;
 
         public BankAdminController(IBankAdminService bankAdmin, IBlobAnalysisService analysis,
-            ILogger<BankAdminController> logger)
+            CustomerProfileBuilder profile, ILogger<BankAdminController> logger)
         {
             _bankAdmin = bankAdmin;
             _analysis = analysis;
+            _profile = profile;
             _logger = logger;
         }
 
@@ -88,68 +90,6 @@ namespace FinRiskLensAI.Controllers
             return View(model);
         }
 
-        /// <summary>
-        /// Backfills t_MsmeScoreSummary from the blob result.json of every onboarded
-        /// UAN. Needed for MSMEs scored before the summary table existed; after that,
-        /// AnalyzeAsync keeps the table current on its own.
-        /// <para>
-        /// The loop lives here rather than in BankAdminService because
-        /// BlobAnalysisService already depends on IBankAdminService — calling back the
-        /// other way would be a circular registration. The controller is the one place
-        /// that legitimately holds both.
-        /// </para>
-        /// </summary>
-        [BankAdminAuthorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResyncScores(CancellationToken ct)
-        {
-            int synced = 0, skipped = 0, failed = 0;
-
-            try
-            {
-                var uans = await _bankAdmin.GetAllUansAsync(ct);
-
-                foreach (var uan in uans)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    try
-                    {
-                        var result = await _analysis.GetResultAsync(uan, ct);
-                        if (result == null) { skipped++; continue; }
-
-                        await _bankAdmin.SaveScoreSummaryAsync(uan, result, ct);
-                        synced++;
-                    }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception ex)
-                    {
-                        failed++;
-                        _logger.LogError(ex, "Resync: failed for {Uan}", uan);
-                    }
-                }
-
-                _logger.LogInformation("Resync complete: {Synced} synced, {Skipped} unscored, {Failed} failed.",
-                    synced, skipped, failed);
-
-                return Json(new
-                {
-                    status = true,
-                    message = $"Synced {synced} score(s). {skipped} not yet analysed"
-                              + (failed > 0 ? $", {failed} failed" : "") + "."
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                return Json(new { status = false, message = "Sync was cancelled before it finished." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Score resync failed");
-                return Json(new { status = false, message = "Score sync failed. Check the logs for details." });
-            }
-        }
-
         /// <summary>Searchable, filterable list of every onboarded MSME.</summary>
         [BankAdminAuthorize]
         [HttpGet]
@@ -182,15 +122,25 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>
-        /// Customer 360 — profile plus the full Financial Health Card for one MSME.
-        /// The UAN comes from the route, guarded by BankAdminAuthorize; the customer
-        /// pages remain session-scoped so an MSME can still only see its own data.
+        /// Customer 360 — the full file on one MSME: Financial Health Card, Udyam
+        /// identity, GST returns, MCA corporate report and the source-IP audit.
+        /// Every section is built by CustomerProfileBuilder, the same code path the
+        /// customer's own screens use, so the bank sees identical data.
+        /// <para>
+        /// The UAN comes from the route and is guarded by BankAdminAuthorize; the
+        /// customer-facing pages stay session-scoped, so an MSME still cannot read
+        /// anyone else's file.
+        /// </para>
         /// </summary>
         [BankAdminAuthorize]
         [HttpGet]
-        public async Task<IActionResult> Customer(string uan, CancellationToken ct)
+        public async Task<IActionResult> Customer(string uan, string? tab, CancellationToken ct)
         {
-            var model = new BankCustomerDetailViewModel { Uan = uan?.Trim() };
+            var model = new BankCustomerDetailViewModel
+            {
+                Uan = uan?.Trim(),
+                ActiveTab = string.IsNullOrWhiteSpace(tab) ? "score" : tab.Trim().ToLowerInvariant()
+            };
 
             if (string.IsNullOrWhiteSpace(model.Uan))
                 return RedirectToAction(nameof(Customers));
@@ -212,6 +162,15 @@ namespace FinRiskLensAI.Controllers
                     Status = await _analysis.GetStatusAsync(model.Uan, ct),
                     Result = await _analysis.GetResultAsync(model.Uan, ct)
                 };
+
+                // The remaining sections come from the shared builder. They are
+                // independent, so a failure in one must not blank the whole page —
+                // each view model carries its own LoadError for the tab to show.
+                model.Udyam = await _profile.GetUdyamAsync(model.Uan);
+                model.Gst = await _profile.GetGstAsync(model.Uan,
+                    model.Customer.EnterpriseName, model.Customer.PanNumber);
+                model.Mca = await _profile.GetMcaAsync(model.Uan, ct);
+                model.IpAudit = await _profile.GetIpAuditAsync(model.Uan, model.Customer.IPAddress, ct);
             }
             catch (OperationCanceledException)
             {

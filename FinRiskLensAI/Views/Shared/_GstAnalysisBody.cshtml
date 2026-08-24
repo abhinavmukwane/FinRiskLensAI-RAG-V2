@@ -1,0 +1,789 @@
+@model FinRiskLensAI.Models.GSTAnalysisViewModel
+@using FinRiskLensAI.Core.Common
+@*
+    Shared GST analysis body. Rendered by the customer page
+    (Views/Dashboard/GSTAnalysis) and the bank portal Customer 360, so both
+    show identical data. Identity is read from the model first so the view
+    also renders for a bank officer, whose session holds no MSME user.
+*@
+@{
+
+    // Prefer the model (set per-UAN by CustomerProfileBuilder) so this view also
+    // renders for a bank officer, whose session holds no MSME user.
+    var user = Context.Session.GetCurrentUser();
+    var enterpriseName = Model.EnterpriseName ?? user?.NameOfEnterprise ?? "TRUST FINTECH LIMITED";
+
+    // Sensitive identifiers are always rendered masked (Universal maskers —
+    // the same helpers UdyamController uses; never show the raw values here).
+    var gstin = Universal.MaskGstin(Model.Gstin ?? user?.GstinNumber ?? "27AAAAA1111A1Z1");
+    var pan = Universal.MaskPan(Model.PanNumber ?? user?.PanNumber ?? "AAAAA1111A");
+    var uan = Universal.MaskUdyam(Model.Uan ?? "UDYAM-MH-20-0033382");
+}
+
+
+@*
+    GST Business Intelligence dashboard (static demo data for now — the
+    live figures will be computed from the stored GSTR-2B/3B responses that
+    DashboardController.GSTAnalysis already loads into the ViewModel and
+    hands to ~/FRLScripts/Dashboard/GSTAnalysis.js via window.frlGstAnalysis).
+    Styles: ~/css/GstAnalysis.css, scoped under .gst-analysis.
+*@
+
+<link href="~/css/GstAnalysis.css" rel="stylesheet" />
+
+<div class="gst-analysis container-fluid py-4 animate-fade-in">
+
+    <!-- ============ BUSINESS HEADER ============ -->
+    <section class="glass-card business-header-card mb-4">
+        <div class="row align-items-center g-4">
+            <div class="col-12 col-md-auto text-center text-md-start">
+                <div class="header-logo-box mx-auto">
+                    <i class="bi bi-buildings"></i>
+                </div>
+            </div>
+            <div class="col-12 col-md text-center text-md-start">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 mb-1">
+                    <span class="verified-tag">
+                        <i class="bi bi-patch-check-fill"></i> GST RETURNS VERIFIED
+                    </span>
+                </div>
+                <h3 class="m-0 font-headline text-gradient-primary">AI-Powered GST Intelligence Analysis</h3>
+                <p class="text-muted mb-3" style="font-size: 13px; font-weight: 500;">
+                    Advanced GSTR-2B &amp; GSTR-3B Business Intelligence Dashboard &bull; @enterpriseName
+                </p>
+
+                <div class="header-info-grid">
+                    <div class="header-info-item">
+                        <span>GSTIN</span>
+                        <strong>@gstin</strong>
+                    </div>
+                    <div class="header-info-item">
+                        <span>PAN</span>
+                        <strong>@pan</strong>
+                    </div>
+                    <div class="header-info-item">
+                        <span>Udyam Registration</span>
+                        <strong>@uan</strong>
+                    </div>
+                    <div class="header-info-item">
+                        <span>Business Age</span>
+                        <strong>27 Years (Est. 1998)</strong>
+                    </div>
+                    <div class="header-info-item">
+                        <span>Industry</span>
+                        <strong>Software Services</strong>
+                    </div>
+                    <div class="header-info-item">
+                        <span>Enterprise Type</span>
+                        <strong>Small Enterprise</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-auto border-start-md border-color-border ps-md-4 text-center text-md-start d-flex flex-column align-items-center justify-content-center gap-2">
+                <span class="text-muted d-block font-headline mb-1" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">GST Health Score</span>
+                <div class="gauge-wrapper my-1" style="width: 110px; height: 110px;">
+                    <svg viewBox="0 0 140 140" style="width: 110px; height: 110px;">
+                        <circle class="gauge-circle-bg" cx="70" cy="70" r="58"></circle>
+                        <circle id="gstHealthGauge" class="gauge-circle-progress success" cx="70" cy="70" r="58" style="stroke-dasharray: 364; stroke-dashoffset: 364;"></circle>
+                    </svg>
+                    <div class="gauge-center-content">
+                        <span class="gauge-center-val" style="font-size: 22px;">94</span>
+                        <span class="gauge-center-label" style="font-size: 8px;">/ 100</span>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <span class="badge-risk low px-3 py-1" style="font-size: 11.5px;">Excellent GST Compliance</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 1 — EXECUTIVE SUMMARY KPIs ============ -->
+    <section class="kpi-grid mb-4">
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>GST Health Score</span>
+                <i class="bi bi-heart-pulse"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">94</span>
+                <span class="kpi-status-pill">94/100</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>GST Compliance</span>
+                <i class="bi bi-file-earmark-check"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">98%</span>
+                <span class="kpi-status-pill">Excellent</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-primary">
+            <div class="kpi-card-header">
+                <span>Business Growth</span>
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">87%</span>
+                <span class="kpi-status-pill">Consistent</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>Risk Score</span>
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">Low</span>
+                <span class="kpi-status-pill">Stable</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>Compliance Rating</span>
+                <i class="bi bi-trophy"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">A+</span>
+                <span class="kpi-status-pill">Excellent</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>GST Health</span>
+                <i class="bi bi-journal-check"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value" style="font-size: 20px;">Healthy</span>
+                <span class="kpi-status-pill">Passed Analysis</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-primary">
+            <div class="kpi-card-header">
+                <span>Business Stability</span>
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">94%</span>
+                <span class="kpi-status-pill">94% Stability</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>Cash Flow</span>
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value" style="font-size: 20px;">Healthy</span>
+                <span class="kpi-status-pill">Positive Operating CF</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="row g-4">
+
+        <!-- ============ SECTION 2 — AI DECISION CARD ============ -->
+        <div class="col-12 col-xl-7">
+            <article class="glass-card h-100 border-primary" style="background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(239,246,255,0.8) 100%);">
+                <div class="card-title-container">
+                    <h4 class="card-heading text-primary m-0">
+                        <i class="bi bi-cpu"></i> AI Business Assessment Engine
+                    </h4>
+                    <span class="badge bg-primary px-3 py-1 font-headline" style="font-weight: 600; font-size: 11px;">BUSINESS ASSESSMENT</span>
+                </div>
+
+                <div class="row align-items-center g-4">
+                    <div class="col-12 col-md-5 text-center pe-md-4">
+                        <div class="mb-3">
+                            <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">AI ASSESSMENT</span>
+                            <span class="badge bg-success px-4 py-2 mt-1" style="font-size: 17px; font-weight: 700; letter-spacing: 0.5px; border-radius: 8px;">STABLE PERFORMANCE</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">CONFIDENCE LEVEL</span>
+                            <h2 class="m-0 text-success font-headline">96%</h2>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-7">
+                        <h5 class="text-secondary font-headline mb-3" style="font-size: 14px; font-weight: 700;">AI ASSESSMENT RATIONALE</h5>
+                        <ul class="list-unstyled d-flex flex-column gap-2" style="font-size: 13px; color: var(--color-text-secondary);">
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
+                                <span>Business has maintained excellent GST compliance (98%+) for the last 24 months.</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
+                                <span>Revenue growth is highly consistent (+18% outward supply YoY).</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
+                                <span>Vendor dependency is low (highest customer concentration is 28%).</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
+                                <span>ITC utilization is excellent (97% utilization rate with near-zero leakage).</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
+                                <span>Operating cash flow is healthy and no abnormal filing patterns detected.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 4 — GST COMPLIANCE TIMELINE & STATS ============ -->
+        <div class="col-12 col-xl-5">
+            <article class="glass-card h-100">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-calendar-check-fill text-primary"></i> GST Compliance &amp; Filing History
+                    </h4>
+                    <span class="badge bg-success-light text-success-hover font-headline px-3 py-1" style="font-weight: 600; font-size: 11px;">REGISTRATION ACTIVE</span>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-secondary font-headline mb-3" style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">6-MONTH FILING TIMELINE (GSTR-1 &amp; 3B)</h5>
+                    <div class="timeline-grid">
+                        <div class="timeline-node success">
+                            <div class="timeline-circle"><i class="bi bi-check"></i></div>
+                            <span class="timeline-month">Jan</span>
+                        </div>
+                        <div class="timeline-node success">
+                            <div class="timeline-circle"><i class="bi bi-check"></i></div>
+                            <span class="timeline-month">Feb</span>
+                        </div>
+                        <div class="timeline-node success">
+                            <div class="timeline-circle"><i class="bi bi-check"></i></div>
+                            <span class="timeline-month">Mar</span>
+                        </div>
+                        <div class="timeline-node success">
+                            <div class="timeline-circle"><i class="bi bi-check"></i></div>
+                            <span class="timeline-month">Apr</span>
+                        </div>
+                        <div class="timeline-node success">
+                            <div class="timeline-circle"><i class="bi bi-check"></i></div>
+                            <span class="timeline-month">May</span>
+                        </div>
+                        <div class="timeline-node success">
+                            <div class="timeline-circle"><i class="bi bi-check"></i></div>
+                            <span class="timeline-month">Jun</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6 col-sm-3">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">RETURNS FILED</span>
+                            <strong class="font-headline text-primary" style="font-size: 18px;">18 / 18</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">LATE RETURNS</span>
+                            <strong class="font-headline text-danger" style="font-size: 18px;">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">COMPLIANCE</span>
+                            <strong class="font-headline text-success" style="font-size: 18px;">99%</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">REGISTRY</span>
+                            <strong class="font-headline text-success" style="font-size: 16px;">Active</strong>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 3 — REVENUE & PURCHASE INTELLIGENCE ============ -->
+        <div class="col-12 col-xl-8">
+            <article class="glass-card">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-bar-chart-line text-primary"></i> Business Revenue &amp; Purchase Intelligence
+                    </h4>
+                    <span class="badge bg-primary-light text-primary font-headline px-3 py-1" style="font-size: 11px;">GSTR-3B VS GSTR-2B</span>
+                </div>
+
+                <div id="revenueChart" style="min-height: 280px;"></div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Revenue Growth</span>
+                            <h4 class="text-success m-0 font-headline">+18%</h4>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Purchase Growth</span>
+                            <h4 class="text-primary m-0 font-headline">+12%</h4>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Growth Stability</span>
+                            <h4 class="text-success m-0 font-headline">91%</h4>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth</span>
+                            <h4 class="text-primary m-0 font-headline">+16%</h4>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 6 — ITC INTELLIGENCE ============ -->
+        <div class="col-12 col-xl-4">
+            <article class="glass-card h-100">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-wallet-fill text-primary"></i> ITC Intelligence (Input Tax Credit)
+                    </h4>
+                </div>
+
+                <div class="text-center mb-4">
+                    <div class="gauge-wrapper">
+                        <svg viewBox="0 0 140 140">
+                            <circle class="gauge-circle-bg" cx="70" cy="70" r="58"></circle>
+                            <circle id="itcGauge" class="gauge-circle-progress success" cx="70" cy="70" r="58" style="stroke-dasharray: 364; stroke-dashoffset: 364;"></circle>
+                        </svg>
+                        <div class="gauge-center-content">
+                            <span class="gauge-center-val">97%</span>
+                            <span class="gauge-center-label">UTILIZATION</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-success-light text-success-hover px-3 py-1 font-headline mt-2" style="font-size: 11px; font-weight: 700;">EXCELLENT ITC MATCHING</span>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="p-2 border rounded text-center">
+                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">ELIGIBLE ITC</span>
+                            <strong class="text-primary" style="font-size: 13px;">₹45.2 Lakh</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded text-center">
+                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">CLAIMED ITC</span>
+                            <strong class="text-success" style="font-size: 13px;">₹43.8 Lakh</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded text-center">
+                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">REJECTED ITC</span>
+                            <strong class="text-danger" style="font-size: 13px;">₹0</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded text-center">
+                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">BLOCKED ITC</span>
+                            <strong class="text-warning" style="font-size: 13px;">₹1.4 Lakh</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-muted d-block font-headline mb-2" style="font-size: 11px; font-weight: 700;">ITC AUDIT OBSERVATIONS</span>
+                    <div class="scroll-panel" style="max-height: 120px;">
+                        <div class="scroll-panel-item check">
+                            <i class="bi bi-shield-check"></i>
+                            <span>No significant Input Tax Credit mismatch or leakage detected.</span>
+                        </div>
+                        <div class="scroll-panel-item check">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Business efficiently utilizes available ITC to offset tax liability.</span>
+                        </div>
+                        <div class="scroll-panel-item check">
+                            <i class="bi bi-shield-check"></i>
+                            <span>No abnormal GSTR-3B vs 2B tax claims observed.</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 5 — VENDOR CONCENTRATION ============ -->
+        <div class="col-12">
+            <article class="glass-card">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-people-fill text-primary"></i> Vendor Intelligence &amp; Concentration Risk
+                    </h4>
+                    <span class="badge bg-success-light text-success-hover font-headline px-3 py-1" style="font-size: 11px;">HIGH DIVERSITY</span>
+                </div>
+
+                <div class="row align-items-center g-4">
+                    <div class="col-12 col-lg-7">
+                        <div class="table-responsive">
+                            <table class="table dash-table m-0">
+                                <thead>
+                                    <tr>
+                                        <th>Vendor Name</th>
+                                        <th>Purchase Amount (12M)</th>
+                                        <th>Concentration %</th>
+                                        <th>Risk Classification</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Microsoft Corporation</strong></td>
+                                        <td>₹32 Lakh</td>
+                                        <td><strong>28%</strong></td>
+                                        <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Redington India Ltd</strong></td>
+                                        <td>₹24 Lakh</td>
+                                        <td><strong>18%</strong></td>
+                                        <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Persistent Systems Ltd</strong></td>
+                                        <td>₹19 Lakh</td>
+                                        <td><strong>13%</strong></td>
+                                        <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-5 text-center border-start-lg border-color-border ps-lg-4">
+                        <div class="row align-items-center">
+                            <div class="col-12 col-sm-6">
+                                <div id="vendorChart" style="min-height: 180px;"></div>
+                            </div>
+                            <div class="col-12 col-sm-6 text-start">
+                                <div class="d-flex flex-column gap-2" style="font-size: 12.5px;">
+                                    <div>
+                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOP VENDOR SHARE</span>
+                                        <strong>Microsoft: 28%</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOP 5 VENDOR CONCENTRATION</span>
+                                        <strong>61% Total Share</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOTAL VENDOR COUNT</span>
+                                        <strong>82 Active Vendors</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">SUPPLIER DIVERSITY</span>
+                                        <span class="text-success" style="font-weight: 700;">High Diversity (Stable)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 7 — TAX PAYMENT BEHAVIOR ============ -->
+        <div class="col-12 col-xl-8">
+            <article class="glass-card">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-wallet2 text-primary"></i> Tax Payment Ledger &amp; Cash Liability Behavior
+                    </h4>
+                </div>
+
+                <div id="taxPaymentChart" style="min-height: 250px;"></div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Total GST Paid</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">₹52.4 Lakh</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Paid in Cash</span>
+                            <strong class="text-success font-headline" style="font-size: 15px;">₹18.6 Lakh</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Off-set via ITC</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">₹33.8 Lakh</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Reverse Charge (RCM)</span>
+                            <strong class="text-warning font-headline" style="font-size: 15px;">₹1.2 Lakh</strong>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 8 — STABILITY RADAR ============ -->
+        <div class="col-12 col-xl-4">
+            <article class="glass-card h-100">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-compass text-primary"></i> Multi-Dimensional Stability Index
+                    </h4>
+                </div>
+
+                <div id="stabilityRadarChart" style="min-height: 220px;"></div>
+
+                <div class="mt-3 text-center border-top pt-3">
+                    <div class="row">
+                        <div class="col-6">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Overall Stability</span>
+                            <h3 class="text-success m-0 font-headline">94%</h3>
+                        </div>
+                        <div class="col-6 border-start">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Stability Grade</span>
+                            <h3 class="text-success m-0 font-headline">Excellent</h3>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 9 — FRAUD DETECTION ============ -->
+        <div class="col-12 col-md-6">
+            <article class="glass-card h-100">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-shield-alert text-primary"></i> Red Flag &amp; Fraud Auditing
+                    </h4>
+                </div>
+
+                <div class="text-center my-3">
+                    <i class="bi bi-shield-check-fill text-success" style="font-size: 56px; filter: drop-shadow(0 0 10px rgba(34,197,94,0.3));"></i>
+                    <h5 class="font-headline text-success mt-2">Zero Red Flags Detected</h5>
+                </div>
+
+                <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                    <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span>Sudden Outward Sales Spike</span>
+                        <strong class="text-success"><i class="bi bi-dash-circle"></i> No</strong>
+                    </div>
+                    <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span>Abnormal ITC Claim (MoM)</span>
+                        <strong class="text-success"><i class="bi bi-dash-circle"></i> No</strong>
+                    </div>
+                    <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span>Fake Invoice Circular Trading</span>
+                        <strong class="text-success"><i class="bi bi-shield-check"></i> Not Detected</strong>
+                    </div>
+                    <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span>Missing / Delayed Returns</span>
+                        <strong class="text-success"><i class="bi bi-dash-circle"></i> No</strong>
+                    </div>
+                    <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <span>High Supplier Interdependency</span>
+                        <strong class="text-success"><i class="bi bi-dash-circle"></i> No</strong>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 10 — CASH FLOW HEALTH ============ -->
+        <div class="col-12 col-md-6">
+            <article class="glass-card h-100">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-currency-exchange text-primary"></i> Operating Cash Flow &amp; Direction
+                    </h4>
+                </div>
+
+                <div class="d-flex flex-column gap-3 mb-4">
+                    <div class="p-3 border rounded d-flex align-items-center justify-content-between bg-light">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-graph-up text-success" style="font-size: 20px;"></i>
+                            <span>GSTR-3B Sales Trend</span>
+                        </div>
+                        <strong class="text-success" style="font-size: 15px;"><i class="bi bi-arrow-up-right"></i> Increasing</strong>
+                    </div>
+                    <div class="p-3 border rounded d-flex align-items-center justify-content-between bg-light">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-cart-check text-primary" style="font-size: 20px;"></i>
+                            <span>GSTR-2A Purchase Trend</span>
+                        </div>
+                        <strong class="text-primary" style="font-size: 15px;"><i class="bi bi-arrow-up-right"></i> Increasing</strong>
+                    </div>
+                    <div class="p-3 border rounded d-flex align-items-center justify-content-between bg-light">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-bank2 text-success" style="font-size: 20px;"></i>
+                            <span>Actual GST Paid</span>
+                        </div>
+                        <strong class="text-success" style="font-size: 15px;"><i class="bi bi-arrow-up-right"></i> Increasing</strong>
+                    </div>
+                </div>
+
+                <div class="p-3 border border-success rounded text-center" style="background: var(--color-success-light);">
+                    <span class="text-muted d-block font-headline mb-1" style="font-size: 10px; font-weight: 700;">CASH FLOW FORECAST</span>
+                    <h4 class="text-success-hover font-headline m-0">Positive CF (89% Conf.)</h4>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 12 — 12-MONTH FORECAST ============ -->
+        <div class="col-12 col-xl-8">
+            <article class="glass-card">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-hourglass-split text-primary"></i> 12-Month Predictive Analytics &amp; Revenue Outlook
+                    </h4>
+                </div>
+
+                <div id="forecastChart" style="min-height: 250px;"></div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Revenue</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">₹4.2 Crore</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth Rate</span>
+                            <strong class="text-success font-headline" style="font-size: 15px;">15%</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Volatility Risk</span>
+                            <strong class="text-success font-headline" style="font-size: 15px;">Low Risk</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 border rounded text-center">
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Forecast Accuracy</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">92%</strong>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 13 — AI INSIGHTS PANEL ============ -->
+        <div class="col-12 col-xl-4">
+            <article class="glass-card h-100">
+                <div class="card-title-container">
+                    <h4 class="card-heading m-0">
+                        <i class="bi bi-lightbulb-fill text-primary"></i> GST Intelligence Observations
+                    </h4>
+                </div>
+
+                <div class="scroll-panel" style="max-height: 310px;">
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Outward supplies (Sales Revenue) has grown by 18% consistently over the last 6 months.</span>
+                    </div>
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>GST return filing compliance rate has remained at perfect 100% on-time GSTR-3B filings.</span>
+                    </div>
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Vendor diversification index is high; top counterparties demonstrate low default risks.</span>
+                    </div>
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Fraud check passes with flying colors; no circular invoices or fake GSTR trading signatures detected.</span>
+                    </div>
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Tax payments have remained highly consistent and regular month-over-month.</span>
+                    </div>
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>ITC matching and reconciliation efficiency exceeds industry averages by 6%.</span>
+                    </div>
+                    <div class="scroll-panel-item warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>Minor dip in outward supplies observed in Feb, fully recovered in March due to seasonal sales.</span>
+                    </div>
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Business demonstrates a highly stable performance score across five core compliance domains.</span>
+                    </div>
+                    <div class="scroll-panel-item check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Strong indicator for high business growth potential and operational strength.</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ SECTION 15 — DOWNLOADS & ACTIONS ============ -->
+       @*  <div class="col-12">
+            <section class="glass-card">
+                <div class="card-title-container">
+                    <h5 class="card-heading m-0">
+                        <i class="bi bi-download text-primary"></i> Export &amp; Sharing GST Intelligence Reports
+                    </h5>
+                </div>
+
+                <div class="btn-grid">
+                    <button type="button" class="btn-report" id="btnDownloadAnalysis">
+                        <i class="bi bi-file-earmark-bar-graph"></i> Download Analysis Report
+                    </button>
+                    <button type="button" class="btn-report" id="btnDownloadCompliance">
+                        <i class="bi bi-file-earmark-person"></i> Download Compliance Report
+                    </button>
+                    <button type="button" class="btn-report" id="btnDownloadSummary">
+                        <i class="bi bi-file-earmark-medical"></i> Download GST Summary
+                    </button>
+                    <button type="button" class="btn-report" id="btnDownloadVendor">
+                        <i class="bi bi-people"></i> Download Vendor Report
+                    </button>
+                    <button type="button" class="btn-report btn-report-primary" id="btnDownloadPdf">
+                        <i class="bi bi-filetype-pdf"></i> Export GST Analysis PDF
+                    </button>
+                    <button type="button" class="btn-report" id="btnShareReport">
+                        <i class="bi bi-share"></i> Share GST Analysis Report
+                    </button>
+                </div>
+            </section>
+        </div> *@
+
+    </div>
+</div>
+
+<script>
+    // Raw stored responses (when present) for GSTAnalysis.js — the charts run
+    // on static demo data until the live figures are computed from these.
+    window.frlGstAnalysis = {
+        hasData: @Json.Serialize(Model.HasData),
+        uan: @Json.Serialize(uan),      // masked — raw identifiers never reach the client
+        gstin: @Json.Serialize(gstin),  // masked
+        filingPeriod: @Json.Serialize(Model.FilingPeriod),
+        createdDate: @Json.Serialize(Model.CreatedDate),
+        gstr2BResponseData: @Json.Serialize(Model.GSTR2BResponseData),
+        gstr3BResponseData: @Json.Serialize(Model.GSTR3BResponseData)
+    };
+
+    // Universal chatbot context — identifiers only, not the full payloads.
+    window.frlChatContext = {
+        pageKey: 'GSTAnalysis',
+        pageName: 'GST Analysis (GSTR-2B & GSTR-3B Intelligence) page',
+        context: {
+            gstin: @Json.Serialize(gstin),
+            filingPeriod: @Json.Serialize(Model.FilingPeriod)
+        }
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="~/FRLScripts/Dashboard/GSTAnalysis.js"></script>

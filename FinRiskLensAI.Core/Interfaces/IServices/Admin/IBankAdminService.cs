@@ -29,8 +29,5 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Admin
 
         /// <summary>Distinct states present in the portfolio, for the filter dropdown.</summary>
         Task<List<string>> GetStatesAsync(CancellationToken ct = default);
-
-        /// <summary>Every onboarded UAN — drives the score backfill.</summary>
-        Task<List<string>> GetAllUansAsync(CancellationToken ct = default);
     }
 }

@@ -20,22 +20,21 @@ namespace FinRiskLensAI.Controllers
     [CustDashboardAuthorize]
     public class UdyamController : Controller
     {
-        private readonly IStaticResponseService _staticResponses;
-        private readonly IOnboardingService _onboardService;
+        private readonly CustomerProfileBuilder _profile;
         private readonly ILogger<UdyamController> _logger;
 
-        public UdyamController(IStaticResponseService staticResponses, ILogger<UdyamController> logger, IOnboardingService OnboardService)
+        public UdyamController(CustomerProfileBuilder profile, ILogger<UdyamController> logger)
         {
-            _staticResponses = staticResponses;
+            _profile = profile;
             _logger = logger;
-            _onboardService = OnboardService;
         }
 
         /// <summary>Business Identity &amp; Trust Analysis page.</summary>
         [HttpGet]
         public async Task<IActionResult> UdyamDetails()
         {
-            return View(await LoadUdyamAnalysis());
+            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
+            return View(await _profile.GetUdyamAsync(uan));
         }
 
         /// <summary>
@@ -45,49 +44,9 @@ namespace FinRiskLensAI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUdyamAnalysis()
         {
-            var model = await LoadUdyamAnalysis();
-            return Json(new { status = model.HasData, data = model, message = model.LoadError ?? "Success" });
-        }
-
-        /// <summary>Fetches the session user's cached Udyam response and computes the full analysis model.</summary>
-        private async Task<UdyamDetailsViewModel> LoadUdyamAnalysis()
-        {
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
-            var model = new UdyamDetailsViewModel { Uan = uan };
-
-            if (string.IsNullOrWhiteSpace(uan))
-            {
-                model.LoadError = "No Udyam number is linked to your account yet, so there are no Udyam details to display.";
-                return model;
-            }
-
-            try
-            {
-                var udyam = await _staticResponses.GetStaticCommonResponce<UdyamResponseModel>(uan, StaticResponseType.Udyam);
-
-                if (udyam == null)
-                {
-                    //model.LoadError = $"No stored Udyam response was found for {uan}.";
-                    var msmeData = await _onboardService.GetUdyamPayload(uan);
-
-                    if(msmeData.Result != tflResultType.tflSuccess)
-                        model.LoadError = $"No stored Udyam response was found for {uan}.";
-
-                    var udyamDet = JsonConvert.DeserializeObject<UdyamResponseModel>(msmeData.Data);
-                    model = BuildAnalysis(udyamDet, uan);
-                }
-                else
-                {
-                    model = BuildAnalysis(udyam, uan);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed loading Udyam details for {Uan}", uan);
-                model.LoadError = "Could not load your Udyam details right now. Please try again later.";
-            }
-
-            return model;
+            var model = await _profile.GetUdyamAsync(uan);
+            return Json(new { status = model.HasData, data = model, message = model.LoadError ?? "Success" });
         }
 
         /// <summary>
@@ -96,7 +55,7 @@ namespace FinRiskLensAI.Controllers
         /// nic_code and derives the transparent rule-based identity score,
         /// risk label, classification, strengths and observations.
         /// </summary>
-        private static UdyamDetailsViewModel BuildAnalysis(UdyamResponseModel udyam, string sessionUan)
+        internal static UdyamDetailsViewModel BuildAnalysis(UdyamResponseModel udyam, string sessionUan)
         {
             var mainDetails = udyam.main_details;
 

@@ -46,6 +46,11 @@ builder.Services.AddControllersWithViews()
         new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddAppDbContext(builder.Configuration);
 
+// Builds an MSME's Udyam / MCA / GST / IP view models by UAN. Shared by the
+// customer-facing controllers (UAN from session) and the bank portal (UAN from
+// route), so both render identical data from one code path.
+builder.Services.AddScoped<FinRiskLensAI.Common.CustomerProfileBuilder>();
+
 // Persist DataProtection keys so session cookies survive app restarts / pool
 // recycles — otherwise ephemeral keys regenerate and everyone is silently logged
 // out (this bit us: the heavy first re-analyze can recycle the app pool).
