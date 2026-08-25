@@ -107,9 +107,16 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>
-        /// Seeds the logged-in MSME's blob folder with the DUMMY-DATA GST template,
-        /// rewriting the template filer's GSTIN/PAN to the user's so the copied
-        /// returns validate as theirs. No-op if the folder already has GST files.
+        /// Seeds the logged-in MSME's blob folder: the DUMMY-DATA GST template
+        /// (rewriting the template filer's GSTIN/PAN to the user's so the copied
+        /// returns validate as theirs), the MCA response, and one DIN file per
+        /// director.
+        /// <para>
+        /// Each of the three parts guards itself, so calling this again is safe and
+        /// fills in only what is missing. That matters for MSMEs onboarded before
+        /// the MCA/DIN step existed: they already have GST files, and an early
+        /// return on "GST present" would leave them without MCA/DIN forever.
+        /// </para>
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> SeedFinancialData(CancellationToken ct)
@@ -119,38 +126,58 @@ namespace FinRiskLensAI.Controllers
             if (string.IsNullOrWhiteSpace(uan) || string.IsNullOrWhiteSpace(user!.GstinNumber))
                 return Json(new { status = false, message = "No Udyam/GSTIN in session." });
 
-            // Already seeded? Don't copy again.
             var existing = await _store.ListFilesAsync(uan, ct);
-            if (existing.Any(f => f.StartsWith("gstr", StringComparison.OrdinalIgnoreCase)))
-                return Json(new { status = true, copied = 0, message = "GST data already present." });
-
-            const string template = "dummy-data";
-            var files = await _store.ListFilesAsync(template, ct);
-            if (files.Count == 0)
-                return Json(new { status = false, message = "DUMMY-DATA template folder is empty." });
-
-            // Template filer's GSTIN (top-level of any gstr3b file); PAN is chars 2..11 of the GSTIN.
-            var probe = await _store.DownloadAsync(template, files.First(f => f.StartsWith("gstr3b")), ct);
-            var srcGstin = probe != null ? JObject.Parse(probe).SelectToken("$..gstin")?.Value<string>() : null;
-            if (string.IsNullOrEmpty(srcGstin) || srcGstin.Length < 15)
-                return Json(new { status = false, message = "Could not read template GSTIN." });
-
-            var srcPan = srcGstin.Substring(2, 10);
-            var userGstin = user.GstinNumber;
-            var userPan = userGstin.Length >= 15 ? userGstin.Substring(2, 10) : (user.PanNumber ?? srcPan);
+            var gstPresent = existing.Any(f => f.StartsWith("gstr", StringComparison.OrdinalIgnoreCase));
 
             int copied = 0;
-            foreach (var f in files)
+            string? gstError = null;
+
+            // ── 1. GST returns — copied from the shared template, once.
+            if (!gstPresent)
             {
-                var content = await _store.DownloadAsync(template, f, ct);
-                if (content == null) continue;
-                content = content.Replace(srcGstin, userGstin).Replace(srcPan, userPan);
-                await _store.UploadAsync(uan, f, content, ct);
-                copied++;
+                const string template = "dummy-data";
+                var files = await _store.ListFilesAsync(template, ct);
+                var probeFile = files.FirstOrDefault(f => f.StartsWith("gstr3b", StringComparison.OrdinalIgnoreCase));
+
+                if (files.Count == 0)
+                {
+                    gstError = "DUMMY-DATA template folder is empty.";
+                }
+                else if (probeFile == null)
+                {
+                    gstError = "DUMMY-DATA template has no gstr3b file to read the filer's GSTIN from.";
+                }
+                else
+                {
+                    // Template filer's GSTIN (top-level of any gstr3b file); PAN is chars 2..11.
+                    var probe = await _store.DownloadAsync(template, probeFile, ct);
+                    var srcGstin = probe != null ? JObject.Parse(probe).SelectToken("$..gstin")?.Value<string>() : null;
+
+                    if (string.IsNullOrEmpty(srcGstin) || srcGstin.Length < 15)
+                    {
+                        gstError = "Could not read template GSTIN.";
+                    }
+                    else
+                    {
+                        var srcPan = srcGstin.Substring(2, 10);
+                        var userGstin = user.GstinNumber;
+                        var userPan = userGstin.Length >= 15 ? userGstin.Substring(2, 10) : (user.PanNumber ?? srcPan);
+
+                        foreach (var f in files)
+                        {
+                            var content = await _store.DownloadAsync(template, f, ct);
+                            if (content == null) continue;
+                            content = content.Replace(srcGstin, userGstin).Replace(srcPan, userPan);
+                            await _store.UploadAsync(uan, f, content, ct);
+                            copied++;
+                        }
+                    }
+                }
             }
 
-            // MCA response — same company name as the profile, dynamic charges. Store once.
+            // ── 2. MCA response — same company name as the profile, dynamic charges.
             string? mcaJson;
+            var mcaCreated = false;
             if (!await _store.ExistsAsync(uan, MsmeDataFiles.Mca, ct))
             {
                 var companyName = user.NameOfEnterprise;
@@ -163,15 +190,18 @@ namespace FinRiskLensAI.Controllers
                 }
                 mcaJson = _dummyData.GetDummyMca(uan, companyName ?? uan, user.PanNumber);
                 await _store.UploadAsync(uan, MsmeDataFiles.Mca, mcaJson, ct);
+                mcaCreated = true;
             }
             else
             {
                 mcaJson = await _store.DownloadAsync(uan, MsmeDataFiles.Mca, ct);
             }
 
-            // DIN verification files — one per director from the MCA response, stored as
-            // DIN_<din>.json (e.g. DIN_85111678.json) so each director's profile can be
-            // pulled by DIN. Skips directors without a DIN and any file already present.
+            // ── 3. DIN verification files — one per director from the MCA response,
+            //      stored as DIN_<din>.json (e.g. DIN_85111678.json) so each director's
+            //      profile can be pulled by DIN. Skips directors without a DIN and any
+            //      file already present.
+            var dinCreated = 0;
             if (!string.IsNullOrWhiteSpace(mcaJson))
             {
                 var directors = JsonConvert.DeserializeObject<McaResponseModel>(mcaJson)?
@@ -187,11 +217,33 @@ namespace FinRiskLensAI.Controllers
 
                     var dinJson = _dummyData.GetDummyDin(din, d.director_name ?? string.Empty, user.PanNumber);
                     await _store.UploadAsync(uan, dinFile, dinJson, ct);
+                    dinCreated++;
                 }
             }
 
-            _logger.LogInformation("Seeded {Count} GST files into {Uan} from template.", copied, uan);
-            return Json(new { status = true, copied, message = $"Copied {copied} GST files." });
+            _logger.LogInformation(
+                "Seed {Uan}: {Copied} GST file(s) copied (already present: {GstPresent}), MCA created: {Mca}, DIN files created: {Din}.",
+                uan, copied, gstPresent, mcaCreated, dinCreated);
+
+            // Report what actually changed, so a repeat click is not silently a no-op.
+            var parts = new List<string>();
+            if (copied > 0) parts.Add($"{copied} GST file(s) copied");
+            else if (gstPresent) parts.Add("GST data already present");
+            if (mcaCreated) parts.Add("MCA record created");
+            if (dinCreated > 0) parts.Add($"{dinCreated} DIN record(s) created");
+            if (gstError != null) parts.Add($"GST copy skipped — {gstError}");
+
+            var nothingChanged = copied == 0 && !mcaCreated && dinCreated == 0;
+            if (nothingChanged && gstError == null) parts.Add("nothing new to fetch");
+
+            return Json(new
+            {
+                status = gstError == null,
+                copied,
+                mcaCreated,
+                dinCreated,
+                message = string.Join("; ", parts) + "."
+            });
         }
 
         // MCADetails moved to McaController (/Mca/MCADetails), backed by the

@@ -86,6 +86,27 @@ namespace FinRiskLensAI.Data.Repositories.Admin
         // ─────────────────────────────────────────────────────────────
 
         /// <summary>
+        /// Normalises a place / category name for grouping and display.
+        /// <para>
+        /// The Udyam feed returns the same value in different cases — "MAHARASHTRA"
+        /// and "Maharashtra", "GUJARAT" and "Gujarat" — which would otherwise show as
+        /// separate bars on the dashboard and separate options in the filter. Grouping
+        /// on this normalised form collapses them into one.
+        /// </para>
+        /// </summary>
+        private static string NormalizeName(string? value)
+        {
+            var s = (value ?? string.Empty).Trim();
+            if (s.Length == 0) return s;
+
+            // Collapse repeated internal whitespace, then Title Case from lower so
+            // ALL-CAPS input is reduced rather than left as-is.
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", " ");
+            return System.Globalization.CultureInfo.InvariantCulture.TextInfo
+                .ToTitleCase(s.ToLowerInvariant());
+        }
+
+        /// <summary>
         /// Onboarded MSMEs joined to their Udyam profile and score row. The score
         /// join is a LEFT join — an MSME that has registered but not yet been
         /// analysed must still appear in the list, flagged as pending.
@@ -124,6 +145,13 @@ namespace FinRiskLensAI.Data.Repositories.Admin
                    ComputedAt = sum != null ? sum.ComputedAt : (DateTime?)null
                };
 
+        /// <summary>Tidies the place names on a materialised row for display.</summary>
+        private static void NormalizeRow(BankCustomerRow row)
+        {
+            if (!string.IsNullOrWhiteSpace(row.State)) row.State = NormalizeName(row.State);
+            if (!string.IsNullOrWhiteSpace(row.City)) row.City = NormalizeName(row.City);
+        }
+
         public async Task<BankCustomerPage> GetCustomersAsync(BankCustomerQuery query, CancellationToken ct = default)
         {
             query ??= new BankCustomerQuery();
@@ -144,7 +172,14 @@ namespace FinRiskLensAI.Data.Repositories.Admin
                 q = q.Where(x => x.ScoreBand == query.Band);
 
             if (!string.IsNullOrWhiteSpace(query.State))
-                q = q.Where(x => x.State == query.State);
+            {
+                // The dropdown offers the normalised name, but rows hold whatever
+                // casing the Udyam feed sent — compare lowered so both match. This
+                // also keeps the filter correct on PostgreSQL, whose default
+                // collation is case-sensitive unlike SQL Server's.
+                var state = query.State.Trim().ToLower();
+                q = q.Where(x => x.State != null && x.State.ToLower() == state);
+            }
 
             if (string.Equals(query.Status, "scored", StringComparison.OrdinalIgnoreCase))
                 q = q.Where(x => x.OverallScore != null);
@@ -165,6 +200,7 @@ namespace FinRiskLensAI.Data.Repositories.Admin
             var size = Math.Clamp(query.PageSize, 5, 200);
 
             var rows = await q.Skip((page - 1) * size).Take(size).ToListAsync(ct);
+            rows.ForEach(NormalizeRow);
 
             return new BankCustomerPage { Rows = rows, TotalCount = total, Page = page, PageSize = size };
         }
@@ -173,16 +209,29 @@ namespace FinRiskLensAI.Data.Repositories.Admin
         {
             if (string.IsNullOrWhiteSpace(uan)) return null;
             var key = uan.Trim();
-            return await CustomerQuery().FirstOrDefaultAsync(x => x.Uan == key, ct);
+            var row = await CustomerQuery().FirstOrDefaultAsync(x => x.Uan == key, ct);
+            if (row != null) NormalizeRow(row);
+            return row;
         }
 
+        /// <summary>
+        /// Distinct states for the filter dropdown, de-duplicated on the normalised
+        /// name so the list shows "Maharashtra" once rather than both casings.
+        /// </summary>
         public async Task<List<string>> GetStatesAsync(CancellationToken ct = default)
-            => await _context.MsmeEnquiries.AsNoTracking()
+        {
+            var raw = await _context.MsmeEnquiries.AsNoTracking()
                 .Where(x => x.State != null && x.State != "")
                 .Select(x => x.State!)
                 .Distinct()
-                .OrderBy(x => x)
                 .ToListAsync(ct);
+
+            return raw.Select(NormalizeName)
+                .Where(s => s.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
 
         public async Task<BankPortfolioStats> GetPortfolioStatsAsync(CancellationToken ct = default)
         {
@@ -227,12 +276,14 @@ namespace FinRiskLensAI.Data.Repositories.Admin
                 stats.ScoreHistogram[bucket]++;
             }
 
+            // Grouped on the normalised name so mixed-case duplicates from the Udyam
+            // feed ("MAHARASHTRA" / "Maharashtra") collapse into a single bar.
             stats.TopStates = all.Where(x => !string.IsNullOrWhiteSpace(x.State))
-                .GroupBy(x => x.State!).OrderByDescending(g => g.Count()).Take(8)
+                .GroupBy(x => NormalizeName(x.State)).OrderByDescending(g => g.Count()).Take(8)
                 .ToDictionary(g => g.Key, g => g.Count());
 
             stats.ActivityMix = all.Where(x => !string.IsNullOrWhiteSpace(x.MajorActivity))
-                .GroupBy(x => x.MajorActivity!).OrderByDescending(g => g.Count()).Take(6)
+                .GroupBy(x => NormalizeName(x.MajorActivity)).OrderByDescending(g => g.Count()).Take(6)
                 .ToDictionary(g => g.Key, g => g.Count());
 
             stats.ProductMix = scored.Where(x => !string.IsNullOrWhiteSpace(x.TopProductName))

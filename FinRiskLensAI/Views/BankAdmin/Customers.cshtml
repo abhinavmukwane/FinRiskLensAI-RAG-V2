@@ -15,15 +15,19 @@
     }
 
     // Rebuilds the current query string with one value replaced
-    string Link(object? page = null, string? sortBy = null, bool? sortDesc = null) =>
+    string Link(object? page = null, string? sortBy = null, bool? sortDesc = null, int? pageSize = null) =>
         Url.Action("Customers", "BankAdmin", new
         {
             search = q.Search, band = q.Band, state = q.State, status = q.Status,
             sortBy = sortBy ?? q.SortBy,
             sortDesc = sortDesc ?? q.SortDesc,
             page = page ?? q.Page,
-            pageSize = q.PageSize
+            pageSize = pageSize ?? q.PageSize
         })!;
+
+    // Changing rows-per-page always returns to page 1 — the old page number
+    // would point somewhere else entirely under a different page size.
+    string SizeLink(int size) => Link(page: 1, pageSize: size);
 
     string SortIcon(string col) =>
         !string.Equals(q.SortBy, col, StringComparison.OrdinalIgnoreCase) ? "bi-arrow-down-up bp-sort-idle"
@@ -192,36 +196,93 @@ else
         </div>
 
         <!-- ===================== Pager ===================== -->
-        @if (p.TotalPages > 1)
-        {
-            <div class="bp-pager">
-                <div class="bp-pager-info">
-                    Showing @(((p.Page - 1) * p.PageSize) + 1)–@(Math.Min(p.Page * p.PageSize, p.TotalCount)) of @p.TotalCount
-                </div>
-                <div class="bp-pager-btns">
-                    @if (p.Page > 1)
+        @* The row count and page-size control show even on a single page, so the
+           paging state is always visible; the page buttons only appear when there
+           is somewhere to navigate to. *@
+        <div class="bp-pager">
+            <div class="bp-pager-left">
+                <span class="bp-pager-info">
+                    Showing <strong>@(((p.Page - 1) * p.PageSize) + 1)–@(Math.Min(p.Page * p.PageSize, p.TotalCount))</strong>
+                    of <strong>@p.TotalCount</strong>
+                    @if (p.TotalPages > 1)
                     {
-                        <a class="bp-page-btn" href="@Link(page: 1)"><i class="bi bi-chevron-double-left"></i></a>
-                        <a class="bp-page-btn" href="@Link(page: p.Page - 1)"><i class="bi bi-chevron-left"></i></a>
+                        <text>&nbsp;·&nbsp;page @p.Page of @p.TotalPages</text>
                     }
+                </span>
 
-                    @{
-                        var from = Math.Max(1, p.Page - 2);
-                        var to = Math.Min(p.TotalPages, from + 4);
-                        from = Math.Max(1, to - 4);
-                    }
-                    @for (var i = from; i <= to; i++)
+                @{
+                    // Include the active size when it isn't one of the presets (e.g. a
+                    // hand-typed ?pageSize=), so the dropdown never shows a value that
+                    // disagrees with the rows actually on screen.
+                    var sizes = new[] { 10, 25, 50, 100 }.Append(p.PageSize).Distinct().OrderBy(x => x);
+                }
+                <select class="bp-select bp-select-sm" aria-label="Rows per page"
+                        onchange="if(this.value) location.href=this.value;">
+                    @foreach (var size in sizes)
                     {
-                        <a class="bp-page-btn @(i == p.Page ? "active" : "")" href="@Link(page: i)">@i</a>
+                        <option value="@SizeLink(size)" selected="@(p.PageSize == size)">@size per page</option>
                     }
-
-                    @if (p.Page < p.TotalPages)
-                    {
-                        <a class="bp-page-btn" href="@Link(page: p.Page + 1)"><i class="bi bi-chevron-right"></i></a>
-                        <a class="bp-page-btn" href="@Link(page: p.TotalPages)"><i class="bi bi-chevron-double-right"></i></a>
-                    }
-                </div>
+                </select>
             </div>
-        }
+
+            @*  Previous / Next are always rendered — disabled rather than hidden — so
+                the control never disappears on a single-page result and the officer
+                can always see where they are. *@
+            @{
+                var hasPrev = p.Page > 1;
+                var hasNext = p.Page < p.TotalPages;
+            }
+            <div class="bp-pager-btns">
+
+                @if (hasPrev)
+                {
+                    <a class="bp-page-btn" href="@Link(page: 1)" title="First page">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                    <a class="bp-page-btn bp-page-nav" href="@Link(page: p.Page - 1)" rel="prev">
+                        <i class="bi bi-chevron-left"></i><span>Previous</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="bp-page-btn disabled" title="First page">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </span>
+                    <span class="bp-page-btn bp-page-nav disabled">
+                        <i class="bi bi-chevron-left"></i><span>Previous</span>
+                    </span>
+                }
+
+                @{
+                    // Sliding window of at most 5 page numbers, centred on the current page
+                    var from = Math.Max(1, p.Page - 2);
+                    var to = Math.Min(Math.Max(p.TotalPages, 1), from + 4);
+                    from = Math.Max(1, to - 4);
+                }
+                @for (var i = from; i <= to; i++)
+                {
+                    <a class="bp-page-btn @(i == p.Page ? "active" : "")" href="@Link(page: i)">@i</a>
+                }
+
+                @if (hasNext)
+                {
+                    <a class="bp-page-btn bp-page-nav" href="@Link(page: p.Page + 1)" rel="next">
+                        <span>Next</span><i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a class="bp-page-btn" href="@Link(page: p.TotalPages)" title="Last page">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                }
+                else
+                {
+                    <span class="bp-page-btn bp-page-nav disabled">
+                        <span>Next</span><i class="bi bi-chevron-right"></i>
+                    </span>
+                    <span class="bp-page-btn disabled" title="Last page">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </span>
+                }
+            </div>
+        </div>
     }
 }

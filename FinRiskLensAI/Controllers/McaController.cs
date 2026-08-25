@@ -62,9 +62,19 @@ namespace FinRiskLensAI.Controllers
 
             try
             {
-                // Primary: the cached DIN verification response.
+                // Primary: the cached DIN verification response in m_StaticResponces.
                 var dinJson = await _staticResponses.GetStaticCommonResponce(uan, StaticResponseType.Din);
                 var profile = FindDinProfile(dinJson, din);
+
+                // Secondary: the per-director DIN_<din>.json seeded into the MSME's
+                // blob folder. That column holds one director; the blob has a file per
+                // director, so it covers the rest of the board.
+                if (profile == null)
+                {
+                    var blobJson = await _store.DownloadAsync(uan, MsmeDataFiles.DinFile(din), ct);
+                    profile = FindDinProfile(blobJson, din);
+                }
+
                 if (profile != null)
                 {
                     MapDinProfile(profile, vm);
@@ -128,6 +138,11 @@ namespace FinRiskLensAI.Controllers
                     else if (t.Type == JTokenType.Object) candidates.Add(t);
                 }
 
+                // "message" first: the MCA DIN API nests the whole director profile
+                // there (full_name, father_name, dob, address, email), while the root
+                // carries only rrn/din/status. Collecting root first would match on
+                // the root's din and return an object with every profile field null.
+                Collect(root.SelectToken("message"));
                 Collect(root);
                 Collect(root.SelectToken("data"));
                 Collect(root.SelectToken("directors"));
@@ -152,19 +167,25 @@ namespace FinRiskLensAI.Controllers
 
         private static void MapDinProfile(DinResponseModel p, DinDetailViewModel vm)
         {
-            vm.Din = p.din ?? vm.Din;
-            vm.FullName = p.full_name ?? p.name ?? "-";
-            vm.FatherName = p.father_name ?? vm.FatherName;
+            // The API pads some name fields with leading spaces — trim for display.
+            static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+            vm.Din = Clean(p.din) ?? Clean(p.din_number) ?? vm.Din;
+            vm.FullName = Clean(p.full_name) ?? Clean(p.name) ?? "-";
+            vm.FatherName = Clean(p.father_name) ?? vm.FatherName;
             vm.Dob = FormatDate(p.dob ?? p.date_of_birth, vm.Dob);
-            vm.Nationality = p.nationality ?? vm.Nationality;
-            vm.Pan = string.IsNullOrWhiteSpace(p.pan) ? vm.Pan : Core.Common.Universal.MaskPan(p.pan);
-            vm.Email = p.email ?? p.email_id ?? vm.Email;
-            vm.PresentAddress = p.present_address ?? vm.PresentAddress;
-            vm.PermanentAddress = p.permanent_address ?? vm.PermanentAddress;
+            vm.Nationality = Clean(p.nationality) ?? vm.Nationality;
+
+            var pan = Clean(p.pan) ?? Clean(p.pan_number);
+            vm.Pan = pan == null ? vm.Pan : Core.Common.Universal.MaskPan(pan);
+
+            vm.Email = Clean(p.email) ?? Clean(p.email_id) ?? vm.Email;
+            vm.PresentAddress = Clean(p.present_address) ?? vm.PresentAddress;
+            vm.PermanentAddress = Clean(p.permanent_address) ?? vm.PermanentAddress;
             vm.AppointedOn = FormatDate(p.date_of_appointment ?? p.din_allocation_date, vm.AppointedOn);
             vm.DirectorSince = YearsSince(p.date_of_appointment ?? p.din_allocation_date, vm.DirectorSince);
 
-            var companies = (p.companies ?? p.company_list)?
+            var companies = (p.companies ?? p.company_list ?? p.companies_associated)?
                 .Select(c => c.company_name)
                 .Where(n => !string.IsNullOrWhiteSpace(n))
                 .ToList();
