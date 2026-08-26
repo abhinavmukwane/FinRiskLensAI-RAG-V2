@@ -203,3 +203,54 @@
             overflow-y: auto;
             z-index: 2000;
         }
+
+        /* Login dropdown — User Login / Bank Login, opens on hover or click */
+        .frl-login-dropdown { position: relative; }
+        .frl-login-toggle { cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+        .frl-login-toggle:hover,
+        .frl-login-dropdown.open .frl-login-toggle {
+            background: rgba(255, 255, 255, .15) !important;
+            border-color: var(--gold-soft) !important;
+        }
+        .frl-login-caret { transition: transform .2s ease; }
+        .frl-login-dropdown:hover .frl-login-caret,
+        .frl-login-dropdown.open .frl-login-caret { transform: rotate(180deg); }
+
+        .frl-login-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 190px;
+            background: #fff;
+            border-radius: .75rem;
+            box-shadow: 0 12px 32px rgba(0,0,0,.18);
+            padding: .4rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px);
+            transition: opacity .15s ease, transform .15s ease, visibility .15s ease;
+            z-index: 1050;
+        }
+        .frl-login-dropdown:hover .frl-login-menu,
+        .frl-login-dropdown.open .frl-login-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .frl-login-menu-item {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .6rem .75rem;
+            border-radius: .5rem;
+            color: #2b2026;
+            font-size: .88rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .15s ease, color .15s ease;
+        }
+        .frl-login-menu-item:hover {
+            background: var(--brand-tint-bg-2, #f2e6ea);
+            color: var(--brand-primary-dark, #57001D);
+        }
+        .frl-login-menu-item i { font-size: 1rem; color: var(--brand-primary, #7A1230); }

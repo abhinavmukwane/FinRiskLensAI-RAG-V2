@@ -11,7 +11,7 @@
 <style>
     .stat-tile {
     width: 100%;
-    max-width: 160px;   
+    /* max-width: 160px;    */
     min-height: 90px;   
     padding: 12px;
     text-align: center;
@@ -23,6 +23,7 @@
 .stat-tile .v {
     font-size: 1.5rem;
     font-weight: 700;
+      margin-bottom: 8px;
 }
 .stat-tile .k {
     font-size: 0.75rem;
@@ -518,10 +519,20 @@
         <script>
             const dims = @Html.Raw(Json.Serialize(r.Dimensions.Select(d => new { d.Dimension, d.Score, d.MaxPoints })));
             const score = @r.OverallScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            // Brand colors follow the active theme (see ~/css/theme.css)
-            const frlBrand = getComputedStyle(document.documentElement);
-            const maroon = frlBrand.getPropertyValue('--brand-btn-bg').trim() || '#f37021';
-            const rose = frlBrand.getPropertyValue('--brand-secondary').trim() || '#974354';
+            // Brand colors follow the active theme (see ~/css/theme.css). Read
+            // fresh (not just once at load) so re-applying after a theme
+            // switch — see frl-theme-changed below — picks up the new values.
+            function readBrandColors() {
+                const cs = getComputedStyle(document.documentElement);
+                return {
+                    maroon: cs.getPropertyValue('--brand-btn-bg').trim() || '#f37021',
+                    rose: cs.getPropertyValue('--brand-secondary').trim() || '#974354',
+                    tint2: cs.getPropertyValue('--brand-tint-bg-2').trim() || '#f2e6ea',
+                    accent: cs.getPropertyValue('--brand-btn-bg-hover').trim() || '#c98a2b'
+                };
+            }
+            let { maroon, rose, tint2, accent } = readBrandColors();
+            const charts = {};
 
             // ── Score meter: 5 band segments + needle
             const bandColors = ['#c22f3e', '#e08a3c', '#e6c34c', '#7fae5e', '#2e7d4f'];
@@ -542,7 +553,7 @@
                     ctx.restore();
                 }
             };
-            new Chart(document.getElementById('scoreGauge'), {
+            charts.gauge = new Chart(document.getElementById('scoreGauge'), {
                 type: 'doughnut',
                 data: { datasets: [{
                     data: [350, 150, 150, 150, 200],       // HighRisk / AtRisk / Fair / Good / Excellent widths
@@ -559,7 +570,7 @@
             });
 
             // ── Radar: % of each dimension's max
-            new Chart(document.getElementById('radarChart'), {
+            charts.radar = new Chart(document.getElementById('radarChart'), {
                 type: 'radar',
                 data: {
                     labels: dims.map(d => d.dimension.replace(' ', '\n')),
@@ -621,7 +632,7 @@
             }));
             if (bank && document.getElementById('balanceChart')) {
                 const keys = Object.keys(bank.balances).sort();
-                new Chart(document.getElementById('balanceChart'), {
+                charts.balance = new Chart(document.getElementById('balanceChart'), {
                     type: 'line',
                     data: { labels: keys.map(monthLabel), datasets: [{
                         data: keys.map(k => bank.balances[k]),
@@ -634,11 +645,11 @@
                         scales: { y: { ticks: { callback: inr } } } }
                 });
                 const modeKeys = Object.keys(bank.modes);
-                new Chart(document.getElementById('modeChart'), {
+                charts.mode = new Chart(document.getElementById('modeChart'), {
                     type: 'doughnut',
                     data: { labels: modeKeys, datasets: [{
                         data: modeKeys.map(k => bank.modes[k]),
-                        backgroundColor: [maroon, rose, '#c98a2b', '#2e7d4f', '#7fae5e', '#8a6d00', '#c22f3e'],
+                        backgroundColor: [maroon, rose, accent, '#2e7d4f', '#7fae5e', '#8a6d00', '#c22f3e'],
                         borderColor: '#fff', borderWidth: 2
                     }]},
                     options: { maintainAspectRatio: false, cutout: '58%',
@@ -654,7 +665,7 @@
             }));
             if (gst && document.getElementById('gstSalesChart')) {
                 const saleKeys = Object.keys(gst.sales).sort();
-                new Chart(document.getElementById('gstSalesChart'), {
+                charts.gstSales = new Chart(document.getElementById('gstSalesChart'), {
                     type: 'bar',
                     data: { labels: saleKeys.map(monthLabel), datasets: [{
                         data: saleKeys.map(k => gst.sales[k]), backgroundColor: maroon, borderRadius: 6
@@ -665,8 +676,8 @@
                 });
                 const shareBar = (id, data, color) => {
                     const keys = Object.keys(data);
-                    if (keys.length === 0) { document.getElementById(id).replaceWith('No data'); return; }
-                    new Chart(document.getElementById(id), {
+                    if (keys.length === 0) { document.getElementById(id).replaceWith('No data'); return null; }
+                    return new Chart(document.getElementById(id), {
                         type: 'bar',
                         data: { labels: keys, datasets: [{
                             data: keys.map(k => Math.round(data[k] * 100)), backgroundColor: color, borderRadius: 6
@@ -677,18 +688,18 @@
                                       y: { ticks: { font: { size: 9, family: 'monospace' } } } } }
                     });
                 };
-                shareBar('customerChart', gst.customers, rose);
-                shareBar('vendorChart', gst.vendors, '#c98a2b');
+                charts.customer = shareBar('customerChart', gst.customers, rose);
+                charts.vendor = shareBar('vendorChart', gst.vendors, accent);
             }
 
             // ── Horizontal bars: earned vs max
-            new Chart(document.getElementById('barChart'), {
+            charts.bar = new Chart(document.getElementById('barChart'), {
                 type: 'bar',
                 data: {
                     labels: dims.map(d => d.dimension),
                     datasets: [
                         { label: 'Earned', data: dims.map(d => d.score), backgroundColor: maroon, borderRadius: 6 },
-                        { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: frlBrand.getPropertyValue('--brand-tint-bg-2').trim() || '#f2e6ea', borderRadius: 6 }
+                        { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: tint2, borderRadius: 6 }
                     ]
                 },
                 options: {
@@ -696,6 +707,41 @@
                     scales: { x: { beginAtZero: true, max: 260 } },
                     plugins: { legend: { position: 'bottom' } }
                 }
+            });
+
+            // ── Re-color every chart in place when the theme is switched —
+            // Chart.js datasets hold plain color strings, so a CSS variable
+            // change alone (data-theme flip) never reaches an already-drawn
+            // canvas. See frlSetTheme in ~/js/theme.js for the dispatch side.
+            document.addEventListener('frl-theme-changed', function () {
+                ({ maroon, rose, tint2, accent } = readBrandColors());
+
+                if (charts.gauge) charts.gauge.update();               // needle reads `maroon` live at draw time
+
+                if (charts.radar) {
+                    const ds = charts.radar.data.datasets[0];
+                    ds.backgroundColor = maroon + '2e'; ds.borderColor = maroon; ds.pointBackgroundColor = maroon;
+                    charts.radar.update();
+                }
+                if (charts.bar) {
+                    charts.bar.data.datasets[0].backgroundColor = maroon;
+                    charts.bar.data.datasets[1].backgroundColor = tint2;
+                    charts.bar.update();
+                }
+                if (charts.balance) {
+                    const ds = charts.balance.data.datasets[0];
+                    ds.borderColor = maroon; ds.backgroundColor = maroon + '1f'; ds.pointBackgroundColor = maroon;
+                    charts.balance.update();
+                }
+                if (charts.mode) {
+                    charts.mode.data.datasets[0].backgroundColor[0] = maroon;
+                    charts.mode.data.datasets[0].backgroundColor[1] = rose;
+                    charts.mode.data.datasets[0].backgroundColor[2] = accent;
+                    charts.mode.update();
+                }
+                if (charts.gstSales) { charts.gstSales.data.datasets[0].backgroundColor = maroon; charts.gstSales.update(); }
+                if (charts.customer) { charts.customer.data.datasets[0].backgroundColor = rose; charts.customer.update(); }
+                if (charts.vendor) { charts.vendor.data.datasets[0].backgroundColor = accent; charts.vendor.update(); }
             });
         </script>
     }

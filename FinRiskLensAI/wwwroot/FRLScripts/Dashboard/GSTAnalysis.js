@@ -45,16 +45,38 @@
         }, 300);
     }
 
+    // ── Theme-aware palette ─────────────────────────────────────────────
+    // Reads the same --brand-* tokens as ~/css/theme.css instead of baking
+    // in Theme 2's hexes (#8b1538 etc. below were literally Theme 2's
+    // --brand-primary/--brand-secondary — that's why nothing moved on
+    // Theme 1 or after a live theme switch).
+    function getBrandPalette() {
+        var cs = getComputedStyle(document.documentElement);
+        function v(name, fallback) { return cs.getPropertyValue(name).trim() || fallback; }
+        return {
+            primary: v('--brand-primary', '#8b1538'),
+            secondary: v('--brand-secondary', '#897174'),
+            secondaryContainer: v('--brand-secondary-container', '#d08c9f'),
+            tint2: v('--brand-tint-bg-2', '#ead9df'),
+            accent: v('--brand-accent', '#b26a00')
+        };
+    }
+
     // ── ApexCharts ───────────────────────────────────────────────────────
-    function renderChart(selector, options) {
+    var charts = {};
+
+    function renderChart(key, selector, options) {
         var el = document.querySelector(selector);
         if (!el || typeof ApexCharts === 'undefined') return;
-        new ApexCharts(el, options).render();
+        charts[key] = new ApexCharts(el, options);
+        charts[key].render();
     }
 
     function renderCharts() {
+        var p = getBrandPalette();
+
         // 1. Revenue & Purchase Trend
-        renderChart('#revenueChart', {
+        renderChart('revenue', '#revenueChart', {
             series: [{
                 name: 'Monthly Revenue (GSTR-3B)',
                 data: [84, 90, 105, 112, 122, 130] // in Lakhs
@@ -66,7 +88,7 @@
             plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4, endingShape: 'rounded' } },
             dataLabels: { enabled: false },
             stroke: { show: true, width: 2, colors: ['transparent'] },
-            colors: ['#8b1538', '#897174'],
+            colors: [p.primary, p.secondary],
             xaxis: {
                 categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                 axisBorder: { show: false },
@@ -80,11 +102,11 @@
         });
 
         // 2. Vendor Concentration Donut
-        renderChart('#vendorChart', {
+        renderChart('vendor', '#vendorChart', {
             series: [28, 18, 13, 41],
             chart: { type: 'donut', height: 180, fontFamily: 'Inter, sans-serif' },
             labels: ['Microsoft Corp', 'Redington India', 'Persistent Systems', 'Other Vendors'],
-            colors: ['#8b1538', '#a83c5e', '#d08c9f', '#ead9df'],
+            colors: [p.primary, p.secondary, p.secondaryContainer, p.tint2],
             legend: { show: false },
             dataLabels: { enabled: false },
             plotOptions: {
@@ -107,7 +129,7 @@
         });
 
         // 3. Tax Liability vs Payment
-        renderChart('#taxPaymentChart', {
+        renderChart('taxPayment', '#taxPaymentChart', {
             series: [{
                 name: 'GST Tax Liability',
                 data: [4.2, 4.5, 5.2, 5.6, 6.1, 6.5]
@@ -118,7 +140,7 @@
             chart: { type: 'bar', height: 250, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
             plotOptions: { bar: { horizontal: false, columnWidth: '45%', borderRadius: 3 } },
             dataLabels: { enabled: false },
-            colors: ['#b26a00', '#2e7d32'],
+            colors: [p.accent, p.primary],
             xaxis: {
                 categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                 axisBorder: { show: false },
@@ -130,18 +152,18 @@
         });
 
         // 4. Stability Radar
-        renderChart('#stabilityRadarChart', {
+        renderChart('stabilityRadar', '#stabilityRadarChart', {
             series: [{ name: 'Stability Score', data: [88, 98, 92, 87, 91, 97, 99] }],
             chart: { height: 220, type: 'radar', toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
-            colors: ['#8b1538'],
+            colors: [p.primary],
             xaxis: { categories: ['Revenue', 'Compliance', 'Cash Flow', 'Growth', 'Vendor Diversity', 'ITC', 'Tax Payment'] },
-            fill: { opacity: 0.1, colors: ['#8b1538'] },
-            markers: { size: 4, colors: ['#8b1538'], strokeColor: '#fff', strokeWidth: 2 },
+            fill: { opacity: 0.1, colors: [p.primary] },
+            markers: { size: 4, colors: [p.primary], strokeColor: '#fff', strokeWidth: 2 },
             yaxis: { show: false, max: 100 }
         });
 
         // 5. 12-Month Forecast
-        renderChart('#forecastChart', {
+        renderChart('forecast', '#forecastChart', {
             series: [{
                 name: 'Projected Revenue (in Lakhs)',
                 data: [132, 135, 138, 142, 145, 148, 152, 155, 160, 164, 168, 172]
@@ -151,7 +173,7 @@
             }],
             chart: { height: 250, type: 'line', toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
             stroke: { width: [3, 2], curve: 'smooth', dashArray: [0, 5] },
-            colors: ['#8b1538', '#d08c9f'],
+            colors: [p.primary, p.secondaryContainer],
             xaxis: {
                 categories: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                 axisBorder: { show: false },
@@ -162,6 +184,17 @@
             legend: { position: 'top', horizontalAlign: 'right' }
         });
     }
+
+    // ── Re-color in place on theme switch (see frlSetTheme in ~/js/theme.js) ─
+    function applyChartTheme() {
+        var p = getBrandPalette();
+        if (charts.revenue) charts.revenue.updateOptions({ colors: [p.primary, p.secondary] });
+        if (charts.vendor) charts.vendor.updateOptions({ colors: [p.primary, p.secondary, p.secondaryContainer, p.tint2] });
+        if (charts.taxPayment) charts.taxPayment.updateOptions({ colors: [p.accent, p.primary] });
+        if (charts.stabilityRadar) charts.stabilityRadar.updateOptions({ colors: [p.primary], fill: { opacity: 0.1, colors: [p.primary] }, markers: { colors: [p.primary] } });
+        if (charts.forecast) charts.forecast.updateOptions({ colors: [p.primary, p.secondaryContainer] });
+    }
+    document.addEventListener('frl-theme-changed', applyChartTheme);
 
     // ── Download / export micro-interactions ─────────────────────────────
     function wireReportButtons() {
