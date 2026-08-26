@@ -257,6 +257,9 @@ namespace FinRiskLensAI.Controllers
         [HttpGet]
         public async Task<IActionResult> FinancialHealthCard(CancellationToken ct)
         {
+            var theme = HttpContext.Session.GetString("frl-theme");
+            if (string.IsNullOrWhiteSpace(theme))theme = "theme1";
+
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
             var model = new FinancialHealthCardViewModel { Uan = uan?.Trim() };
 
@@ -281,50 +284,60 @@ namespace FinRiskLensAI.Controllers
 
                 if (model.Result != null)
                 {
-                    try
+                    var emailSentKey = $"ReportEmailSent_{model.Uan}_{model.Result.ComputedAt.Ticks}";
+                    if (HttpContext.Session.GetString(emailSentKey) == null)
                     {
-                        var recipientEmail = HttpContext.Session.GetCurrentUser()?.Email;
-                        var recipientName = HttpContext.Session.GetCurrentUser()?.NameOfEnterprise;
-
-                        if (!string.IsNullOrWhiteSpace(recipientEmail))
+                        try
                         {
-                            //var reportUrl = Url.Action(
-                            //    "FinancialHealthCard", "FinancialHealthReport",
-                            //    new { uan = model.Uan }, Request.Scheme)!;
+                            var recipientEmail = HttpContext.Session.GetCurrentUser()?.Email;
+                            var recipientName = HttpContext.Session.GetCurrentUser()?.NameOfEnterprise;
 
-                            string DimText(string name)
+                            if (!string.IsNullOrWhiteSpace(recipientEmail))
                             {
-                                var d = model.Result.Dimensions.FirstOrDefault(x =>
-                                    string.Equals(x.Dimension, name, StringComparison.OrdinalIgnoreCase));
-                                return d == null ? "N/A" : $"{d.Score:0}/{d.MaxPoints:0}";
-                            }
+                                //var reportUrl = Url.Action(
+                                //    "FinancialHealthCard", "FinancialHealthReport",
+                                //    new { uan = model.Uan }, Request.Scheme)!;
 
-                            await _emailService.SendReportReadyEmailAsync(
-                                toEmail: recipientEmail,
-                                recipientName: recipientName,
-                                businessName: model.EnterpriseName ?? model.Uan!,
-                                financialHealthScore: (int)Math.Round(model.Result.OverallScore),
-                                riskBand: model.Result.ScoreBand.ToString(),
-                                reportDate: model.Result.ComputedAt.ToString("dd MMM yyyy"),
-                                reportUrl: "",
-                                 metric1Label: "Revenue Vitality",
-                                 metric1Value: DimText("Revenue Vitality"),
-                                 metric2Label: "Cash Flow Health",
-                                 metric2Value: DimText("Cash Flow Health"),
-                                 metric3Label: "Compliance Quotient",
-                                 metric3Value: DimText("Compliance Quotient"),
-                                theme: "theme1",
-                                ct: ct);
+                                string DimText(string name)
+                                {
+                                    var d = model.Result.Dimensions.FirstOrDefault(x =>
+                                        string.Equals(x.Dimension, name, StringComparison.OrdinalIgnoreCase));
+                                    return d == null ? "N/A" : $"{d.Score:0}/{d.MaxPoints:0}";
+                                }
+
+                                await _emailService.SendReportReadyEmailAsync(
+                                    toEmail: recipientEmail,
+                                    recipientName: recipientName,
+                                    businessName: model.EnterpriseName ?? model.Uan!,
+                                    financialHealthScore: (int)Math.Round(model.Result.OverallScore),
+                                    riskBand: model.Result.ScoreBand.ToString(),
+                                    reportDate: model.Result.ComputedAt.ToString("dd MMM yyyy"),
+                                    reportUrl: "",
+                                     metric1Label: "Revenue Vitality",
+                                     metric1Value: DimText("Revenue Vitality"),
+                                     metric2Label: "Cash Flow Health",
+                                     metric2Value: DimText("Cash Flow Health"),
+                                     metric3Label: "Compliance Quotient",
+                                     metric3Value: DimText("Compliance Quotient"),
+                                    theme: theme,
+                                    ct: ct);
+
+                                HttpContext.Session.SetString(emailSentKey, "1");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Report-ready email skipped for {Uan} — no email on session user.", model.Uan);
+                            }
                         }
-                        else
+                        catch (Exception mailEx)
                         {
-                            _logger.LogWarning("Report-ready email skipped for {Uan} — no email on session user.", model.Uan);
+                            // Never let an email failure break the card view
+                            _logger.LogError(mailEx, "Failed sending report-ready email for {Uan}", model.Uan);
                         }
                     }
-                    catch (Exception mailEx)
+                    else
                     {
-                        // Never let an email failure break the card view
-                        _logger.LogError(mailEx, "Failed sending report-ready email for {Uan}", model.Uan);
+                        _logger.LogInformation("Report-ready email already sent this session for {Uan}, skipping.", model.Uan);
                     }
                 }
 
