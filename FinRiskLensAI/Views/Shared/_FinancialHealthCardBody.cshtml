@@ -7,6 +7,30 @@
     never drift apart. The caller supplies its own header and the
     surrounding .fhc-wrap container.
 *@
+
+<style>
+    .stat-tile {
+    width: 100%;
+    max-width: 160px;   
+    min-height: 90px;   
+    padding: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.stat-tile .v {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.stat-tile .k {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+</style>
+
 @{
     var r = Model.Result;
 }
@@ -75,7 +99,7 @@
             <div class="col-lg-7">
                 <div class="fhc-card">
                     <div class="fhc-section-label">Score Composition</div>
-                    <div class="row g-3 mb-3">
+                 @*    <div class="row g-3 mb-3">
                         <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">@r.HeuristicScore.ToString("0")</div><div class="k">Rules Engine</div></div></div>
                         <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">@r.MlCalibratedScore.ToString("0")</div><div class="k">ML Model</div></div></div>
                         <div class="col-6 col-md-3">
@@ -87,8 +111,35 @@
                             </div>
                         </div>
                         <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">@(Model.Status?.FilesPresent.Count ?? 0)</div><div class="k">Data Files Used</div></div></div>
+                    </div> *@
+                    <div class="row g-3 mb-3">
+                        <div class="col-6 col-md-3 d-flex justify-content-center">
+                            <div class="stat-tile">
+                                <div class="v">@r.HeuristicScore.ToString("0")</div>
+                                <div class="k">Rules Engine</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 d-flex justify-content-center">
+                            <div class="stat-tile">
+                                <div class="v">@r.MlCalibratedScore.ToString("0")</div>
+                                <div class="k">ML Model</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 d-flex justify-content-center">
+                            <div class="stat-tile">
+                                <div class="v">
+                                    @(r.CashflowTrendSlope >= 0 ? "▲" : "▼") @Math.Abs(r.CashflowTrendSlope).ToString("0.00")
+                                </div>
+                                <div class="k">Cashflow Trend</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 d-flex justify-content-center">
+                            <div class="stat-tile">
+                                <div class="v">@(Model.Status?.FilesPresent.Count ?? 0)</div>
+                                <div class="k">Data Files Used</div>
+                            </div>
+                        </div>
                     </div>
-
                     <div class="fhc-section-label">Six Dimensions</div>
                     @foreach (var d in r.Dimensions)
                     {
@@ -164,7 +215,7 @@
                 </div>
 
                 <!-- Eligibility headline tiles -->
-                <div class="row g-3 mb-4">
+              @*   <div class="row g-3 mb-4">
                     <div class="col-6 col-lg-3">
                         <div class="stat-tile" style="border-left:4px solid var(--brand-primary-dark);">
                             <div class="v">₹@FormatInr(l.WorkingCapitalLimit)</div>
@@ -193,7 +244,39 @@
                             <div class="fhc-sub" style="font-size:.7rem;">5% of turnover (Nayak)</div>
                         </div>
                     </div>
-                </div>
+                </div> *@
+
+
+                <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3 d-flex justify-content-center">
+        <div class="stat-tile" style="border-left:4px solid var(--brand-primary-dark);">
+            <div class="v">₹@FormatInr(l.WorkingCapitalLimit)</div>
+            <div class="k">Working Capital Limit</div>
+            <div class="fhc-sub" style="font-size:.7rem;">turnover method (20%)</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 d-flex justify-content-center">
+        <div class="stat-tile" style="border-left:4px solid var(--brand-secondary);">
+            <div class="v">₹@FormatInr(l.TermLoanCapacity)</div>
+            <div class="k">Term Loan Capacity</div>
+            <div class="fhc-sub" style="font-size:.7rem;">5yr @@ 11% on EMI headroom</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 d-flex justify-content-center">
+        <div class="stat-tile" style="border-left:4px solid #0f5137;">
+            <div class="v">₹@FormatInr(l.TotalIndicativeEligibility)</div>
+            <div class="k">Total Indicative Eligibility</div>
+            <div class="fhc-sub" style="font-size:.7rem;">WC + term combined</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 d-flex justify-content-center">
+        <div class="stat-tile" style="border-left:4px solid #8a6d00;">
+            <div class="v">₹@FormatInr(l.MarginMoneyRequired)</div>
+            <div class="k">Borrower Margin Required</div>
+            <div class="fhc-sub" style="font-size:.7rem;">5% of turnover (Nayak)</div>
+        </div>
+    </div>
+</div>
 
                 <div class="row g-4">
                     <!-- Ratio table -->
