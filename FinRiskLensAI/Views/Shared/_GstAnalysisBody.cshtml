@@ -149,87 +149,103 @@
     </section>
 
     <!-- ============ SECTION 1 — EXECUTIVE SUMMARY KPIs ============ -->
+    @* KPI strip — 8 cards, 4 per row. Values are static demo figures for now
+       (see FRLScripts/Dashboard/GSTAnalysis.js); they become live once the
+       GSTR-2B/3B parser lands. Deliberately excludes the overall GST Health
+       Score — that is already the big gauge above, so repeating it here wasted
+       two cards. *@
     <section class="kpi-grid mb-4">
-        <div class="kpi-card kpi-success">
+
+        @* ── Row 1 — headline financials ───────────────────────────────── *@
+        <div class="kpi-card kpi-primary">
             <div class="kpi-card-header">
-                <span>GST Health Score</span>
-                <i class="bi bi-heart-pulse"></i>
+                <span>Annual Turnover</span>
+                <i class="bi bi-cash-stack"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">94</span>
-                <span class="kpi-status-pill">94/100</span>
+                <span class="kpi-value" style="font-size: 24px;">₹35.9 Cr</span>
+                <span class="kpi-status-pill">GSTR-3B, 12M</span>
             </div>
         </div>
+
+        <div class="kpi-card kpi-primary">
+            <div class="kpi-card-header">
+                <span>Turnover Growth</span>
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">+18.4%</span>
+                <span class="kpi-status-pill">YoY</span>
+            </div>
+        </div>
+
         <div class="kpi-card kpi-success">
             <div class="kpi-card-header">
-                <span>GST Compliance</span>
+                <span>Filing Compliance</span>
                 <i class="bi bi-file-earmark-check"></i>
             </div>
             <div class="kpi-value-row">
                 <span class="kpi-value">98%</span>
-                <span class="kpi-status-pill">Excellent</span>
+                <span class="kpi-status-pill">Filed on time</span>
             </div>
         </div>
-        <div class="kpi-card kpi-primary">
+
+        <div class="kpi-card kpi-success">
             <div class="kpi-card-header">
-                <span>Business Growth</span>
-                <i class="bi bi-graph-up-arrow"></i>
+                <span>ITC Utilisation</span>
+                <i class="bi bi-arrow-repeat"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">87%</span>
+                <span class="kpi-value">97%</span>
+                <span class="kpi-status-pill">Claimed vs 2B</span>
+            </div>
+        </div>
+
+        @* ── Row 2 — data quality & risk ───────────────────────────────── *@
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>GSTR-1 vs 3B Match</span>
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">99.2%</span>
                 <span class="kpi-status-pill">Consistent</span>
             </div>
         </div>
+
+        <div class="kpi-card kpi-success">
+            <div class="kpi-card-header">
+                <span>Tax Paid in Cash</span>
+                <i class="bi bi-percent"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">29%</span>
+                <span class="kpi-status-pill">Healthy mix</span>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-primary">
+            <div class="kpi-card-header">
+                <span>Active B2B Customers</span>
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">126</span>
+                <span class="kpi-status-pill">Well diversified</span>
+            </div>
+        </div>
+
         <div class="kpi-card kpi-success">
             <div class="kpi-card-header">
                 <span>Risk Score</span>
-                <i class="bi bi-shield-exclamation"></i>
+                <i class="bi bi-shield-check"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">Low</span>
+                <span class="kpi-value" style="font-size: 24px;">Low</span>
                 <span class="kpi-status-pill">Stable</span>
             </div>
         </div>
-        <div class="kpi-card kpi-success">
-            <div class="kpi-card-header">
-                <span>Compliance Rating</span>
-                <i class="bi bi-trophy"></i>
-            </div>
-            <div class="kpi-value-row">
-                <span class="kpi-value">A+</span>
-                <span class="kpi-status-pill">Excellent</span>
-            </div>
-        </div>
-        <div class="kpi-card kpi-success">
-            <div class="kpi-card-header">
-                <span>GST Health</span>
-                <i class="bi bi-journal-check"></i>
-            </div>
-            <div class="kpi-value-row">
-                <span class="kpi-value" style="font-size: 20px;">Healthy</span>
-                <span class="kpi-status-pill">Passed Analysis</span>
-            </div>
-        </div>
-        <div class="kpi-card kpi-primary">
-            <div class="kpi-card-header">
-                <span>Business Stability</span>
-                <i class="bi bi-calendar-check"></i>
-            </div>
-            <div class="kpi-value-row">
-                <span class="kpi-value">94%</span>
-                <span class="kpi-status-pill">94% Stability</span>
-            </div>
-        </div>
-        <div class="kpi-card kpi-success">
-            <div class="kpi-card-header">
-                <span>Cash Flow</span>
-                <i class="bi bi-cash-stack"></i>
-            </div>
-            <div class="kpi-value-row">
-                <span class="kpi-value" style="font-size: 20px;">Healthy</span>
-                <span class="kpi-status-pill">Positive Operating CF</span>
-            </div>
-        </div>
+
     </section>
 
     <div class="row g-4">

@@ -3,7 +3,8 @@
 // Renders the BI dashboard (gauges + ApexCharts) with static demo data, and
 // parses the stored GSTR-2B/3B responses from window.frlGstAnalysis into
 // window.FRLGst so the charts can switch to live figures in the next phase.
-// Requires: jQuery + ApexCharts (both loaded by the view/layout).
+// Requires: ApexCharts only (loaded by the view). Deliberately jQuery-free —
+// this partial also renders under _BankAdminLayout, which does not load jQuery.
 // ============================================================================
 
 (function () {
@@ -29,19 +30,17 @@
 
     // ── SVG circular gauges ──────────────────────────────────────────────
     function animateCircleGauge(id, value, max) {
-        var circle = $('#' + id);
-        if (!circle.length) return;
+        var circle = document.getElementById(id);
+        if (!circle) return;
 
-        var radius = circle.attr('r');
+        var radius = circle.getAttribute('r');
         var circumference = 2 * Math.PI * radius; // r=58 → ≈364.4
-        circle.css('stroke-dasharray', circumference);
+        circle.style.strokeDasharray = circumference;
 
         var offset = circumference - (value / max) * circumference;
         setTimeout(function () {
-            circle.css({
-                'stroke-dashoffset': offset,
-                'transition': 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)'
-            });
+            circle.style.strokeDashoffset = offset;
+            circle.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
         }, 300);
     }
 
@@ -198,25 +197,34 @@
 
     // ── Download / export micro-interactions ─────────────────────────────
     function wireReportButtons() {
-        $('.gst-analysis .btn-report').on('click', function () {
-            var $btn = $(this);
-            var originalHtml = $btn.html();
+        document.querySelectorAll('.gst-analysis .btn-report').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var originalHtml = btn.innerHTML;
 
-            $btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Processing...');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
 
-            setTimeout(function () {
-                $btn.html('<i class="bi bi-check-circle-fill text-success"></i> Done!');
                 setTimeout(function () {
-                    $btn.prop('disabled', false).html(originalHtml);
-                }, 2000);
-            }, 1200);
+                    btn.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Done!';
+                    setTimeout(function () {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }, 2000);
+                }, 1200);
+            });
         });
     }
 
-    $(document).ready(function () {
+    function init() {
         animateCircleGauge('gstHealthGauge', 94, 100);
         animateCircleGauge('itcGauge', 97, 100);
         renderCharts();
         wireReportButtons();
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
