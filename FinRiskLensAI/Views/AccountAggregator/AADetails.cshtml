@@ -1,0 +1,121 @@
+@using FinRiskLensAI.Core.Models.AccountAggregator
+@model AaAnalysisResult
+@{
+    ViewBag.Title = "Account Aggregator Details";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@functions {
+    static string Inr(decimal v)
+    {
+        var abs = Math.Abs(v);
+        if (abs >= 10000000m) return $"₹{v / 10000000m:0.##} Cr";
+        if (abs >= 100000m) return $"₹{v / 100000m:0.##} L";
+        return $"₹{v:N0}";
+    }
+}
+
+<link rel="stylesheet" href="~/css/AaAnalysis.css" />
+
+<div class="container-fluid py-4 aa-analysis">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-end mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1" style="color:var(--aa-good);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">
+                <i class="bi bi-bank2"></i>
+                <span>Account Aggregator @(Model.HasData ? "· Statement Linked" : "· Awaiting Data")</span>
+            </div>
+            <h2 style="font-weight:700;color:var(--aa-primary);margin-bottom:4px;">Account Aggregator Details</h2>
+            <p class="text-muted mb-0">Bank account information received through the AA consent journey.</p>
+        </div>
+
+        @if (Model.HasData)
+        {
+            <a href="/AccountAggregator/DeepAnalysis" class="btn btn-theme btn-lg">
+                <i class="bi bi-graph-up-arrow me-2"></i>Bank Statement Deep Analysis
+            </a>
+        }
+    </div>
+
+    @if (!Model.HasData)
+    {
+        <div class="aa-card">
+            <div class="aa-empty">
+                <i class="bi bi-inbox" style="font-size:2.2rem;color:var(--aa-muted);"></i>
+                <p class="mt-3 mb-1">@(Model.LoadError ?? "No Account Aggregator statement is available yet.")</p>
+                <p class="mb-3" style="font-size:12.5px;">
+                    Complete the Account Aggregator consent from the dashboard to fetch your bank statement.
+                </p>
+                <a href="/Dashboard/CustDashboard" class="btn btn-outline-theme btn-sm">
+                    <i class="bi bi-arrow-right-circle me-1"></i>Go to Dashboard
+                </a>
+            </div>
+        </div>
+        return;
+    }
+
+    <!-- Statement overview -->
+    <div class="aa-card">
+        <div class="aa-card-head">
+            <h6><i class="bi bi-file-earmark-text"></i>Statement Overview</h6>
+            <p class="aa-sub">@Model.AnalysisPeriod</p>
+        </div>
+        <div class="aa-kpi-grid">
+            <div class="aa-kpi"><span class="lbl">Linked Accounts</span><span class="val">@Model.Accounts.Count</span></div>
+            <div class="aa-kpi"><span class="lbl">Transactions</span><span class="val">@Model.TransactionCount</span><span class="hint">@Model.MonthsCovered month(s)</span></div>
+            <div class="aa-kpi"><span class="lbl">Total Credits</span><span class="val pos">@Inr(Model.TotalCredits)</span></div>
+            <div class="aa-kpi"><span class="lbl">Total Debits</span><span class="val neg">@Inr(Model.TotalDebits)</span></div>
+            <div class="aa-kpi"><span class="lbl">Net Cash Flow</span><span class="val @(Model.NetCashFlow >= 0 ? "pos" : "neg")">@Inr(Model.NetCashFlow)</span></div>
+            <div class="aa-kpi">
+                <span class="lbl">Closing Balance</span>
+                <span class="val">@(Model.BalanceAvailable && Model.ClosingBalance.HasValue ? Inr(Model.ClosingBalance.Value) : "Not reported")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Linked accounts as reported by the FIP -->
+    <div class="aa-card">
+        <div class="aa-card-head"><h6><i class="bi bi-credit-card-2-front"></i>Linked Accounts</h6></div>
+        <div class="aa-table-wrap">
+            <table class="aa-table">
+                <thead>
+                    <tr><th>Account</th><th>FIP</th><th>Type</th><th>Branch</th><th>IFSC</th><th>Status</th><th class="num">Txns</th><th class="num">Reported Balance</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.Accounts)
+                    {
+                        <tr>
+                            <td><strong>@a.MaskedAccountNumber</strong></td>
+                            <td>@a.FipName</td>
+                            <td><span class="aa-pill">@a.Type</span></td>
+                            <td>@a.Branch</td>
+                            <td>@a.IfscCode</td>
+                            <td>@a.Status</td>
+                            <td class="num">@a.TransactionCount</td>
+                            <td class="num">@(a.CurrentBalance.HasValue ? Inr(a.CurrentBalance.Value) : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Deep analysis entry point -->
+    <div class="aa-card" style="background:linear-gradient(135deg,var(--aa-tint),#fff);border-left:4px solid var(--aa-accent);">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <h6 style="font-weight:700;color:var(--aa-primary);margin:0 0 6px;">
+                    <i class="bi bi-graph-up-arrow me-2"></i>Bank Statement Deep Analysis
+                </h6>
+                <p class="aa-sub mb-0" style="max-width:640px;">
+                    Runs a credit-analyst review of the full statement — inflow/outflow classification,
+                    potential pass-through detection, cash behaviour, recurring obligations, balance and
+                    liquidity, concentration, risk indicators and an explainable banking health score.
+                </p>
+            </div>
+            <a href="/AccountAggregator/DeepAnalysis" class="btn btn-theme btn-lg flex-shrink-0">
+                Open Deep Analysis <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,7 +1,9 @@
 using FinRiskLensAI.Controllers;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
+using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
+using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.GST;
 using FinRiskLensAI.Core.Interfaces.IServices.OnBoarding;
 using FinRiskLensAI.Core.Models.Mca;
@@ -35,6 +37,7 @@ namespace FinRiskLensAI.Common
         private readonly IMsmeDataStore _store;
         private readonly IGSTR2And3BResponceService _gstResponces;
         private readonly IIpRiskService _ipRisk;
+        private readonly IAaStatementAnalysisService _aaAnalysis;
         private readonly ILogger<CustomerProfileBuilder> _logger;
 
         public CustomerProfileBuilder(
@@ -43,6 +46,7 @@ namespace FinRiskLensAI.Common
             IMsmeDataStore store,
             IGSTR2And3BResponceService gstResponces,
             IIpRiskService ipRisk,
+            IAaStatementAnalysisService aaAnalysis,
             ILogger<CustomerProfileBuilder> logger)
         {
             _staticResponses = staticResponses;
@@ -50,7 +54,37 @@ namespace FinRiskLensAI.Common
             _store = store;
             _gstResponces = gstResponces;
             _ipRisk = ipRisk;
+            _aaAnalysis = aaAnalysis;
             _logger = logger;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  Account Aggregator — Bank Statement Deep Analysis
+        // ─────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Reads the AA statement already stored in blob storage (never re-calls the
+        /// AA API) and runs the deterministic deep analysis over it.
+        /// </summary>
+        public async Task<AaAnalysisResult> GetAaAnalysisAsync(string? uan, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(uan))
+                return new AaAnalysisResult { LoadError = "No Udyam number is linked to this account, so no bank statement can be loaded." };
+
+            string? json;
+            try
+            {
+                json = await _store.DownloadAsync(uan, MsmeDataFiles.Aa, ct);
+            }
+            catch (Exception ex)
+            {
+                // Never log the statement itself — only that the read failed.
+                _logger.LogError(ex, "Failed reading AA statement from blob for {Uan}", uan);
+                return new AaAnalysisResult { Uan = uan, LoadError = "Could not read the Account Aggregator statement right now. Please try again later." };
+            }
+
+            var result = _aaAnalysis.Analyze(json);
+            result.Uan = uan;
+            return result;
         }
 
         // ─────────────────────────────────────────────────────────────
