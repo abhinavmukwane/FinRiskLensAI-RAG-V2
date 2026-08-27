@@ -907,7 +907,7 @@
 .bp-profile-score .k { font-size: .74rem; color: #93a4ae; margin: 4px 0 8px; }
 
 .bp-fact-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 12px; margin-bottom: 16px;
 }
 
@@ -956,7 +956,7 @@
 .bp-tabs {
     display: flex;
     gap: 4px;
-    overflow-x: auto;
+    /*overflow-x: auto;*/
     border-bottom: 2px solid var(--brand-tint-border);
     margin: 4px 0 18px;
     padding-bottom: 0;
