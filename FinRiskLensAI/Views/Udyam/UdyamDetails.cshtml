@@ -4,5 +4,9 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
+@* .fhc-title/.fhc-sub (used for this page's heading) come from here — the
+   bank portal's Customer.cshtml already loads it for the same reason. *@
+<link href="~/css/FinancialHealthCard.css" rel="stylesheet" />
+
 @* Body is shared with the bank portal Customer 360 — see _UdyamDetailsBody. *@
 @await Html.PartialAsync("_UdyamDetailsBody", Model)

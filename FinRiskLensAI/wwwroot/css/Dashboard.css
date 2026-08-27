@@ -74,6 +74,41 @@ html, body {
     margin: 0;
     padding: 0;
 }
+.fhc-wrap {
+    padding: 24px;
+    max-width: 1320px;
+    margin: 0 auto;
+    font-family: var(--font-data, 'Inter', sans-serif);
+}
+
+.fhc-card {
+    background: #fff;
+    border: 1px solid var(--brand-tint-border);
+    border-radius: 16px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(var(--brand-primary-dark-rgb),.05);
+    height: 100%;
+}
+
+.fhc-title {
+    font-family: var(--font-headline, 'Sora', sans-serif);
+    font-weight: 700;
+    color: var(--brand-primary-dark);
+}
+
+.fhc-sub {
+    color: var(--brand-secondary);
+    font-size: .85rem;
+}
+
+.fhc-section-label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--brand-secondary);
+    margin-bottom: 12px;
+}
 
 body {
     background-color: var(--color-background);
@@ -1341,7 +1376,7 @@ img {
     --danger-red-soft: #fdecea;
     --card-border: var(--brand-tint-border);
     --text-muted-2: #767683;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: var(--font-data, 'Inter', sans-serif); /* same rule as .fhc-wrap in FinancialHealthCard.css */
 }
 
     /* Verified tag */
@@ -1354,8 +1389,12 @@ img {
     }
 
     .udyam-dashboard .dashboard-title {
-      /*  font-family: 'Outfit', sans-serif;*/
-        color: var(--theme-maroon);
+        /* Same rule as .fhc-title in FinancialHealthCard.css — kept correct
+           here too in case the commented-out h2 in _UdyamDetailsBody.cshtml
+           (which now uses .fhc-title/.fhc-sub directly instead) comes back. */
+        font-family: var(--font-headline, 'Sora', sans-serif);
+        font-weight: 700;
+        color: var(--brand-primary-dark);
     }
 
     /* Buttons */
@@ -1416,20 +1455,23 @@ img {
     }
 
     .udyam-dashboard .card-subtitle {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-muted-2);
+        /* Same rule as .fhc-section-label in FinancialHealthCard.css */
+        font-size: .72rem;
+        font-weight: 700;
+        color: var(--brand-secondary);
         margin: 0;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: .08em;
     }
 
     .udyam-dashboard .card-heading {
-        font-family: 'Outfit', sans-serif;
-        font-size: 16px;
+        /* Same rule as .fhc-section-label in FinancialHealthCard.css */
+        font-size: .72rem;
         font-weight: 700;
-        color: var(--theme-maroon);
-        margin-bottom: 16px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--brand-secondary);
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
     }

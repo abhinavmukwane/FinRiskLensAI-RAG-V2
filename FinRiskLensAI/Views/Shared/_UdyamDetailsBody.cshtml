@@ -33,10 +33,9 @@
                 <i class="bi bi-patch-check-fill"></i>
                 <span>UDYAM REGISTRATION @Model.RegistrationStatus.ToUpper()</span>
             </div>
-            <h2 class="dashboard-title mb-1">AI-Powered Udyam Registration Analysis</h2>
-            <p class="text-muted mb-0">
-                @Model.EnterpriseName &middot; Registration No: <span id="udyamRegNumber">@Model.Uan</span>
-            </p>
+            <h3 class="fhc-title mb-1">AI-Powered Udyam Registration Analysis</h3>
+            <p class=" fhc-sub">@Model.EnterpriseName &middot; Registration No: <span id="udyamRegNumber">@Model.Uan</span></p>
+            
         </div>
         <div class="d-flex gap-2">
             <button id="btnDownloadReport" type="button" class="btn btn-outline-theme">
@@ -56,8 +55,8 @@
                 <i class="bi bi-info-circle info-icon position-absolute top-0 end-0 m-3"
                    title="Score = Business Age + Enterprise Stability + Registration + Plant Locations + NIC Diversity + Org Type + GST + PAN (see Observations for detail)"></i>
 
-                <h6 class="card-subtitle mb-3">Business Identity Score</h6>
-
+                @* <h6 class="card-subtitle mb-3">Business Identity Score</h6> *@
+                <div class="fhc-section-label mb-0">Business Identity Score</div>
                 <div class="score-gauge my-3">
                     <svg viewBox="0 0 200 200">
                         <circle class="gauge-track" cx="100" cy="100" r="88"></circle>
@@ -102,7 +101,8 @@
                 <!-- Strengths -->
                 <div class="col-12 col-md-6">
                     <div class="dash-card h-100">
-                        <h6 class="card-heading"><i class="bi bi-shield-check me-2"></i>Identified Strengths</h6>
+                        <div class="fhc-section-label mb-0" style="padding-bottom: 12px;"><i class="bi bi-shield-check me-2"></i>Identified Strengths</div>
+                        @* <h6 class="card-heading"><i class="bi bi-shield-check me-2"></i>Identified Strengths</h6> *@
                         <ul class="signal-list list-unstyled mb-0">
                             @foreach (var s in Model.Strengths)
                             {
@@ -119,7 +119,8 @@
             <!-- Classification Timeline -->
             <div class="dash-card glass-card">
                 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                    <h6 class="card-heading mb-0"><i class="bi bi-calendar3 me-2"></i>Enterprise Classification Timeline</h6>
+                    @* <div class="fhc-section-label mb-0"><i class="bi bi-bank me-1"></i>Bank Lending Assessment</div> *@
+                    <div class="fhc-section-label mb-0"><i class="bi bi-calendar3 me-2"></i>Enterprise Classification Timeline</div>
                     <span class="legend"><span class="legend-dot"></span> Stable Classification</span>
                 </div>
                 <div class="classification-timeline">
@@ -138,7 +139,7 @@
         <!-- Location Summary -->
         <div class="col-12 col-md-6">
             <div class="dash-card compliance-card h-100">
-                <h6 class="card-label">Location Summary</h6>
+                <div class="fhc-section-label">Location Summary</div>
                 <ul class="mini-list">
                     <li><span>State</span><strong>@Model.State</strong></li>
                     <li><span>District</span><strong>@Model.District</strong></li>
@@ -152,7 +153,7 @@
         <!-- Compliance Summary -->
         <div class="col-12 col-md-6">
             <div class="dash-card compliance-card h-100">
-                <h6 class="card-label">Compliance Summary</h6>
+                <div class="fhc-section-label">Compliance Summary</div>
                 <ul class="mini-list">
                     <li><span>GST</span><strong>@(string.IsNullOrWhiteSpace(Model.GstinMasked) ? "Not Available" : Model.GstinMasked)</strong></li>
                     <li><span>PAN</span><strong>@(string.IsNullOrWhiteSpace(Model.PanMasked) ? "Not Available" : Model.PanMasked)</strong></li>
@@ -164,7 +165,8 @@
         <!-- Plant Location Card -->
         <div class="col-12 col-lg-6">
             <div class="dash-card h-100">
-                <h6 class="card-heading"><i class="bi bi-geo-alt-fill me-2"></i>Registered Plant Locations (@Model.PlantLocations.Count)</h6>
+                <div class="fhc-section-label mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Registered Plant Locations (@Model.PlantLocations.Count)</div>
+                @* <h6 class="card-heading"><i class="bi bi-geo-alt-fill me-2"></i>Registered Plant Locations (@Model.PlantLocations.Count)</h6> *@
                 <div class="table-responsive">
                     <table class="table dash-table mb-0">
                         <thead>
@@ -189,7 +191,8 @@
         <!-- NIC Activities Card -->
         <div class="col-12 col-lg-6">
             <div class="dash-card h-100">
-                <h6 class="card-heading"><i class="bi bi-diagram-3-fill me-2"></i>NIC Activities (@Model.NicActivities.Count)</h6>
+                <div class="fhc-section-label mb-0"><i class="bi bi-diagram-3-fill me-2"></i>NIC Activities (@Model.NicActivities.Count)</div>
+                @* <h6 class="card-heading"><i class="bi bi-diagram-3-fill me-2"></i>NIC Activities (@Model.NicActivities.Count)</h6> *@
                 <div class="table-responsive">
                     <table class="table dash-table mb-0">
                         <thead>
