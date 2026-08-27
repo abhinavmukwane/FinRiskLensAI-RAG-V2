@@ -226,8 +226,13 @@
                                         <input type="email"
                                                class="rv-mobile-input"
                                                id="rv_email"
-                                               placeholder="Enter Email Address">
-                                        <i class="bi bi-pencil rv-mobile-edit"></i>
+                                               placeholder="Enter Email Address"
+                                               readonly>
+                                        <!-- Real value never appears here — only the masked display
+                                             string from GetUdyamDetails. The actual value travels
+                                             encrypted in #rv_email_enc and is decrypted server-side
+                                             only at the point GenerateOtp sends/saves it. -->
+                                        <input type="hidden" id="rv_email_enc" />
                                     </div>
                                 </div>
 
@@ -240,8 +245,9 @@
                                         <div class="rv-mobile-input-wrap">
                                             <span class="rv-mobile-prefix">+91</span>
                                             <input type="text" class="rv-mobile-input" id="mobileInput"
-                                                   placeholder="98xxxxxxxx" maxlength="10">
-                                            <i class="bi bi-pencil rv-mobile-edit"></i>
+                                                   placeholder="98xxxxxxxx" maxlength="10" readonly>
+                                            <!-- Same as email above — masked here, real value encrypted in #mobileInput_enc. -->
+                                            <input type="hidden" id="mobileInput_enc" />
                                         </div>
                                     </div>
                                 </div>

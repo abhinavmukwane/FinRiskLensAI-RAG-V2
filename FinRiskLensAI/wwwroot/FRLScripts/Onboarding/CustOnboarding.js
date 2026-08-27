@@ -232,9 +232,15 @@ $(function () {
                                 $("#rv_panNo").text(d.pan);
                                 $("#hdnMsmeEnquiryID").val(d.msmeEnquiryID);
 
+                                // d.email/d.mobile are already masked server-side (GetUdyamDetails) —
+                                // the real values only ever exist here encrypted, in the hidden
+                                // fields, and are decrypted server-side at GenerateOtp.
                                 $("#rv_email").val(d.email);
                                 $("#mobileInput").val(d.mobile);
+                                $("#rv_email_enc").val(response.emailEnc);
+                                $("#mobileInput_enc").val(response.mobileEnc);
                                 $("#rv_address").text(d.address);
+                                checkProceedEnabled();
 
                                 // Show Step 2 only after data is loaded
                                 $('#fetchLoader').hide();
@@ -292,15 +298,14 @@ $(function () {
     }
 
     // ---------- REVIEW STEP: enable Proceed button ----------
+    // Mobile is read-only and shows the masked value (98******21), so it can
+    // no longer be regex-validated as raw digits — the encrypted hidden field
+    // being populated (from a successful Udyam fetch) is the real signal.
     function checkProceedEnabled() {
-        const mobileOk = /^\d{10}$/.test($('#mobileInput').val().trim());
+        const mobileOk = !!$('#mobileInput_enc').val();
         const consentOk = $('#consentCheck').is(':checked');
         $('#btnProceedToOtp').prop('disabled', !(mobileOk && consentOk));
     }
-    $('#mobileInput').on('input', function () {
-        this.value = this.value.replace(/[^0-9]/g, '');
-        checkProceedEnabled();
-    });
     $('#consentCheck').on('change', checkProceedEnabled);
 
 
@@ -310,6 +315,9 @@ $(function () {
         var model = {
             MsmeEnquiryID: $('#hdnMsmeEnquiryID').val(),
             UdyamNumber: $('#rv_udyam_number').text().trim(),
+            // Masked display values — the server ignores these in favor of
+            // emailEnc/mobileEnc below whenever they're present, decrypting
+            // the real values only at the point of sending/saving them.
             MobileNumber: $('#mobileInput').val(),
             Email: $('#rv_email').val(),
             GstinNumber: $('#rv_gstnNumber').text().trim(),
@@ -322,7 +330,11 @@ $(function () {
         $.ajax({
             url: '/Onboarding/GenerateOtp',
             type: 'POST',
-            data: { model, nameOfEnterprise, theme: (localStorage.getItem('frl-theme') || 'theme1') },
+            data: {
+                model, nameOfEnterprise, theme: (localStorage.getItem('frl-theme') || 'theme1'),
+                emailEnc: $('#rv_email_enc').val(),
+                mobileEnc: $('#mobileInput_enc').val()
+            },
             success: function (response) {
                 $btn.prop('disabled', false)
                     .html('<i class="bi bi-send me-1"></i> Proceed & Send OTP');
@@ -553,6 +565,8 @@ $(function () {
         }
         var model = {
             MsmeEnquiryID: $('#hdnMsmeEnquiryID').val(),
+            // Masked — server decrypts emailEnc/mobileEnc below and uses that
+            // for the actual OTP match + saved registration record.
             Email: $("#rv_email").val(),
             MobileNumber: $("#mobileInput").val(),
             OTP: code
@@ -563,7 +577,10 @@ $(function () {
         $.ajax({
             url: "/Onboarding/FetchUserOTPDet",
             type: "POST",
-            data: model,
+            data: $.extend({}, model, {
+                emailEnc: $('#rv_email_enc').val(),
+                mobileEnc: $('#mobileInput_enc').val()
+            }),
             success: function (res) {
                 $btn.prop("disabled", false)
                     .html('<i class="bi bi-check-circle me-1"></i> Verify & Continue');
@@ -655,12 +672,5 @@ $(function () {
 
 });
 
-$(document).on("click", ".rv-mobile-edit", function () {
-
-    var $input = $(this).closest(".rv-mobile-input-wrap").find(".rv-mobile-input");
-
-    $input.prop("disabled", false);
-    $input.focus();
-
-    $(this).addClass("d-none");
-});
+// Email/Mobile in Contact Details are read-only, masked display fields —
+// no edit-in-place affordance any more (pencil icon removed from the view).

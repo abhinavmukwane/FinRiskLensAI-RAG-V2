@@ -169,7 +169,14 @@
                 document.getElementById('reAnalyzeStatus').textContent = 'Re-analyzing with the latest data…';
                 try {
                     const resp = await fetch('/api/msme-data/@Model.Uan/analyze?force=true', { method: 'POST' });
-                    if (resp.ok) { location.reload(); }
+                    if (resp.ok) {
+                        // Best-effort — an email hiccup should never block the reload.
+                        try {
+                            const theme = localStorage.getItem('frl-theme') || 'theme1';
+                            await fetch('/Dashboard/SendFinancialHealthReportEmail?theme=' + encodeURIComponent(theme), { method: 'POST' });
+                        } catch (e) { /* ignore */ }
+                        location.reload();
+                    }
                     else { document.getElementById('reAnalyzeStatus').textContent = 'Failed: ' + await resp.text(); this.disabled = false; }
                 } catch (e) { document.getElementById('reAnalyzeStatus').textContent = 'Error: ' + e; this.disabled = false; }
             });

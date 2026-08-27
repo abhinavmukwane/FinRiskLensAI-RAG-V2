@@ -155,10 +155,30 @@ namespace FinRiskLensAI.Controllers
             {
                 var result = await _onboardingService.GetUdyamDetails(uan);
 
+                string? emailEnc = null;
+                string? mobileEnc = null;
+
+                if (result.Result == tflResultType.tflSuccess && result.Data != null)
+                {
+                    // Encrypt the real values for the client's hidden fields first,
+                    // then overwrite the model's own Email/Mobile with the masked
+                    // display strings — the real values must never reach the page
+                    // in plain text, only ever masked (view) or encrypted (hidden).
+                    if (!string.IsNullOrWhiteSpace(result.Data.Email))
+                        emailEnc = _encryption.EncryptString(result.Data.Email);
+                    if (!string.IsNullOrWhiteSpace(result.Data.Mobile))
+                        mobileEnc = _encryption.EncryptString(result.Data.Mobile);
+
+                    result.Data.Email = Universal.MaskEmail(result.Data.Email);
+                    result.Data.Mobile = Universal.MaskMobile(result.Data.Mobile);
+                }
+
                 return Json(new
                 {
                     status = result.Result == tflResultType.tflSuccess,
                     data = result.Data,
+                    emailEnc,
+                    mobileEnc,
                     message = result.Message
                 });
             }
@@ -174,10 +194,18 @@ namespace FinRiskLensAI.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> GenerateOtp(UserRegistrationModel model, string nameOfEnterprise, string theme)
+        public async Task<IActionResult> GenerateOtp(UserRegistrationModel model, string nameOfEnterprise, string theme, string? emailEnc, string? mobileEnc)
         {
             try
             {
+                // Client only ever holds masked Email/MobileNumber — the real values
+                // travel encrypted (see GetUdyamDetails) and are decrypted here, right
+                // before the OTP is actually sent to the address / saved.
+                if (!string.IsNullOrWhiteSpace(emailEnc))
+                    model.Email = _encryption.DecryptString(emailEnc);
+                if (!string.IsNullOrWhiteSpace(mobileEnc))
+                    model.MobileNumber = _encryption.DecryptString(mobileEnc);
+
                 // 1. Basic validation (adjust as per your model)
                 if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.MobileNumber))
                 {
@@ -227,8 +255,16 @@ namespace FinRiskLensAI.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> FetchUserOTPDet(UserOtpModel model)
+        public async Task<IActionResult> FetchUserOTPDet(UserOtpModel model, string? emailEnc, string? mobileEnc)
         {
+            // Client only ever holds masked Email/MobileNumber — the real values
+            // travel encrypted (see GetUdyamDetails) and are decrypted here, right
+            // before they're used for the OTP match and the saved registration.
+            if (!string.IsNullOrWhiteSpace(emailEnc))
+                model.Email = _encryption.DecryptString(emailEnc);
+            if (!string.IsNullOrWhiteSpace(mobileEnc))
+                model.MobileNumber = _encryption.DecryptString(mobileEnc);
+
             var result = await _onboardingService.FetchUserOTPDet(model);
             if (result.Result != tflResultType.tflSuccess)
             {
