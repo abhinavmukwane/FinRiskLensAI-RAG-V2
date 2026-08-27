@@ -536,6 +536,10 @@
                 const res = await resp.json();
                 if (res.status) {
                     status.innerHTML = '<span class="text-success">' + res.message + ' Redirecting…</span>';
+                    // Best-effort — fires before navigating away; no-ops if a score
+                    // hasn't been computed yet (nothing to email on a first fetch).
+                    const theme = localStorage.getItem('frl-theme') || 'theme1';
+                    fetch('/Dashboard/SendFinancialHealthReportEmail?theme=' + encodeURIComponent(theme), { method: 'POST' }).catch(() => {});
                     setTimeout(() => window.location.href = '/Dashboard/FinancialHealthCard', 1200);
                 } else {
                     status.innerHTML = '<span class="text-danger">' + res.message + '</span>';

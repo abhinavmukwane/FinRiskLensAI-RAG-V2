@@ -250,6 +250,83 @@ namespace FinRiskLensAI.Controllers
         // common IStaticResponseService over m_StaticResponces (MCAResponce/DINResponce).
 
         /// <summary>
+        /// Sends the "report ready" email for the logged-in MSME's current score.
+        /// Called explicitly by the client — fetchGstrBtn (CustDashboard) and
+        /// reAnalyzeBtn (Financial Health Card) — never from a GET/page load, so
+        /// simply viewing or refreshing the card never sends an email. A no-op
+        /// (status: false) when there's no score yet, e.g. right after fetching
+        /// GSTR data but before the first analysis has run.
+        /// <para>
+        /// <paramref name="theme"/> comes from the caller's own
+        /// localStorage.getItem('frl-theme') — that's the only reliable source
+        /// for "what theme is this browser actually showing" (see theme.js);
+        /// nothing server-side (session/cookie) tracks it.
+        /// </para>
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> SendFinancialHealthReportEmail(string? theme, CancellationToken ct)
+        {
+            theme = string.Equals(theme, "theme2", StringComparison.OrdinalIgnoreCase) ? "theme2" : "theme1";
+
+            var user = HttpContext.Session.GetCurrentUser();
+            var uan = user?.UdyamNumber?.Trim();
+            if (string.IsNullOrWhiteSpace(uan))
+                return Json(new { status = false, message = "No Udyam number on this account." });
+
+            if (string.IsNullOrWhiteSpace(user!.Email))
+            {
+                _logger.LogWarning("Report-ready email skipped for {Uan} — no email on session user.", uan);
+                return Json(new { status = false, message = "No email on file." });
+            }
+
+            try
+            {
+                var result = await _analysis.GetResultAsync(uan, ct);
+                if (result == null)
+                    return Json(new { status = false, message = "No score computed yet." });
+
+                var udyamJson = await _store.DownloadAsync(uan, MsmeDataFiles.Udyam, ct);
+                var enterpriseName = udyamJson != null
+                    ? JObject.Parse(udyamJson).SelectToken("main_details.name_of_enterprise")?.Value<string>()
+                    : null;
+
+                string DimText(string name)
+                {
+                    var d = result.Dimensions.FirstOrDefault(x =>
+                        string.Equals(x.Dimension, name, StringComparison.OrdinalIgnoreCase));
+                    return d == null ? "N/A" : $"{d.Score:0}/{d.MaxPoints:0}";
+                }
+
+                var sent = await _emailService.SendReportReadyEmailAsync(
+                    toEmail: user.Email,
+                    recipientName: user.NameOfEnterprise,
+                    businessName: enterpriseName ?? uan,
+                    financialHealthScore: (int)Math.Round(result.OverallScore),
+                    riskBand: result.ScoreBand.ToString(),
+                    reportDate: result.ComputedAt.ToString("dd MMM yyyy"),
+                    reportUrl: "",
+                    metric1Label: "Revenue Vitality",
+                    metric1Value: DimText("Revenue Vitality"),
+                    metric2Label: "Cash Flow Health",
+                    metric2Value: DimText("Cash Flow Health"),
+                    metric3Label: "Compliance Quotient",
+                    metric3Value: DimText("Compliance Quotient"),
+                    theme: theme,
+                    ct: ct);
+
+                if (!sent)
+                    _logger.LogWarning("Report-ready email failed to send for {Uan}.", uan);
+
+                return Json(new { status = sent, message = sent ? "Report email sent." : "Could not send the email." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed sending report-ready email for {Uan}", uan);
+                return Json(new { status = false, message = "Something went wrong sending the email." });
+            }
+        }
+
+        /// <summary>
         /// Financial Health Card — renders the ML risk analysis result for the
         /// logged-in MSME only. The UAN is taken from the authenticated session
         /// (never from the request), so a user can only ever see their own card.
@@ -257,9 +334,6 @@ namespace FinRiskLensAI.Controllers
         [HttpGet]
         public async Task<IActionResult> FinancialHealthCard(CancellationToken ct)
         {
-            var theme = HttpContext.Session.GetString("frl-theme");
-            if (string.IsNullOrWhiteSpace(theme))theme = "theme1";
-
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
             var model = new FinancialHealthCardViewModel { Uan = uan?.Trim() };
 
@@ -281,66 +355,9 @@ namespace FinRiskLensAI.Controllers
                     model.EnterpriseName = JObject.Parse(udyamJson)
                         .SelectToken("main_details.name_of_enterprise")?.Value<string>();
 
-
-                if (model.Result != null)
-                {
-                    var emailSentKey = $"ReportEmailSent_{model.Uan}_{model.Result.ComputedAt.Ticks}";
-                    if (HttpContext.Session.GetString(emailSentKey) == null)
-                    {
-                        try
-                        {
-                            var recipientEmail = HttpContext.Session.GetCurrentUser()?.Email;
-                            var recipientName = HttpContext.Session.GetCurrentUser()?.NameOfEnterprise;
-
-                            if (!string.IsNullOrWhiteSpace(recipientEmail))
-                            {
-                                //var reportUrl = Url.Action(
-                                //    "FinancialHealthCard", "FinancialHealthReport",
-                                //    new { uan = model.Uan }, Request.Scheme)!;
-
-                                string DimText(string name)
-                                {
-                                    var d = model.Result.Dimensions.FirstOrDefault(x =>
-                                        string.Equals(x.Dimension, name, StringComparison.OrdinalIgnoreCase));
-                                    return d == null ? "N/A" : $"{d.Score:0}/{d.MaxPoints:0}";
-                                }
-
-                                await _emailService.SendReportReadyEmailAsync(
-                                    toEmail: recipientEmail,
-                                    recipientName: recipientName,
-                                    businessName: model.EnterpriseName ?? model.Uan!,
-                                    financialHealthScore: (int)Math.Round(model.Result.OverallScore),
-                                    riskBand: model.Result.ScoreBand.ToString(),
-                                    reportDate: model.Result.ComputedAt.ToString("dd MMM yyyy"),
-                                    reportUrl: "",
-                                     metric1Label: "Revenue Vitality",
-                                     metric1Value: DimText("Revenue Vitality"),
-                                     metric2Label: "Cash Flow Health",
-                                     metric2Value: DimText("Cash Flow Health"),
-                                     metric3Label: "Compliance Quotient",
-                                     metric3Value: DimText("Compliance Quotient"),
-                                    theme: theme,
-                                    ct: ct);
-
-                                HttpContext.Session.SetString(emailSentKey, "1");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Report-ready email skipped for {Uan} — no email on session user.", model.Uan);
-                            }
-                        }
-                        catch (Exception mailEx)
-                        {
-                            // Never let an email failure break the card view
-                            _logger.LogError(mailEx, "Failed sending report-ready email for {Uan}", model.Uan);
-                        }
-                    }
-                    else
-                    {
-                        _logger.LogInformation("Report-ready email already sent this session for {Uan}, skipping.", model.Uan);
-                    }
-                }
-
+                // Report-ready email is sent only from explicit user actions — see
+                // SendFinancialHealthReportEmail, called by fetchGstrBtn/reAnalyzeBtn.
+                // Loading or refreshing this page must never trigger it.
             }
             catch (OperationCanceledException)
             {
