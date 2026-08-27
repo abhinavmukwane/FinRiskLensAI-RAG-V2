@@ -10,10 +10,16 @@ using Microsoft.AspNetCore.Mvc;
 namespace FinRiskLensAI.Controllers
 {
     /// <summary>
-    /// Bank-side portal: login, portfolio dashboard, onboarded-customer list and
-    /// the per-customer 360 view. Authentication is user id + password against
-    /// ADM_BankLogin, held in its own session slot (see BankAdminAuthorize).
+    /// Bank-side portal: portfolio dashboard, onboarded-customer list and the
+    /// per-customer 360 view.
+    /// <para>
+    /// Every action here requires an authenticated bank user, so the guard sits on
+    /// the class rather than being repeated per action — there is no anonymous
+    /// surface to carve out. Sign-in and sign-out live in AuthController alongside
+    /// the customer login (<c>Auth/BankLogin</c>, <c>Auth/BankLogout</c>).
+    /// </para>
     /// </summary>
+    [BankAdminAuthorize]
     public class BankAdminController : Controller
     {
         private readonly IBankAdminService _bankAdmin;
@@ -30,50 +36,7 @@ namespace FinRiskLensAI.Controllers
             _logger = logger;
         }
 
-        /// <summary>Bank login screen. Already signed in → straight to the dashboard.</summary>
-        [HttpGet]
-        public IActionResult Login()
-        {
-            if (HttpContext.Session.GetCurrentBankUser() != null)
-                return RedirectToAction(nameof(Dashboard));
-
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string userId, string password, CancellationToken ct)
-        {
-            var result = await _bankAdmin.ValidateLoginAsync(userId, password, ct);
-
-            if (result.Result != tflResultType.tflUserAuthenticated || result.Data == null)
-            {
-                _logger.LogWarning("Bank login failed for {UserId}: {Message}", userId, result.Message);
-                return Json(new { status = false, message = result.Message });
-            }
-
-            result.Data.ClientIP = await IP_Get_Service.GetClientIPAddressAsync(HttpContext);
-            HttpContext.Session.SetCurrentBankUser(result.Data);
-
-            _logger.LogInformation("Bank user {UserId} signed in from {Ip}", result.Data.UserId, result.Data.ClientIP);
-
-            return Json(new
-            {
-                status = true,
-                message = "Login successful.",
-                redirectUrl = Url.Action(nameof(Dashboard), "BankAdmin")
-            });
-        }
-
-        [HttpGet]
-        public IActionResult Logout()
-        {
-            HttpContext.Session.Remove(SessionKeys.CurrentBankUser);
-            return RedirectToAction(nameof(Login));
-        }
-
         /// <summary>Portfolio dashboard — KPIs and charts across all onboarded MSMEs.</summary>
-        [BankAdminAuthorize]
         [HttpGet]
         public async Task<IActionResult> Dashboard(CancellationToken ct)
         {
@@ -91,7 +54,6 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>Searchable, filterable list of every onboarded MSME.</summary>
-        [BankAdminAuthorize]
         [HttpGet]
         public async Task<IActionResult> Customers(
             string? search, string? band, string? state, string? status,
@@ -132,7 +94,6 @@ namespace FinRiskLensAI.Controllers
         /// anyone else's file.
         /// </para>
         /// </summary>
-        [BankAdminAuthorize]
         [HttpGet]
         public async Task<IActionResult> Customer(string uan, string? tab, CancellationToken ct)
         {

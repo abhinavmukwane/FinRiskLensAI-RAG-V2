@@ -17,7 +17,7 @@ namespace FinRiskLensAI.Utility
 
             if (user == null || user.AdmBankLoginID <= 0 || string.IsNullOrEmpty(user.UserId))
             {
-                context.Result = new RedirectToActionResult("Login", "BankAdmin", null);
+                context.Result = new RedirectToActionResult("BankLogin", "Auth", null);
             }
         }
     }

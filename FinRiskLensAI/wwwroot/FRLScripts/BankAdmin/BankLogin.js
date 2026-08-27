@@ -1,4 +1,4 @@
-// Bank portal login — client-side validation + AJAX post to /BankAdmin/Login.
+// Bank portal login — client-side validation + AJAX post to /Auth/BankLogin.
 $(function () {
 
     var $form = $("#bankLoginForm");
@@ -62,7 +62,7 @@ $(function () {
         $btn.prop("disabled", true).addClass("loading");
 
         $.ajax({
-            url: "/BankAdmin/Login",
+            url: "/Auth/BankLogin",
             type: "POST",
             data: {
                 userId: userId,

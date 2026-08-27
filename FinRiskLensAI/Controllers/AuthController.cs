@@ -1,6 +1,7 @@
 ﻿using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces.ICommon;
+using FinRiskLensAI.Core.Interfaces.IServices.Admin;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
 using FinRiskLensAI.Core.Interfaces.IServices.OnBoarding;
 using FinRiskLensAI.Core.Models.User_Activity;
@@ -13,22 +14,86 @@ namespace FinRiskLensAI.Controllers
         private readonly IEmailService _emailService;
         private readonly IEncryption _encryption;
         private readonly IOnboardingService _onboardingService;
+        private readonly IBankAdminService _bankAdmin;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IOnboardingService onboardingService, IEmailService emailService, IEncryption encryption)
+        public AuthController(IOnboardingService onboardingService, IEmailService emailService,
+            IEncryption encryption, IBankAdminService bankAdmin, ILogger<AuthController> logger)
         {
             _onboardingService = onboardingService;
             _emailService = emailService;
             _encryption = encryption;
+            _bankAdmin = bankAdmin;
+            _logger = logger;
         }
+
+        // ─────────────────────────────────────────────────────────────
+        //  MSME (customer) — email OTP
+        // ─────────────────────────────────────────────────────────────
+
         public IActionResult CustLogin()
         {
             return View();
         }
+
         public ActionResult Logout()
         {
             HttpContext.Session.Clear();
 
             return RedirectToAction("Index", "Home");
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  Bank portal — user id + password
+        //  Kept here with the other sign-in surfaces so BankAdminController
+        //  can carry [BankAdminAuthorize] at class level and hold nothing
+        //  but authenticated screens.
+        // ─────────────────────────────────────────────────────────────
+
+        /// <summary>Bank login screen. Already signed in → straight to the dashboard.</summary>
+        [HttpGet]
+        public IActionResult BankLogin()
+        {
+            if (HttpContext.Session.GetCurrentBankUser() != null)
+                return RedirectToAction("Dashboard", "BankAdmin");
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BankLogin(string userId, string password, CancellationToken ct)
+        {
+            var result = await _bankAdmin.ValidateLoginAsync(userId, password, ct);
+
+            if (result.Result != tflResultType.tflUserAuthenticated || result.Data == null)
+            {
+                _logger.LogWarning("Bank login failed for {UserId}: {Message}", userId, result.Message);
+                return Json(new { status = false, message = result.Message });
+            }
+
+            result.Data.ClientIP = await IP_Get_Service.GetClientIPAddressAsync(HttpContext);
+            HttpContext.Session.SetCurrentBankUser(result.Data);
+
+            _logger.LogInformation("Bank user {UserId} signed in from {Ip}", result.Data.UserId, result.Data.ClientIP);
+
+            return Json(new
+            {
+                status = true,
+                message = "Login successful.",
+                redirectUrl = Url.Action("Dashboard", "BankAdmin")
+            });
+        }
+
+        /// <summary>
+        /// Signs the bank user out. Removes only the bank slot rather than clearing
+        /// the whole session, so the two portals stay independent.
+        /// </summary>
+        [HttpGet]
+        public IActionResult BankLogout()
+        {
+            HttpContext.Session.Remove(SessionKeys.CurrentBankUser);
+            return RedirectToAction(nameof(BankLogin));
         }
 
         [HttpPost]
