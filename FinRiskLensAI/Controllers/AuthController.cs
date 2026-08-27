@@ -38,7 +38,7 @@ namespace FinRiskLensAI.Controllers
 
         public ActionResult Logout()
         {
-            HttpContext.Session.Clear();
+            HttpContext.Session.Remove(SessionKeys.CurrentUser);
 
             return RedirectToAction("Index", "Home");
         }
