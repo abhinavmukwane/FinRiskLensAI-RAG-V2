@@ -86,13 +86,25 @@
                     </div>
                 </div>
 
-                <div class="verify-card">
+                <div class="verify-card mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">ITR</h6>
                             <small class="text-muted">Income Tax Return Verification</small>
                         </div>
                         <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#itrModal" data-title="Fetch ITR Details">
+                            Fetch Details
+                        </button>
+                    </div>
+                </div>
+
+                <div class="verify-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">MCA</h6>
+                            <small class="text-muted">Corporate Affairs &amp; Director Verification</small>
+                        </div>
+                        <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#mcaModal">
                             Fetch Details
                         </button>
                     </div>
@@ -156,6 +168,24 @@
                             @* <i class="bi bi-info-circle-fill text-primary mt-1"></i> *@
                             <span>
                                 Verify declared income, tax filings, and financial stability.
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Corporate Affairs (MCA) -->
+                <div class="card shadow-sm border-0" style="max-width:280px; background:var(--brand-tint-bg-2); border-radius:15px;">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-building-check text-info fs-4"></i>
+                            <span class="fw-bold text-dark text-uppercase small">
+                                Corporate Affairs
+                            </span>
+                        </div>
+
+                        <p class="card-text text-muted mb-0 d-flex gap-2" style="font-size:0.82rem; line-height:1.6;">
+                            <span>
+                                Confirm company status, paid-up capital, registered charges and director DIN records.
                             </span>
                         </p>
                     </div>
@@ -397,6 +427,52 @@
 
 </div>
 
+@* ===================== MCA — Corporate Affairs & Directors ===================== *@
+<div class="modal fade" id="mcaModal" tabindex="-1" data-bs-backdrop="static"
+     aria-labelledby="mcaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content verification-modal">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title" id="mcaModalLabel">Fetch MCA Details</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Company Name</label>
+                    <input type="text" class="form-control custom-input" value="@enterpriseName" disabled readonly>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Udyam Registration Number</label>
+                    <input type="text" class="form-control custom-input" value="@currentUser?.UdyamNumber" disabled readonly>
+                </div>
+
+                <div class="consent-box">
+                    <div class="form-check">
+                        <input class="form-check-input rv-checkbox" type="checkbox" id="mcaConsent">
+                        <label class="form-check-label" for="mcaConsent">
+                            I authorize the platform to securely retrieve my
+                            <strong>Ministry of Corporate Affairs (MCA)</strong> company record
+                            and the <strong>DIN details of my directors</strong> for verification
+                            purposes. I understand this data will be used only for credit
+                            assessment and handled securely.
+                        </label>
+                    </div>
+                </div>
+
+                <div id="mcaFetchStatus" class="small mt-2"></div>
+            </div>
+
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" id="fetchMcaBtn" class="btn btn-theme w-100">Fetch MCA Details</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="aaConsentModal" tabindex="-1" aria-labelledby="aaConsentModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content verification-modal">
@@ -544,6 +620,44 @@
             } catch (e) {
                 status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
                 this.disabled = false;
+            }
+        });
+
+        // ---------- Fetch MCA: validate consent, then seed the MCA + DIN records ----------
+        document.getElementById('fetchMcaBtn').addEventListener('click', async function () {
+            const consent = document.getElementById('mcaConsent');
+            const status = document.getElementById('mcaFetchStatus');
+            status.textContent = '';
+
+            consent.classList.toggle('is-invalid', !consent.checked);
+            if (!consent.checked) {
+                status.innerHTML = '<span class="text-danger">Please accept the consent to continue.</span>';
+                return;
+            }
+
+            this.disabled = true;
+            status.innerHTML = '<span class="text-muted">Fetching MCA &amp; director details…</span>';
+            try {
+                const resp = await fetch('/Dashboard/SeedMcaData');
+                const res = await resp.json();
+                if (res.status) {
+                    status.innerHTML = '<span class="text-success">' + res.message + ' Redirecting…</span>';
+                    setTimeout(() => window.location.href = '/Mca/MCADetails', 1200);
+                } else {
+                    status.innerHTML = '<span class="text-danger">' + res.message + '</span>';
+                    this.disabled = false;
+                }
+            } catch (e) {
+                status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
+                this.disabled = false;
+            }
+        });
+
+        // Clear the consent error as soon as the user ticks it
+        document.getElementById('mcaConsent').addEventListener('change', function () {
+            if (this.checked) {
+                this.classList.remove('is-invalid');
+                document.getElementById('mcaFetchStatus').textContent = '';
             }
         });
 

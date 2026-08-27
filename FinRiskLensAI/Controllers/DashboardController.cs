@@ -107,15 +107,13 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>
-        /// Seeds the logged-in MSME's blob folder: the DUMMY-DATA GST template
-        /// (rewriting the template filer's GSTIN/PAN to the user's so the copied
-        /// returns validate as theirs), the MCA response, and one DIN file per
-        /// director.
+        /// Seeds the logged-in MSME's blob folder with the DUMMY-DATA GST template,
+        /// rewriting the template filer's GSTIN/PAN to the user's so the copied
+        /// returns validate as theirs.
         /// <para>
-        /// Each of the three parts guards itself, so calling this again is safe and
-        /// fills in only what is missing. That matters for MSMEs onboarded before
-        /// the MCA/DIN step existed: they already have GST files, and an early
-        /// return on "GST present" would leave them without MCA/DIN forever.
+        /// GST only — MCA and DIN are fetched separately from their own card on the
+        /// dashboard (see <see cref="SeedMcaData"/>). Safe to call again: it copies
+        /// only what is missing.
         /// </para>
         /// </summary>
         [HttpGet]
@@ -175,75 +173,115 @@ namespace FinRiskLensAI.Controllers
                 }
             }
 
-            // ── 2. MCA response — same company name as the profile, dynamic charges.
-            string? mcaJson;
-            var mcaCreated = false;
-            if (!await _store.ExistsAsync(uan, MsmeDataFiles.Mca, ct))
-            {
-                var companyName = user.NameOfEnterprise;
-                if (string.IsNullOrWhiteSpace(companyName))
-                {
-                    var udyamJson = await _store.DownloadAsync(uan, MsmeDataFiles.Udyam, ct);
-                    companyName = udyamJson != null
-                        ? JObject.Parse(udyamJson).SelectToken("main_details.name_of_enterprise")?.Value<string>()
-                        : uan;
-                }
-                mcaJson = _dummyData.GetDummyMca(uan, companyName ?? uan, user.PanNumber);
-                await _store.UploadAsync(uan, MsmeDataFiles.Mca, mcaJson, ct);
-                mcaCreated = true;
-            }
-            else
-            {
-                mcaJson = await _store.DownloadAsync(uan, MsmeDataFiles.Mca, ct);
-            }
-
-            // ── 3. DIN verification files — one per director from the MCA response,
-            //      stored as DIN_<din>.json (e.g. DIN_85111678.json) so each director's
-            //      profile can be pulled by DIN. Skips directors without a DIN and any
-            //      file already present.
-            var dinCreated = 0;
-            if (!string.IsNullOrWhiteSpace(mcaJson))
-            {
-                var directors = JsonConvert.DeserializeObject<McaResponseModel>(mcaJson)?
-                    .message?.details?.directors ?? new List<McaResponseModel.McaDirectorModel>();
-
-                foreach (var d in directors)
-                {
-                    var din = d.din_number?.Trim();
-                    if (string.IsNullOrWhiteSpace(din)) continue;
-
-                    var dinFile = MsmeDataFiles.DinFile(din);
-                    if (await _store.ExistsAsync(uan, dinFile, ct)) continue;
-
-                    var dinJson = _dummyData.GetDummyDin(din, d.director_name ?? string.Empty, user.PanNumber);
-                    await _store.UploadAsync(uan, dinFile, dinJson, ct);
-                    dinCreated++;
-                }
-            }
-
             _logger.LogInformation(
-                "Seed {Uan}: {Copied} GST file(s) copied (already present: {GstPresent}), MCA created: {Mca}, DIN files created: {Din}.",
-                uan, copied, gstPresent, mcaCreated, dinCreated);
+                "Seed GST {Uan}: {Copied} file(s) copied (already present: {GstPresent}).",
+                uan, copied, gstPresent);
 
-            // Report what actually changed, so a repeat click is not silently a no-op.
-            var parts = new List<string>();
-            if (copied > 0) parts.Add($"{copied} GST file(s) copied");
-            else if (gstPresent) parts.Add("GST data already present");
-            if (mcaCreated) parts.Add("MCA record created");
-            if (dinCreated > 0) parts.Add($"{dinCreated} DIN record(s) created");
-            if (gstError != null) parts.Add($"GST copy skipped — {gstError}");
-
-            var nothingChanged = copied == 0 && !mcaCreated && dinCreated == 0;
-            if (nothingChanged && gstError == null) parts.Add("nothing new to fetch");
+            if (gstError != null)
+                return Json(new { status = false, copied, message = gstError });
 
             return Json(new
             {
-                status = gstError == null,
+                status = true,
                 copied,
-                mcaCreated,
-                dinCreated,
-                message = string.Join("; ", parts) + "."
+                message = copied > 0
+                    ? $"Copied {copied} GST file(s)."
+                    : "GST data already present."
             });
+        }
+
+        /// <summary>
+        /// Fetches the MSME's Corporate Affairs record: the MCA company response plus
+        /// one DIN verification file per director, written into the MSME's blob folder
+        /// as <c>mca.json</c> and <c>DIN_&lt;din&gt;.json</c>.
+        /// <para>
+        /// DIN files are derived from the directors listed in the MCA response, so MCA
+        /// is always generated (or read back) first. Both parts guard on the file
+        /// already existing, so calling this again only fills what is missing.
+        /// </para>
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> SeedMcaData(CancellationToken ct)
+        {
+            var user = HttpContext.Session.GetCurrentUser();
+            var uan = user?.UdyamNumber;
+            if (string.IsNullOrWhiteSpace(uan))
+                return Json(new { status = false, message = "No Udyam number in session." });
+
+            try
+            {
+                // ── 1. MCA response — same company name as the profile, dynamic charges.
+                string? mcaJson;
+                var mcaCreated = false;
+
+                if (!await _store.ExistsAsync(uan, MsmeDataFiles.Mca, ct))
+                {
+                    var companyName = user!.NameOfEnterprise;
+                    if (string.IsNullOrWhiteSpace(companyName))
+                    {
+                        var udyamJson = await _store.DownloadAsync(uan, MsmeDataFiles.Udyam, ct);
+                        companyName = udyamJson != null
+                            ? JObject.Parse(udyamJson).SelectToken("main_details.name_of_enterprise")?.Value<string>()
+                            : uan;
+                    }
+
+                    mcaJson = _dummyData.GetDummyMca(uan, companyName ?? uan, user.PanNumber);
+                    await _store.UploadAsync(uan, MsmeDataFiles.Mca, mcaJson, ct);
+                    mcaCreated = true;
+                }
+                else
+                {
+                    mcaJson = await _store.DownloadAsync(uan, MsmeDataFiles.Mca, ct);
+                }
+
+                // ── 2. One DIN file per director listed on the MCA response.
+                var dinCreated = 0;
+                var directorCount = 0;
+
+                if (!string.IsNullOrWhiteSpace(mcaJson))
+                {
+                    var directors = JsonConvert.DeserializeObject<McaResponseModel>(mcaJson)?
+                        .message?.details?.directors ?? new List<McaResponseModel.McaDirectorModel>();
+                    directorCount = directors.Count;
+
+                    foreach (var d in directors)
+                    {
+                        var din = d.din_number?.Trim();
+                        if (string.IsNullOrWhiteSpace(din)) continue;
+
+                        var dinFile = MsmeDataFiles.DinFile(din);
+                        if (await _store.ExistsAsync(uan, dinFile, ct)) continue;
+
+                        var dinJson = _dummyData.GetDummyDin(din, d.director_name ?? string.Empty, user!.PanNumber);
+                        await _store.UploadAsync(uan, dinFile, dinJson, ct);
+                        dinCreated++;
+                    }
+                }
+
+                _logger.LogInformation(
+                    "Seed MCA {Uan}: MCA created {Mca}, {Directors} director(s), {Din} DIN file(s) created.",
+                    uan, mcaCreated, directorCount, dinCreated);
+
+                // Say what actually changed, so a repeat click is never a silent no-op.
+                var parts = new List<string>();
+                parts.Add(mcaCreated ? "MCA record fetched" : "MCA record already present");
+                if (dinCreated > 0) parts.Add($"{dinCreated} director DIN record(s) fetched");
+                else if (directorCount > 0) parts.Add("DIN records already present");
+
+                return Json(new
+                {
+                    status = true,
+                    mcaCreated,
+                    dinCreated,
+                    directorCount,
+                    message = string.Join("; ", parts) + "."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "MCA seed failed for {Uan}", uan);
+                return Json(new { status = false, message = "Could not fetch the MCA details. Please try again." });
+            }
         }
 
         // MCADetails moved to McaController (/Mca/MCADetails), backed by the
