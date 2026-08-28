@@ -1,5 +1,6 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.DI;
 using FinRiskLensAI.Data.DI;
 using FinRiskLensAI.ML.DI;
@@ -9,6 +10,10 @@ using Serilog;
 using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Don't advertise the web server. Kestrel writes this header itself, below the
+// middleware pipeline, so it can only be suppressed here.
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 //Serilog
 builder.Host.UseSerilog((ctx, lc) => lc
@@ -82,13 +87,27 @@ builder.Services.AddSession(options =>
     options.Cookie.SameSite = SameSiteMode.Strict;           // no cross-site send
 });
 
+// HSTS — one year, subdomains included. The ASP.NET Core default is only 30
+// days; the hosting panel was also emitting its own header, which is why the
+// live site showed a duplicate Strict-Transport-Security. The app owns it now,
+// so the panel-level one must be turned off (see web.config).
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+    // Preload is deliberately left off: submitting to the preload list is hard
+    // to reverse, so enable it only once HTTPS is settled on every subdomain.
+});
+
 var app = builder.Build();
+
+// Security headers first, so static files and short-circuited responses get them too.
+app.UseSecurityHeaders(app.Configuration, app.Environment);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 

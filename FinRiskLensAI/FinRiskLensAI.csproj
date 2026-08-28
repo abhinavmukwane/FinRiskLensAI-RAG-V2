@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="web.config" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Views\Home\Index.cshtml~RF1af45f1.TMP" />
   </ItemGroup>
 
