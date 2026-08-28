@@ -1660,7 +1660,7 @@ img {
         min-width: 100px;
         position: relative;
         text-align: center;
-        padding-top: 18px;
+        /*padding-top: 18px;*/
     }
 
         .udyam-dashboard .timeline-step::before {
