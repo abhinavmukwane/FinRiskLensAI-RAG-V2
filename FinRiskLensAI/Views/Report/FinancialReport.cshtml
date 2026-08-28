@@ -1,5 +1,10 @@
+@model FinRiskLensAI.Models.FinancialReportViewModel
+@using FinRiskLensAI.Core.Models.Scoring
 @{
     Layout = null;
+    var r = Model.Result;
+    var u = Model.Udyam;
+    var entityName = Model.EnterpriseName ?? Model.Uan ?? "Your Enterprise";
 }
 
 <!DOCTYPE html>
@@ -7,7 +12,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Financial Health Report | UCN Fibrenet Private Limited</title>
+<title>Financial Health Report | @entityName</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
@@ -37,20 +42,17 @@
     </div>
 </div>
 
-<!-- ============ Quick nav ============ -->
-@* <div class="quicknav-wrap d-none d-md-block">
-    <div class="container" style="max-width:1220px;">
-        <div class="quicknav">
-            <a href="#snapshot">Snapshot</a>
-            <a href="#dimensions">Dimensions</a>
-            <a href="#lending">Lending</a>
-            <a href="#bank">Bank Statement</a>
-            <a href="#gst">GST Deep-Dive</a>
-            <a href="#risks">Strengths &amp; Risks</a>
-            <a href="#reco">Recommendations</a>
+@if (Model.LoadError != null || !Model.HasResult)
+{
+    <div class="container py-5" style="max-width:720px;">
+        <div class="fhc-card text-center py-5">
+            <i class="bi bi-hourglass-split" style="font-size:3rem;color:var(--brand-secondary);"></i>
+            <h5 class="fhc-title mt-3">Report not available</h5>
+            <p class="fhc-sub mb-0">@(Model.LoadError ?? "No score has been computed yet for this account.")</p>
         </div>
     </div>
-</div> *@
+    return;
+}
 
 <!-- ============ Letterhead ============ -->
 <div class="report-letterhead">
@@ -66,17 +68,20 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
             <div>
                 <div class="report-eyebrow">Financial Health Report</div>
-                <div class="report-entity">UCN Fibrenet Private Limited</div>
+                <div class="report-entity">@entityName</div>
                 <div class="report-meta-line">
-                    <span><i class="bi bi-patch-check"></i>UDYAM-MH-20-0067394</span>
-                    <span><i class="bi bi-broadcast"></i>Telecommunications · NIC 61</span>
-                    <span><i class="bi bi-clock-history"></i>Generated 04 Jul 2026, 06:46 UTC</span>
+                    <span><i class="bi bi-patch-check"></i>@Model.Uan</span>
+                    @if (r.Industry != null)
+                    {
+                        <span><i class="bi bi-broadcast"></i>@r.Industry.SectorName @(string.IsNullOrWhiteSpace(r.Industry.Nic2Digit) ? "" : $"· NIC {r.Industry.Nic2Digit}")</span>
+                    }
+                    <span><i class="bi bi-clock-history"></i>Generated @r.ComputedAt.ToString("dd MMM yyyy, HH:mm") UTC</span>
                 </div>
             </div>
             <div class="score-plate">
-                <div class="num">718</div>
+                <div class="num">@r.OverallScore.ToString("0")</div>
                 <div class="denom">SCORE OUT OF 1000</div>
-                <div class="band"><i class="bi bi-patch-check-fill"></i> Good</div>
+                <div class="band"><i class="bi bi-patch-check-fill"></i> @r.ScoreBand</div>
             </div>
         </div>
 
@@ -84,31 +89,32 @@
             <div class="col-6 col-md-3">
                 <div class="hero-kpi">
                     <div class="ic"><i class="bi bi-graph-up-arrow"></i></div>
-                    <div class="v">₹2.99 Cr</div>
+                    <div class="v">₹@FormatInr(r.Lending?.MonthlySales ?? 0)</div>
                     <div class="k">Avg Monthly GST Sales</div>
-                    <div class="d">6-month filing window</div>
+                    <div class="d">@(r.GstAnalysis?.MonthlySales.Count ?? 0)-month filing window</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="hero-kpi">
                     <div class="ic"><i class="bi bi-bank2"></i></div>
-                    <div class="v">₹6.14 Cr</div>
+                    <div class="v">₹@FormatInr(r.Lending?.TotalIndicativeEligibility ?? 0)</div>
                     <div class="k">Total Credit Eligibility</div>
                     <div class="d">Working capital + term</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
+                @{ var compliance = DimByName(r.Dimensions, "Compliance Quotient"); }
                 <div class="hero-kpi">
                     <div class="ic"><i class="bi bi-shield-check"></i></div>
-                    <div class="v">150 / 150</div>
+                    <div class="v">@(compliance != null ? $"{compliance.Score:0} / {compliance.MaxPoints:0}" : "N/A")</div>
                     <div class="k">Compliance Quotient</div>
-                    <div class="d">All GST returns filed</div>
+                    <div class="d">GST return filing history</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="hero-kpi">
                     <div class="ic"><i class="bi bi-database-check"></i></div>
-                    <div class="v">39</div>
+                    <div class="v">@(Model.Status?.FilesPresent.Count ?? 0)</div>
                     <div class="k">Data Files Analyzed</div>
                     <div class="d">GST · Bank · Udyam</div>
                 </div>
@@ -124,15 +130,46 @@
         <div class="fhc-card mb-4">
             <div class="fhc-section-label"><i class="bi bi-stars"></i>Executive Summary</div>
             <p class="exec-summary mb-0">
-                <strong>UCN Fibrenet Private Limited</strong> earns an overall Financial Health Score of
-                <strong>718 / 1000</strong>, placing it in the <strong>Good</strong> band. The business shows
-                <strong>strong compliance</strong> (150/150) with every expected GST return filed, healthy
-                <strong>cash-flow coverage</strong> (170/200) with a DSCR of 10.00x and 365 days of cash on hand, and
-                <strong>stable business fundamentals</strong> (134/150) backed by an established Udyam registration and
-                a diversified HSN mix. The main watch-item is <strong>banking penetration</strong> — GST-declared
-                turnover of ₹2.99 Cr/month is not fully mirrored in the consented bank account, so it's worth
-                confirming this is the primary operating account before finalising limits. No cross-source income
-                mismatch or credit-bureau adverse history was found; ITR financials were unavailable for this cycle.
+                <strong>@entityName</strong> earns an overall Financial Health Score of
+                <strong>@r.OverallScore.ToString("0") / 1000</strong>, placing it in the <strong>@r.ScoreBand</strong> band.
+                @{
+                    var strengths = r.Explanations.Where(e => e.Impact == ImpactDirection.Positive)
+                        .OrderByDescending(e => e.RelativeWeight).Take(2).ToList();
+                    var weakest = r.Dimensions.Where(d => d.MaxPoints > 0)
+                        .OrderBy(d => d.Score / d.MaxPoints).FirstOrDefault();
+                    var dscr = RatioByName(r.Lending?.Ratios, "DSCR (Debt Service Coverage)");
+                    var penetration = RatioByName(r.Lending?.Ratios, "Banking Penetration");
+                }
+                @if (strengths.Count > 0)
+                {
+                    <text>The business shows <strong>@strengths[0].Dimension.ToLowerInvariant()</strong> (@strengths[0].ExplanationText.ToLowerInvariant())</text>
+                    @if (strengths.Count > 1)
+                    {
+                        <text>, and <strong>@strengths[1].Dimension.ToLowerInvariant()</strong> (@strengths[1].ExplanationText.ToLowerInvariant())</text>
+                    }
+                    <text>. </text>
+                }
+                @if (dscr != null && dscr.Status != RatioStatus.NotAvailable)
+                {
+                    <text>Debt service coverage stands at <strong>@dscr.Display</strong> against a norm of @dscr.Benchmark. </text>
+                }
+                @if (weakest != null && weakest.MaxPoints > 0)
+                {
+                    var pct = Math.Round(weakest.Score / weakest.MaxPoints * 100);
+                    <text>The main watch-item is <strong>@weakest.Dimension.ToLowerInvariant()</strong> (@pct% of maximum)@(penetration != null && penetration.Status == RatioStatus.Weak ? " — banking penetration is low relative to declared GST sales, so it's worth confirming the consented account is the primary operating account" : "").</text>
+                }
+                @if (r.Anomaly.IsAnomalous)
+                {
+                    <text> A cross-source income mismatch was flagged (anomaly score @r.Anomaly.AnomalyScore.ToString("0.00")) and should be reviewed before finalising limits.</text>
+                }
+                else
+                {
+                    <text> No cross-source income mismatch was found.</text>
+                }
+                @if (r.Financials?.HasFinancials != true)
+                {
+                    <text> ITR financials were unavailable for this cycle.</text>
+                }
             </p>
         </div>
 
@@ -142,23 +179,23 @@
             <div class="col-lg-6">
                 <div class="fhc-card">
                     <div class="fhc-section-label"><i class="bi bi-building"></i>Entity Details</div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-signpost"></i></div><div><div class="k">Legal Name</div><div class="v">UCN Fibrenet Private Limited</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-diagram-2"></i></div><div><div class="k">Constitution</div><div class="v">Private Limited Company</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-patch-check"></i></div><div><div class="k">Udyam Registration</div><div class="v">UDYAM-MH-20-0067394</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-broadcast-pin"></i></div><div><div class="k">Industry / NIC Code</div><div class="v">Telecommunications — NIC 61</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-geo-alt"></i></div><div><div class="k">State Jurisdiction</div><div class="v">Maharashtra (GST state code 27)</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-graph-up"></i></div><div><div class="k">Sector Outlook</div><div class="v">Favourable · risk weight 0.75</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-signpost"></i></div><div><div class="k">Legal Name</div><div class="v">@entityName</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-diagram-2"></i></div><div><div class="k">Constitution</div><div class="v">@(u?.OrganizationType ?? "Not available")</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-patch-check"></i></div><div><div class="k">Udyam Registration</div><div class="v">@Model.Uan</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-broadcast-pin"></i></div><div><div class="k">Industry / NIC Code</div><div class="v">@(r.Industry != null ? $"{r.Industry.SectorName} — NIC {r.Industry.Nic2Digit ?? "n/a"}" : "Not classified")</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-geo-alt"></i></div><div><div class="k">State Jurisdiction</div><div class="v">@(u?.State ?? "Not available")@(!string.IsNullOrWhiteSpace(u?.GstinMasked) && u!.GstinMasked!.Length >= 2 ? $" (GST state code {u.GstinMasked.Substring(0, 2)})" : "")</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-graph-up"></i></div><div><div class="k">Sector Outlook</div><div class="v">@(r.Industry != null ? $"{r.Industry.Outlook} · risk weight {r.Industry.RiskWeight:0.00}" : "Not available")</div></div></div>
                 </div>
             </div>
             <div class="col-lg-6">
                 <div class="fhc-card">
                     <div class="fhc-section-label"><i class="bi bi-clipboard-data"></i>Assessment Basis</div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-calendar-range"></i></div><div><div class="k">GST Return Window</div><div class="v">Dec 2025 – May 2026 (6 months)</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-calendar-range"></i></div><div><div class="k">Bank Statement Window</div><div class="v">Oct 2025 – Feb 2026 (5 months)</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-cash-stack"></i></div><div><div class="k">Cumulative Declared GST Sales</div><div class="v">₹17.92 Cr over 6-month window</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-cpu"></i></div><div><div class="k">Scoring Model</div><div class="v">frl-scoring-v1.0 (Rules 734 · ML 694)</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-calendar-range"></i></div><div><div class="k">GST Return Window</div><div class="v">@WindowLabel(r.GstAnalysis?.MonthlySales.Keys)</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-calendar-range"></i></div><div><div class="k">Bank Statement Window</div><div class="v">@WindowLabel(r.BankAnalysis?.MonthlyAvgBalance.Keys)</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-cash-stack"></i></div><div><div class="k">Cumulative Declared GST Sales</div><div class="v">₹@FormatInr(r.GstAnalysis?.MonthlySales.Values.Sum() ?? 0) over @(r.GstAnalysis?.MonthlySales.Count ?? 0)-month window</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-cpu"></i></div><div><div class="k">Scoring Model</div><div class="v">@r.ModelVersion (Rules @r.HeuristicScore.ToString("0") · ML @r.MlCalibratedScore.ToString("0"))</div></div></div>
                     <div class="snap-item"><div class="ic"><i class="bi bi-hourglass-split"></i></div><div><div class="k">Report Validity</div><div class="v">90 days from generation date</div></div></div>
-                    <div class="snap-item"><div class="ic"><i class="bi bi-fingerprint"></i></div><div><div class="k">Report ID</div><div class="v" style="font-family:var(--font-data);">FHC-20260704-0067394</div></div></div>
+                    <div class="snap-item"><div class="ic"><i class="bi bi-fingerprint"></i></div><div><div class="k">Report ID</div><div class="v" style="font-family:var(--font-data);">@Model.ReportId</div></div></div>
                 </div>
             </div>
         </div>
@@ -166,16 +203,16 @@
         <!-- Data sources -->
         <div class="row g-3 mt-1">
             <div class="col-6 col-md-3">
-                <div class="source-chip"><i class="bi bi-receipt"></i><div><div style="font-weight:600;">GST Returns</div><div class="fhc-sub" style="font-size:.72rem;">GSTR-1 &amp; 3B</div></div></div>
+                <div class="source-chip @(r.GstAnalysis == null ? "off" : "")"><i class="bi bi-receipt"></i><div><div style="font-weight:600;">GST Returns</div><div class="fhc-sub" style="font-size:.72rem;">@(r.GstAnalysis != null ? "GSTR-1 & 3B" : "Not available")</div></div></div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="source-chip"><i class="bi bi-bank"></i><div><div style="font-weight:600;">Bank (Account Aggregator)</div><div class="fhc-sub" style="font-size:.72rem;">5 months</div></div></div>
+                <div class="source-chip @(r.BankAnalysis == null ? "off" : "")"><i class="bi bi-bank"></i><div><div style="font-weight:600;">Bank (Account Aggregator)</div><div class="fhc-sub" style="font-size:.72rem;">@(r.BankAnalysis != null ? $"{r.BankAnalysis.MonthlyAvgBalance.Count} months" : "Not available")</div></div></div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="source-chip"><i class="bi bi-patch-check"></i><div><div style="font-weight:600;">Udyam Registration</div><div class="fhc-sub" style="font-size:.72rem;">Verified</div></div></div>
+                <div class="source-chip @(u?.HasData != true ? "off" : "")"><i class="bi bi-patch-check"></i><div><div style="font-weight:600;">Udyam Registration</div><div class="fhc-sub" style="font-size:.72rem;">@(u?.HasData == true ? "Verified" : "Not available")</div></div></div>
             </div>
             <div class="col-6 col-md-3">
-                <div class="source-chip off"><i class="bi bi-file-earmark-text"></i><div><div style="font-weight:600;">ITR Financials</div><div class="fhc-sub" style="font-size:.72rem;">Not available</div></div></div>
+                <div class="source-chip @(r.Financials?.HasFinancials != true ? "off" : "")"><i class="bi bi-file-earmark-text"></i><div><div style="font-weight:600;">ITR Financials</div><div class="fhc-sub" style="font-size:.72rem;">@(r.Financials?.HasFinancials == true ? $"AY {r.Financials.SourceYear}" : "Not available")</div></div></div>
             </div>
         </div>
 
@@ -188,12 +225,12 @@
                     <div class="gauge-box">
                         <canvas id="scoreGauge"></canvas>
                         <div class="gauge-center">
-                            <div class="gauge-score">718</div>
+                            <div class="gauge-score">@r.OverallScore.ToString("0")</div>
                             <div class="gauge-of">out of 1000</div>
                         </div>
                     </div>
                     <div class="mt-2">
-                        <span class="band-chip band-Good"><i class="bi bi-patch-check-fill"></i> Good</span>
+                        <span class="band-chip band-@r.ScoreBand"><i class="bi bi-patch-check-fill"></i> @r.ScoreBand</span>
                     </div>
                     <div class="band-legend">
                         <span><i style="background:#c22f3e;"></i>High Risk &lt;350</span>
@@ -202,7 +239,7 @@
                         <span><i style="background:#7fae5e;"></i>Good 650–800</span>
                         <span><i style="background:#2e7d4f;"></i>Excellent 800+</span>
                     </div>
-                    <div class="fhc-sub mt-3">UCN Fibrenet Private Limited · computed 04 Jul 2026 06:46 UTC</div>
+                    <div class="fhc-sub mt-3">@entityName · computed @r.ComputedAt.ToString("dd MMM yyyy HH:mm") UTC</div>
                 </div>
             </div>
 
@@ -210,346 +247,278 @@
                 <div class="fhc-card">
                     <div class="fhc-section-label"><i class="bi bi-bar-chart-steps"></i>Score Composition</div>
                     <div class="row g-3 mb-3">
-                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">734</div><div class="k">Rules Engine</div></div></div>
-                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">694</div><div class="k">ML Model</div></div></div>
-                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:var(--emerald);">▲ 0.93</div><div class="k">Cashflow Trend</div></div></div>
-                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">39</div><div class="k">Data Files Used</div></div></div>
+                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">@r.HeuristicScore.ToString("0")</div><div class="k">Rules Engine</div></div></div>
+                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">@r.MlCalibratedScore.ToString("0")</div><div class="k">ML Model</div></div></div>
+                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:var(--emerald);">@(r.CashflowTrendSlope >= 0 ? "▲" : "▼") @Math.Abs(r.CashflowTrendSlope).ToString("0.00")</div><div class="k">Cashflow Trend</div></div></div>
+                        <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">@(Model.Status?.FilesPresent.Count ?? 0)</div><div class="k">Data Files Used</div></div></div>
                     </div>
 
                     <div class="fhc-section-label mt-2">Six Dimensions</div>
-                    <div class="dim-row"><div class="dim-name">Revenue Vitality</div><div class="dim-track"><div class="dim-fill" style="width:55%;"></div></div><div class="dim-val">136 / 250</div></div>
-                    <div class="dim-row"><div class="dim-name">Cash Flow Health</div><div class="dim-track"><div class="dim-fill" style="width:85%;"></div></div><div class="dim-val">170 / 200</div></div>
-                    <div class="dim-row"><div class="dim-name">Transaction Trustworthiness</div><div class="dim-track"><div class="dim-fill" style="width:42%;"></div></div><div class="dim-val">63 / 150</div></div>
-                    <div class="dim-row"><div class="dim-name">Compliance Quotient</div><div class="dim-track"><div class="dim-fill" style="width:100%;"></div></div><div class="dim-val">150 / 150</div></div>
-                    <div class="dim-row"><div class="dim-name">Business Stability</div><div class="dim-track"><div class="dim-fill" style="width:89%;"></div></div><div class="dim-val">134 / 150</div></div>
-                    <div class="dim-row">
-                        <div class="dim-name">Debt Serviceability <i class="bi bi-info-circle text-secondary" title="Neutral default used (New-to-Credit)"></i></div>
-                        <div class="dim-track"><div class="dim-fill" style="width:80%;"></div></div><div class="dim-val">80 / 100</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section-divider" id="lending"><span class="num">03</span><span class="txt">Bank Lending Assessment</span><span class="line"></span></div>
-
-        <div class="fhc-card">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                <div class="fhc-section-label mb-0"><i class="bi bi-bank"></i>Lending Eligibility Summary</div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="badge" style="background:#e3f4ea;color:#0f5137;padding:7px 12px;">
-                        <i class="bi bi-buildings me-1"></i>Telecommunications — Favourable outlook
-                    </span>
-                    <span class="fhc-sub">band factor ×0.85 (Good)</span>
-                </div>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-lg-3">
-                    <div class="stat-tile" style="border-left:4px solid var(--maroon-deep);">
-                        <div class="v">₹6.09 Cr</div><div class="k">Working Capital Limit</div>
-                        <div class="fhc-sub" style="font-size:.7rem;">turnover method (20%)</div>
-                    </div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <div class="stat-tile" style="border-left:4px solid var(--rose);">
-                        <div class="v">₹4.3 L</div><div class="k">Term Loan Capacity</div>
-                        <div class="fhc-sub" style="font-size:.7rem;">5 yr  11% on EMI headroom</div>
-                    </div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <div class="stat-tile" style="border-left:4px solid #0f5137;">
-                        <div class="v">₹6.14 Cr</div><div class="k">Total Indicative Eligibility</div>
-                        <div class="fhc-sub" style="font-size:.7rem;">WC + term combined</div>
-                    </div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <div class="stat-tile" style="border-left:4px solid var(--gold);">
-                        <div class="v">₹1.79 Cr</div><div class="k">Borrower Margin Required</div>
-                        <div class="fhc-sub" style="font-size:.7rem;">5% of turnover (Nayak)</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-4">
-                <div class="col-lg-7">
-                    <div class="fhc-section-label"><i class="bi bi-calculator"></i>Credit Appraisal Ratios</div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">DSCR (Debt Service Coverage)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Cash available for debt service vs existing obligations — the primary repayment-capacity test</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">10.00x</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 1.50x</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#e3f4ea;color:#0f5137;">Strong</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">FOIR (Obligations / Inflows)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Share of monthly inflows already committed to EMIs — headroom for a new loan</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">0%</div><div class="fhc-sub" style="font-size:.7rem;">norm ≤ 40%</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#e3f4ea;color:#0f5137;">Strong</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Banking Penetration</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">GST-declared sales actually routed through the bank account — cash-sales businesses score low</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">0%</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 60%</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#fbe0e0;color:#8b1020;">Weak</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Gross Margin (GST sales vs purchases)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Trading margin implied by GSTR-1 outward vs GSTR-2A inward values</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">19%</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 15%</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#e3f4ea;color:#0f5137;">Strong</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Days Cash on Hand</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">How long current balances cover average outflows if inflows stopped</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">365 days</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 60 days</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#e3f4ea;color:#0f5137;">Strong</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Inflow Volatility (CV)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Month-to-month steadiness of bank inflows — volatile inflows need conservative limits</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">0.48</div><div class="fhc-sub" style="font-size:.7rem;">norm ≤ 0.30</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#fdf3d7;color:#8a6d00;">Adequate</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Credit Note Ratio</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Share of invoiced revenue reversed via credit notes — high values inflate headline turnover</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">1.7%</div><div class="fhc-sub" style="font-size:.7rem;">norm ≤ 5%</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#e3f4ea;color:#0f5137;">Strong</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">GSTR-1 vs GSTR-3B Consistency</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Agreement between invoice-level (GSTR-1) and summary (GSTR-3B) declared sales — persistent gaps signal misdeclaration</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">93%</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 90%</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#e3f4ea;color:#0f5137;">Strong</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">EBITDA Margin (ITR)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Operating profitability from the ITR P&amp;L — PBIDTA over business turnover</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">N/A</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 10%</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#efefef;color:#777;">No data</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Net Profit Margin (ITR)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Bottom-line profitability after all costs and tax, from the ITR P&amp;L</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">N/A</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 5%</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#efefef;color:#777;">No data</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Debtor Days (ITR)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">How long customers take to pay — sundry debtors over turnover × 365 (needs ITR balance sheet)</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">N/A</div><div class="fhc-sub" style="font-size:.7rem;">norm ≤ 60 days</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#efefef;color:#777;">No data</span>
-                    </div>
-
-                    <div class="ratio-row d-flex align-items-center gap-3">
-                        <div style="flex:1;">
-                            <div style="font-size:.88rem;font-weight:600;color:#2b2026;">Asset Turnover (ITR)</div>
-                            <div class="fhc-sub" style="font-size:.74rem;">Revenue generated per rupee of assets — turnover over total assets (needs ITR balance sheet)</div>
-                        </div>
-                        <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">N/A</div><div class="fhc-sub" style="font-size:.7rem;">norm ≥ 1.5x</div></div>
-                        <span class="badge" style="flex:0 0 84px;background:#efefef;color:#777;">No data</span>
-                    </div>
-                </div>
-
-                <div class="col-lg-5">
-                    <div class="fhc-section-label"><i class="bi bi-wallet2"></i>Monthly Cashflow &amp; EMI Capacity</div>
-                    <div class="chart-box" style="height:230px;"><canvas id="lendingChart"></canvas></div>
-                    <div class="lending-notes mt-3">
-                        <div class="lending-notes-head"><i class="bi bi-journal-text"></i> How this was calculated</div>
-                        <div class="lending-note"><i class="bi bi-check2-circle"></i><span>Working capital via turnover method: requirement 25% of annual turnover, bank finance 20%, borrower margin 5% (Nayak norms for MSME limits up to ₹5 Cr).</span></div>
-                        <div class="lending-note"><i class="bi bi-check2-circle"></i><span>Term capacity assumes 5 year tenure  11% p.a., EMI capped at 50% FOIR and 80% of observed monthly surplus.</span></div>
-                        <div class="lending-note"><i class="bi bi-check2-circle"></i><span>All amounts scaled by score-band factor 0.85 (Good); indicative only — not a sanction.</span></div>
-                        <div class="lending-note warn"><i class="bi bi-exclamation-triangle-fill"></i><span>Banking penetration is very low relative to GST sales — verify whether the consented account is the business's primary operating account.</span></div>
-                        <div class="lending-note"><i class="bi bi-check2-circle"></i><span>Industry: Telecommunications (NIC 61) — sector risk weight 0.75 feeds Business Stability; use as a pricing hint, not a sanction condition.</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mt-1">
-            <div class="col-lg-6">
-                <div class="fhc-card">
-                    <div class="fhc-section-label"><i class="bi bi-clipboard2-check"></i>Loan &amp; Obligations</div>
-                    <div class="oblig-row">
-                        <div class="ic"><i class="bi bi-check-lg"></i></div>
-                        <div class="name">Existing Loan EMI</div>
-                        <div class="amt">₹0 / mo</div>
-                    </div>
-                    <div class="oblig-row">
-                        <div class="ic"><i class="bi bi-check-lg"></i></div>
-                        <div class="name">Credit Bureau Adverse History</div>
-                        <div class="amt">None found</div>
-                    </div>
-                    <div class="oblig-row">
-                        <div class="ic"><i class="bi bi-check-lg"></i></div>
-                        <div class="name">Cheque / ECS-NACH Bounces</div>
-                        <div class="amt">0 / 0</div>
-                    </div>
-                    <div class="oblig-flag"><i class="bi bi-check-circle-fill"></i> No Existing Loan Obligations</div>
-                    <div class="fhc-sub mt-2" style="font-size:.72rem;">Debt Serviceability used a neutral New-to-Credit default rather than penalising missing bureau history.</div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="fhc-card">
-                    <div class="fhc-section-label"><i class="bi bi-shield-exclamation"></i>Risk Indicators</div>
-
-                    <div class="risk-row">
-                        <div class="risk-row-head"><span class="name">Banking Penetration</span><span class="val">0%</span></div>
-                        <div class="risk-track-row">
-                            <div class="risk-track"><div class="risk-fill" style="width:2%;background:#c22f3e;"></div></div>
-                            <span class="risk-chip weak">Weak</span>
-                        </div>
-                    </div>
-
-                    <div class="risk-row">
-                        <div class="risk-row-head"><span class="name">Inflow Volatility (CV)</span><span class="val">0.48</span></div>
-                        <div class="risk-track-row">
-                            <div class="risk-track"><div class="risk-fill" style="width:64%;background:#e6c34c;"></div></div>
-                            <span class="risk-chip adequate">Adequate</span>
-                        </div>
-                    </div>
-
-                    <div class="risk-row">
-                        <div class="risk-row-head"><span class="name">FOIR (Obligations / Inflow)</span><span class="val">0%</span></div>
-                        <div class="risk-track-row">
-                            <div class="risk-track"><div class="risk-fill" style="width:3%;background:#2e7d4f;"></div></div>
-                            <span class="risk-chip strong">Strong</span>
-                        </div>
-                    </div>
-
-                    <div class="risk-row" style="border-bottom:none;">
-                        <div class="risk-row-head"><span class="name">DSCR</span><span class="val">10.00x</span></div>
-                        <div class="risk-track-row">
-                            <div class="risk-track"><div class="risk-fill" style="width:100%;background:#2e7d4f;"></div></div>
-                            <span class="risk-chip strong">Strong</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section-divider" id="bank"><span class="num">04</span><span class="txt">Bank Statement Analysis</span><span class="line"></span></div>
-
-        <div class="fhc-card">
-            <div class="fhc-section-label"><i class="bi bi-credit-card-2-front"></i>Account Aggregator Summary</div>
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹2.45 L</div><div class="k">Avg Monthly Balance</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹3.45 L</div><div class="k">Peak Balance</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹3,000</div><div class="k">Customer Receipts / mo</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹720</div><div class="k">Supplier Payments / mo</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹0</div><div class="k">Cash Deposits / mo</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹24,000</div><div class="k">Salary Credits / mo</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:var(--emerald);">0 / 0</div><div class="k">Cheque / ECS-NACH Returns</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:var(--emerald);">0 / 0</div><div class="k">Min-Bal Breaches / Overdrawn</div><div class="fhc-sub" style="font-size:.68rem;">OD limit ₹27 L</div></div></div>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-7">
-                    <div class="fhc-section-label"><i class="bi bi-graph-up"></i>Monthly Average Balance Trend</div>
-                    <div class="chart-box" style="height:230px;"><canvas id="balanceChart"></canvas></div>
-                </div>
-                <!-- <div class="col-lg-5">
-                    <div class="fhc-section-label"><i class="bi bi-pie-chart"></i>Transaction Value by Channel</div>
-                    <div class="breakdown-row">
-                        <div class="breakdown-donut">
-                            <canvas id="modeChart"></canvas>
-                            <div class="breakdown-center">
-                                <div class="pct" id="modeChartPct">-</div>
-                                <div class="lbl" id="modeChartLbl">top channel</div>
+                    @foreach (var d in r.Dimensions)
+                    {
+                        var pct = d.MaxPoints > 0 ? Math.Round(d.Score / d.MaxPoints * 100) : 0;
+                        <div class="dim-row">
+                            <div class="dim-name">
+                                @d.Dimension
+                                @if (d.UsedNeutralDefault) { <i class="bi bi-info-circle text-secondary" title="Neutral default used (New-to-Credit)"></i> }
                             </div>
+                            <div class="dim-track"><div class="dim-fill" style="width:@(pct)%;"></div></div>
+                            <div class="dim-val">@d.Score.ToString("0") / @d.MaxPoints.ToString("0")</div>
                         </div>
-                        <div class="breakdown-legend" id="modeChartLegend"></div>
+                    }
+                    @if (r.ExcludedDimensions.Count > 0)
+                    {
+                        <div class="fhc-sub mt-2"><i class="bi bi-exclamation-triangle me-1"></i>Score computed without: @string.Join(", ", r.ExcludedDimensions) — weights redistributed.</div>
+                    }
+
+                    <div class="row g-4 mt-1">
+                        <div class="col-lg-6">
+                            <div class="fhc-section-label">Dimension Radar</div>
+                            <div class="chart-box" style="height:230px;"><canvas id="radarChart"></canvas></div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="fhc-section-label">Points Earned vs Maximum</div>
+                            <div class="chart-box" style="height:230px;"><canvas id="barChart"></canvas></div>
+                        </div>
                     </div>
-                </div> -->
+                </div>
             </div>
         </div>
 
-        <!-- <div class="section-divider" id="gst"><span class="num">05</span><span class="txt">GST Deep-Dive</span><span class="line"></span></div>
+        @if (r.Lending != null)
+        {
+            var l = r.Lending;
+            var dscrRatio = RatioByName(l.Ratios, "DSCR (Debt Service Coverage)");
+            var foirRatio = RatioByName(l.Ratios, "FOIR (Obligations / Inflows)");
+            var penetrationRatio = RatioByName(l.Ratios, "Banking Penetration");
+            var volatilityRatio = RatioByName(l.Ratios, "Inflow Volatility (CV)");
 
-        <div class="fhc-card">
-            <div class="fhc-section-label"><i class="bi bi-receipt"></i>GST Filing &amp; Trade Concentration</div>
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:var(--emerald);">93%</div><div class="k">GSTR-1 vs 3B Consistency</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">39%</div><div class="k">Tax Paid in Cash</div><div class="fhc-sub" style="font-size:.68rem;">rest settled via ITC</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹36.7 L</div><div class="k">Net ITC / month</div></div></div>
-                <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:var(--emerald);">40%</div><div class="k">Top Customer Share</div><div class="fhc-sub" style="font-size:.68rem;">top vendor 20%</div></div></div>
+            <div class="section-divider" id="lending"><span class="num">03</span><span class="txt">Bank Lending Assessment</span><span class="line"></span></div>
+
+            <div class="fhc-card">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div class="fhc-section-label mb-0"><i class="bi bi-bank"></i>Lending Eligibility Summary</div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        @if (r.Industry != null)
+                        {
+                            <span class="badge" style="background:#e3f4ea;color:#0f5137;padding:7px 12px;">
+                                <i class="bi bi-buildings me-1"></i>@r.Industry.SectorName — @r.Industry.Outlook outlook
+                            </span>
+                        }
+                        <span class="fhc-sub">band factor ×@l.BandAdjustmentFactor.ToString("0.00") (@r.ScoreBand)</span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-lg-3">
+                        <div class="stat-tile" style="border-left:4px solid var(--maroon-deep);">
+                            <div class="v">₹@FormatInr(l.WorkingCapitalLimit)</div><div class="k">Working Capital Limit</div>
+                            <div class="fhc-sub" style="font-size:.7rem;">turnover method (20%)</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="stat-tile" style="border-left:4px solid var(--rose);">
+                            <div class="v">₹@FormatInr(l.TermLoanCapacity)</div><div class="k">Term Loan Capacity</div>
+                            <div class="fhc-sub" style="font-size:.7rem;">5 yr @@ 11% on EMI headroom</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="stat-tile" style="border-left:4px solid #0f5137;">
+                            <div class="v">₹@FormatInr(l.TotalIndicativeEligibility)</div><div class="k">Total Indicative Eligibility</div>
+                            <div class="fhc-sub" style="font-size:.7rem;">WC + term combined</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="stat-tile" style="border-left:4px solid var(--gold);">
+                            <div class="v">₹@FormatInr(l.MarginMoneyRequired)</div><div class="k">Borrower Margin Required</div>
+                            <div class="fhc-sub" style="font-size:.7rem;">5% of turnover (Nayak)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="fhc-section-label"><i class="bi bi-calculator"></i>Credit Appraisal Ratios</div>
+                        @foreach (var ratio in l.Ratios)
+                        {
+                            var badge = RatioBadge(ratio.Status);
+                            <div class="ratio-row d-flex align-items-center gap-3">
+                                <div style="flex:1;">
+                                    <div style="font-size:.88rem;font-weight:600;color:#2b2026;">@ratio.Name</div>
+                                    <div class="fhc-sub" style="font-size:.74rem;">@ratio.Description</div>
+                                </div>
+                                <div class="text-end" style="flex:0 0 90px;"><div class="mono" style="font-weight:700;color:var(--maroon-deep);">@ratio.Display</div><div class="fhc-sub" style="font-size:.7rem;">norm @ratio.Benchmark</div></div>
+                                <span class="badge" style="flex:0 0 84px;background:@badge.bg;color:@badge.fg;">@badge.label</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="fhc-section-label"><i class="bi bi-wallet2"></i>Monthly Cashflow &amp; EMI Capacity</div>
+                        <div class="chart-box" style="height:230px;"><canvas id="lendingChart"></canvas></div>
+                        <div class="lending-notes mt-3">
+                            <div class="lending-notes-head"><i class="bi bi-journal-text"></i> How this was calculated</div>
+                            @foreach (var note in l.Notes)
+                            {
+                                var isWarning = note.Contains("verify", StringComparison.OrdinalIgnoreCase)
+                                             || note.Contains("No AA", StringComparison.OrdinalIgnoreCase);
+                                <div class="lending-note @(isWarning ? "warn" : "")">
+                                    <i class="bi @(isWarning ? "bi-exclamation-triangle-fill" : "bi-check2-circle")"></i><span>@note</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="fhc-section-label">Monthly GST Sales</div>
-                    <div class="chart-box" style="height:230px;"><canvas id="gstSalesChart"></canvas></div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-lg-6">
+                    <div class="fhc-card">
+                        <div class="fhc-section-label"><i class="bi bi-clipboard2-check"></i>Loan &amp; Obligations</div>
+                        <div class="oblig-row">
+                            <div class="ic"><i class="bi bi-check-lg"></i></div>
+                            <div class="name">Existing Loan EMI</div>
+                            <div class="amt">₹@FormatInr(l.ExistingMonthlyEmi) / mo</div>
+                        </div>
+                        <div class="oblig-row">
+                            <div class="ic"><i class="bi bi-check-lg"></i></div>
+                            <div class="name">Credit Bureau Adverse History</div>
+                            @{ var debtSvc = DimByName(r.Dimensions, "Debt Serviceability"); }
+                            <div class="amt">@(debtSvc?.UsedNeutralDefault == true ? "New-to-Credit — none on file" : "Not evaluated this cycle")</div>
+                        </div>
+                        <div class="oblig-row">
+                            <div class="ic"><i class="bi bi-check-lg"></i></div>
+                            <div class="name">Cheque / ECS-NACH Bounces</div>
+                            <div class="amt">@(r.BankAnalysis?.ChequeReturnCount ?? 0) / @(r.BankAnalysis?.EcsNachReturnCount ?? 0)</div>
+                        </div>
+                        @if (l.ExistingMonthlyEmi <= 0)
+                        {
+                            <div class="oblig-flag"><i class="bi bi-check-circle-fill"></i> No Existing Loan Obligations</div>
+                        }
+                        <div class="fhc-sub mt-2" style="font-size:.72rem;">Debt Serviceability used a neutral New-to-Credit default rather than penalising missing bureau history.</div>
+                    </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="fhc-section-label">Major Customers (share of B2B sales)</div>
-                    <div class="chart-box" style="height:230px;"><canvas id="customerChart"></canvas></div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="fhc-section-label">Major Vendors (share of purchases)</div>
-                    <div class="chart-box" style="height:230px;"><canvas id="vendorChart"></canvas></div>
+                <div class="col-lg-6">
+                    <div class="fhc-card">
+                        <div class="fhc-section-label"><i class="bi bi-shield-exclamation"></i>Risk Indicators</div>
+
+                        @foreach (var (label, ratio) in new[] {
+                            ("Banking Penetration", penetrationRatio),
+                            ("Inflow Volatility (CV)", volatilityRatio),
+                            ("FOIR (Obligations / Inflow)", foirRatio),
+                            ("DSCR", dscrRatio)
+                        })
+                        {
+                            if (ratio == null) { continue; }
+                            var badge = RatioBadge(ratio.Status);
+                            var width = RiskBarPercent(ratio.Status);
+                            <div class="risk-row">
+                                <div class="risk-row-head"><span class="name">@label</span><span class="val">@ratio.Display</span></div>
+                                <div class="risk-track-row">
+                                    <div class="risk-track"><div class="risk-fill" style="width:@(width)%;background:@badge.bar;"></div></div>
+                                    <span class="risk-chip @badge.css">@badge.label</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
-        </div> -->
+        }
+
+        @if (r.BankAnalysis != null)
+        {
+            var b = r.BankAnalysis;
+            <div class="section-divider" id="bank"><span class="num">04</span><span class="txt">Bank Statement Analysis</span><span class="line"></span></div>
+
+            <div class="fhc-card">
+                <div class="fhc-section-label"><i class="bi bi-credit-card-2-front"></i>Account Aggregator Summary</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹@FormatInr(b.AverageMonthlyBalance)</div><div class="k">Avg Monthly Balance</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹@FormatInr(b.PeakBalance)</div><div class="k">Peak Balance</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹@FormatInr(b.CustomerReceiptsMonthly)</div><div class="k">Customer Receipts / mo</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹@FormatInr(b.SupplierPaymentsMonthly)</div><div class="k">Supplier Payments / mo</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹@FormatInr(b.CashDepositsMonthly)</div><div class="k">Cash Deposits / mo</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹@FormatInr(b.SalaryCreditsMonthly)</div><div class="k">Salary Credits / mo</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:@(b.ChequeReturnCount + b.EcsNachReturnCount > 0 ? "#8b1020" : "var(--emerald)");">@b.ChequeReturnCount / @b.EcsNachReturnCount</div><div class="k">Cheque / ECS-NACH Returns</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:@(b.MinBalanceBreachCount + b.OverdrawnTxnCount > 0 ? "#9c4a00" : "var(--emerald)");">@b.MinBalanceBreachCount / @b.OverdrawnTxnCount</div><div class="k">Min-Bal Breaches / Overdrawn</div><div class="fhc-sub" style="font-size:.68rem;">OD limit ₹@FormatInr(b.OdLimitTotal)</div></div></div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="fhc-section-label"><i class="bi bi-graph-up"></i>Monthly Average Balance Trend</div>
+                        <div class="chart-box" style="height:230px;"><canvas id="balanceChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (r.GstAnalysis != null)
+        {
+            var g = r.GstAnalysis;
+            <div class="section-divider" id="gst"><span class="num">05</span><span class="txt">GST Deep-Dive</span><span class="line"></span></div>
+
+            <div class="fhc-card">
+                <div class="fhc-section-label"><i class="bi bi-receipt"></i>GST Filing &amp; Trade Concentration</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:@(g.R1Vs3bConsistency >= 0.9 ? "var(--emerald)" : "#9c4a00");">@(g.R1Vs3bConsistency > 0 ? g.R1Vs3bConsistency.ToString("P0") : "N/A")</div><div class="k">GSTR-1 vs 3B Consistency</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">@(g.HasTaxPaymentData ? g.CashTaxShare.ToString("P0") : "N/A")</div><div class="k">Tax Paid in Cash</div><div class="fhc-sub" style="font-size:.68rem;">rest settled via ITC</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v">₹@FormatInr(g.ItcMonthlyAvg)</div><div class="k">Net ITC / month</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-tile"><div class="v" style="color:@(g.TopCustomerShare > 0.4 ? "#9c4a00" : "var(--emerald)");">@(g.TopCustomerShare > 0 ? g.TopCustomerShare.ToString("P0") : "N/A")</div><div class="k">Top Customer Share</div><div class="fhc-sub" style="font-size:.68rem;">top vendor @(g.TopVendorShare > 0 ? g.TopVendorShare.ToString("P0") : "N/A")</div></div></div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-lg-4">
+                        <div class="fhc-section-label">Monthly GST Sales</div>
+                        <div class="chart-box" style="height:230px;"><canvas id="gstSalesChart"></canvas></div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="fhc-section-label">Major Customers (share of B2B sales)</div>
+                        <div class="chart-box" style="height:230px;"><canvas id="customerChart"></canvas></div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="fhc-section-label">Major Vendors (share of purchases)</div>
+                        <div class="chart-box" style="height:230px;"><canvas id="vendorChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        }
 
         <div class="row g-4">
             <div class="section-divider" id="risks"><span class="num">06</span><span class="txt">Strengths, Risks &amp; Recommendations</span><span class="line"></span></div>
             <div class="col-lg-6">
                 <div class="fhc-card">
                     <div class="fhc-section-label"><i class="bi bi-arrow-up-circle-fill" style="color:var(--emerald);"></i>Key Strengths</div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Revenue Vitality</div>GST turnover is growing month over month</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Compliance Quotient</div>GST returns filed for every expected period</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Business Stability</div>Established business vintage per Udyam registration</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Transaction Trustworthiness</div>Strong digital (UPI) payment adoption</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Revenue Vitality</div>Minimal credit-note reversals — invoiced revenue holds up</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Debt Serviceability</div>Existing EMI obligations are small relative to inflows</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Cash Flow Health</div>No payment bounces detected in the statement window</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Debt Serviceability</div>No credit bureau record found (New-to-Credit) — this dimension used a neutral default rather than penalizing missing history</div></div>
-                    <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">Business Stability</div>Diversified product/service mix across HSN codes</div></div>
+                    @{ var posExpl = r.Explanations.Where(e => e.Impact == ImpactDirection.Positive).OrderByDescending(e => e.RelativeWeight).ToList(); }
+                    @if (posExpl.Count == 0)
+                    {
+                        <div class="fhc-sub py-3"><i class="bi bi-info-circle me-1"></i>No strengths surfaced by the model this cycle.</div>
+                    }
+                    @foreach (var e in posExpl)
+                    {
+                        <div class="expl-item"><i class="bi bi-check-circle-fill" style="color:var(--emerald);"></i><div><div class="expl-dim">@e.Dimension</div>@e.ExplanationText</div></div>
+                    }
                 </div>
             </div>
             <div class="col-lg-6">
                 <div class="fhc-card mb-4">
                     <div class="fhc-section-label"><i class="bi bi-arrow-down-circle-fill" style="color:#8b1020;"></i>Risk Factors</div>
-                    <div class="fhc-sub py-3"><i class="bi bi-emoji-smile me-1"></i>No material risk factors surfaced by the model.</div>
+                    @{ var negExpl = r.Explanations.Where(e => e.Impact == ImpactDirection.Negative).OrderByDescending(e => e.RelativeWeight).ToList(); }
+                    @if (negExpl.Count == 0)
+                    {
+                        <div class="fhc-sub py-3"><i class="bi bi-emoji-smile me-1"></i>No material risk factors surfaced by the model.</div>
+                    }
+                    @foreach (var e in negExpl)
+                    {
+                        <div class="expl-item"><i class="bi bi-exclamation-circle-fill" style="color:#9c4a00;"></i><div><div class="expl-dim">@e.Dimension</div>@e.ExplanationText</div></div>
+                    }
 
                     <div class="fhc-section-label mt-2">Cross-Source Income Check</div>
                     <div class="anomaly-box">
                         <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                            <i class="bi bi-shield-check"></i>
-                            <strong>No cross-source mismatch flagged</strong>
-                            <span class="ms-auto fhc-sub">anomaly score 0.43</span>
+                            <i class="bi @(r.Anomaly.IsAnomalous ? "bi-flag-fill" : "bi-shield-check")"></i>
+                            <strong>@(r.Anomaly.IsAnomalous ? "Mismatch flagged for review" : "No cross-source mismatch flagged")</strong>
+                            <span class="ms-auto fhc-sub">anomaly score @r.Anomaly.AnomalyScore.ToString("0.00")</span>
                         </div>
-                        GST ₹2.99 Cr/mo · ITR ₹0/mo · Bank credits ₹27,000/mo
+                        GST ₹@FormatInr(r.Anomaly.GstMonthlyTurnover)/mo · ITR ₹@FormatInr(r.Anomaly.ItrMonthlyIncome)/mo · Bank credits ₹@FormatInr(r.Anomaly.BankMonthlyCredits)/mo
+                        @if (!string.IsNullOrEmpty(r.Anomaly.Note)) { <div class="fhc-sub mt-1">@r.Anomaly.Note</div> }
                     </div>
                 </div>
             </div>
@@ -562,7 +531,7 @@
 <div class="report-footer">
     <div class="container d-flex flex-wrap justify-content-between gap-2" style="max-width:1220px;">
         <div class="fhc-sub"><i class="bi bi-shield-lock me-1"></i>Confidential — generated for internal credit assessment use only.</div>
-        <div class="fhc-sub">FinRiskLens AI · Model frl-scoring-v1.0 · Report ID FHC-20260704-0067394</div>
+        <div class="fhc-sub">FinRiskLens AI · Model @r.ModelVersion · Report ID @Model.ReportId</div>
     </div>
 </div>
 
@@ -575,15 +544,8 @@ window.addEventListener('load', function () {
         return;
     }
 
-    const dims = [
-        {"dimension":"Revenue Vitality","score":136.4,"maxPoints":250},
-        {"dimension":"Cash Flow Health","score":170.1,"maxPoints":200},
-        {"dimension":"Transaction Trustworthiness","score":63.4,"maxPoints":150},
-        {"dimension":"Compliance Quotient","score":150,"maxPoints":150},
-        {"dimension":"Business Stability","score":133.8,"maxPoints":150},
-        {"dimension":"Debt Serviceability","score":80,"maxPoints":100}
-    ];
-    const score = 718;
+    const dims = @Html.Raw(Json.Serialize(r.Dimensions.Select(d => new { dimension = d.Dimension, score = d.Score, maxPoints = d.MaxPoints })));
+    const score = @r.OverallScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
     // Brand colors follow the active theme (see ~/css/theme.css)
     const frlBrand = getComputedStyle(document.documentElement);
     const maroon = frlBrand.getPropertyValue('--brand-btn-bg').trim() || '#f37021';
@@ -607,61 +569,95 @@ window.addEventListener('load', function () {
             ctx.restore();
         }
     };
-    new Chart(document.getElementById('scoreGauge'), {
-        type: 'doughnut',
-        data: { datasets: [{
-            data: [350, 150, 150, 150, 200],
-            backgroundColor: bandColors, borderWidth: 2, borderColor: '#fff'
-        }]},
-        options: {
-            responsive: true,
-            rotation: -90, circumference: 180, cutout: '72%',
-            aspectRatio: 1.9,
-            layout: { padding: { bottom: 4 } },
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            animation: { animateRotate: true }
-        },
-        plugins: [needle]
-    });
-
-    new Chart(document.getElementById('radarChart'), {
-        type: 'radar',
-        data: {
-            labels: dims.map(d => d.dimension.replace(' ', '\n')),
-            datasets: [{
-                label: '% of maximum',
-                data: dims.map(d => d.maxPoints > 0 ? Math.round(d.score / d.maxPoints * 100) : 0),
-                backgroundColor: maroon + '2e', borderColor: maroon,
-                pointBackgroundColor: maroon, borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, backdropColor: 'transparent' }, pointLabels: { font: { size: 11 } } } },
-            plugins: { legend: { display: false } }
-        }
-    });
-
-    const lend = {"inflow":27000,"outflow":13200,"surplus":13800,"existingEmi":0,"affordableEmi":11040};
-    new Chart(document.getElementById('lendingChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Bank Inflow', 'Bank Outflow', 'Surplus', 'Existing EMI', 'EMI Headroom'],
-            datasets: [{
-                data: [lend.inflow, lend.outflow, lend.surplus, lend.existingEmi, lend.affordableEmi],
-                backgroundColor: ['#2e7d4f', '#c22f3e', '#7fae5e', '#e08a3c', maroon],
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: c => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(c.parsed.y)) + '/mo' } }
+    if (document.getElementById('scoreGauge')) {
+        new Chart(document.getElementById('scoreGauge'), {
+            type: 'doughnut',
+            data: { datasets: [{
+                data: [350, 150, 150, 150, 200],
+                backgroundColor: bandColors, borderWidth: 2, borderColor: '#fff'
+            }]},
+            options: {
+                responsive: true,
+                rotation: -90, circumference: 180, cutout: '72%',
+                aspectRatio: 1.9,
+                layout: { padding: { bottom: 4 } },
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                animation: { animateRotate: true }
             },
-            scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(v) } } }
+            plugins: [needle]
+        });
+    }
+
+    if (document.getElementById('radarChart')) {
+        new Chart(document.getElementById('radarChart'), {
+            type: 'radar',
+            data: {
+                labels: dims.map(d => d.dimension.replace(' ', '\n')),
+                datasets: [{
+                    label: '% of maximum',
+                    data: dims.map(d => d.maxPoints > 0 ? Math.round(d.score / d.maxPoints * 100) : 0),
+                    backgroundColor: maroon + '2e', borderColor: maroon,
+                    pointBackgroundColor: maroon, borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, backdropColor: 'transparent' }, pointLabels: { font: { size: 11 } } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    if (document.getElementById('barChart')) {
+        new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: dims.map(d => d.dimension),
+                datasets: [
+                    { label: 'Earned', data: dims.map(d => d.score), backgroundColor: maroon, borderRadius: 6 },
+                    { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: frlBrand.getPropertyValue('--brand-tint-bg-2').trim() || '#f2e6ea', borderRadius: 6 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true, max: 260 } },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    const lendingEl = document.getElementById('lendingChart');
+    if (lendingEl) {
+        const lend = @Html.Raw(Json.Serialize(r.Lending == null ? null : new {
+            inflow = r.Lending.MonthlyBankInflow,
+            outflow = r.Lending.MonthlyBankOutflow,
+            surplus = Math.Max(0, r.Lending.MonthlySurplus),
+            existingEmi = r.Lending.ExistingMonthlyEmi,
+            affordableEmi = r.Lending.AffordableMonthlyEmi
+        }));
+        if (lend) {
+            new Chart(lendingEl, {
+                type: 'bar',
+                data: {
+                    labels: ['Bank Inflow', 'Bank Outflow', 'Surplus', 'Existing EMI', 'EMI Headroom'],
+                    datasets: [{
+                        data: [lend.inflow, lend.outflow, lend.surplus, lend.existingEmi, lend.affordableEmi],
+                        backgroundColor: ['#2e7d4f', '#c22f3e', '#7fae5e', '#e08a3c', maroon],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: c => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(c.parsed.y)) + '/mo' } }
+                    },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(v) } } }
+                }
+            });
         }
-    });
+    }
 
     const monthLabel = k => {
         const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -669,69 +665,57 @@ window.addEventListener('load', function () {
     };
     const inr = v => '₹' + new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(v);
 
-    const bank = {"balances":{"202510":297867,"202511":318093,"202512":337043,"202601":123143,"202602":148108},"modes":{"UPI":62400,"OTHERS":3600,"IMPS":6000,"NEFT":129000}};
-    const keys = Object.keys(bank.balances).sort();
-    new Chart(document.getElementById('balanceChart'), {
-        type: 'line',
-        data: { labels: keys.map(monthLabel), datasets: [{
-            data: keys.map(k => bank.balances[k]),
-            borderColor: maroon, backgroundColor: maroon + '1f',
-            fill: true, tension: .35, pointBackgroundColor: maroon
-        }]},
-        options: { responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => inr(c.parsed.y) } } },
-            scales: { y: { ticks: { callback: inr } } } }
-    });
-    const modeKeys = Object.keys(bank.modes);
-    const modeColors = [maroon, rose, '#c98a2b', '#2e7d4f', '#7fae5e', '#8a6d00', '#c22f3e'];
-    const modeTotal = modeKeys.reduce((s, k) => s + bank.modes[k], 0);
-    new Chart(document.getElementById('modeChart'), {
-        type: 'doughnut',
-        data: { labels: modeKeys, datasets: [{
-            data: modeKeys.map(k => bank.modes[k]),
-            backgroundColor: modeColors,
-            borderColor: '#fff', borderWidth: 2
-        }]},
-        options: { responsive: true, maintainAspectRatio: false, cutout: '68%',
-            plugins: { legend: { display: false },
-            tooltip: { callbacks: { label: c => c.label + ': ' + inr(c.parsed) } } } }
-    });
-    // Custom center label + legend list, mirroring the donut+legend layout
-    const topMode = modeKeys.reduce((a, b) => bank.modes[a] > bank.modes[b] ? a : b);
-    document.getElementById('modeChartPct').textContent = Math.round(bank.modes[topMode] / modeTotal * 100) + '%';
-    document.getElementById('modeChartLbl').textContent = topMode;
-    document.getElementById('modeChartLegend').innerHTML = modeKeys.map((k, i) =>
-        `<div class="legend-row"><span class="legend-dot" style="background:${modeColors[i % modeColors.length]};"></span>` +
-        `<span class="legend-name">${k}</span><span class="legend-amt">${inr(bank.modes[k])}</span></div>`
-    ).join('') + `<div class="breakdown-total">Total ${inr(modeTotal)} across ${modeKeys.length} channels</div>`;
-
-    const gst = {"sales":{"202512":7723673,"202601":13050564.8,"202602":22201503.41,"202603":108914635.82,"202604":12805358,"202605":14505692.95},"customers":{"27AA••••F2ZZ":0.3986,"27AA••••C1ZD":0.1801,"27AA••••K1ZP":0.0828,"27AA••••L1ZE":0.0203,"27AA••••D1ZA":0.0184},"vendors":{"37AA••••J1ZZ":0.1961,"27AA••••L1ZT":0.1866,"27AL••••C1ZX":0.1425,"27AA••••B1ZP":0.0693,"33AA••••P1ZA":0.0598}};
-    const saleKeys = Object.keys(gst.sales).sort();
-    new Chart(document.getElementById('gstSalesChart'), {
-        type: 'bar',
-        data: { labels: saleKeys.map(monthLabel), datasets: [{
-            data: saleKeys.map(k => gst.sales[k]), backgroundColor: maroon, borderRadius: 6
-        }]},
-        options: { responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => inr(c.parsed.y) } } },
-            scales: { y: { beginAtZero: true, ticks: { callback: inr } } } }
-    });
-    const shareBar = (id, data, color) => {
-        const keys = Object.keys(data);
-        if (keys.length === 0) { document.getElementById(id).replaceWith('No data'); return; }
-        new Chart(document.getElementById(id), {
-            type: 'bar',
-            data: { labels: keys, datasets: [{
-                data: keys.map(k => Math.round(data[k] * 100)), backgroundColor: color, borderRadius: 6
+    const bank = @Html.Raw(Json.Serialize(r.BankAnalysis == null ? null : new {
+        balances = r.BankAnalysis.MonthlyAvgBalance
+    }));
+    if (bank && document.getElementById('balanceChart')) {
+        const keys = Object.keys(bank.balances).sort();
+        new Chart(document.getElementById('balanceChart'), {
+            type: 'line',
+            data: { labels: keys.map(monthLabel), datasets: [{
+                data: keys.map(k => bank.balances[k]),
+                borderColor: maroon, backgroundColor: maroon + '1f',
+                fill: true, tension: .35, pointBackgroundColor: maroon
             }]},
-            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x + '% share' } } },
-                scales: { x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
-                          y: { ticks: { font: { size: 9, family: 'monospace' } } } } }
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => inr(c.parsed.y) } } },
+                scales: { y: { ticks: { callback: inr } } } }
         });
-    };
-    shareBar('customerChart', gst.customers, rose);
-    shareBar('vendorChart', gst.vendors, '#c98a2b');
+    }
+
+    const gst = @Html.Raw(Json.Serialize(r.GstAnalysis == null ? null : new {
+        sales = r.GstAnalysis.MonthlySales,
+        customers = r.GstAnalysis.TopCustomers,
+        vendors = r.GstAnalysis.TopVendors
+    }));
+    if (gst && document.getElementById('gstSalesChart')) {
+        const saleKeys = Object.keys(gst.sales).sort();
+        new Chart(document.getElementById('gstSalesChart'), {
+            type: 'bar',
+            data: { labels: saleKeys.map(monthLabel), datasets: [{
+                data: saleKeys.map(k => gst.sales[k]), backgroundColor: maroon, borderRadius: 6
+            }]},
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => inr(c.parsed.y) } } },
+                scales: { y: { beginAtZero: true, ticks: { callback: inr } } } }
+        });
+        const shareBar = (id, data, color) => {
+            const keys = Object.keys(data);
+            if (keys.length === 0) { const el = document.getElementById(id); if (el) el.replaceWith('No data'); return; }
+            new Chart(document.getElementById(id), {
+                type: 'bar',
+                data: { labels: keys, datasets: [{
+                    data: keys.map(k => Math.round(data[k] * 100)), backgroundColor: color, borderRadius: 6
+                }]},
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x + '% share' } } },
+                    scales: { x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+                              y: { ticks: { font: { size: 9, family: 'monospace' } } } } }
+            });
+        };
+        if (document.getElementById('customerChart')) shareBar('customerChart', gst.customers, rose);
+        if (document.getElementById('vendorChart')) shareBar('vendorChart', gst.vendors, '#c98a2b');
+    }
 
     // Ensure every Chart.js canvas redraws at the right size for print/PDF export,
     // since the print stylesheet reflows two-column sections to a single column.
@@ -742,24 +726,51 @@ window.addEventListener('load', function () {
     if (window.matchMedia) {
         window.matchMedia('print').addEventListener('change', mql => { if (mql.matches) resizeAllCharts(); });
     }
-
-    new Chart(document.getElementById('barChart'), {
-        type: 'bar',
-        data: {
-            labels: dims.map(d => d.dimension),
-            datasets: [
-                { label: 'Earned', data: dims.map(d => d.score), backgroundColor: maroon, borderRadius: 6 },
-                { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: frlBrand.getPropertyValue('--brand-tint-bg-2').trim() || '#f2e6ea', borderRadius: 6 }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            indexAxis: 'y',
-            scales: { x: { beginAtZero: true, max: 260 } },
-            plugins: { legend: { position: 'bottom' } }
-        }
-    });
 });
 </script>
 </body>
 </html>
+
+@functions {
+    private static string FormatInr(double v)
+    {
+        if (v >= 10_000_000) return (v / 10_000_000).ToString("0.##") + " Cr";
+        if (v >= 100_000) return (v / 100_000).ToString("0.##") + " L";
+        return v.ToString("N0");
+    }
+
+    private static FinRiskLensAI.Core.Models.Scoring.DimensionScore? DimByName(
+        List<FinRiskLensAI.Core.Models.Scoring.DimensionScore> dims, string name)
+        => dims.FirstOrDefault(d => string.Equals(d.Dimension, name, StringComparison.OrdinalIgnoreCase));
+
+    private static FinRiskLensAI.Core.Models.Scoring.LendingRatio? RatioByName(
+        List<FinRiskLensAI.Core.Models.Scoring.LendingRatio>? ratios, string name)
+        => ratios?.FirstOrDefault(r => string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Formats a set of yyyyMM keys as "Mon yyyy – Mon yyyy (N months)".</summary>
+    private static string WindowLabel(IEnumerable<string>? keys)
+    {
+        var list = keys?.OrderBy(k => k).ToList() ?? new List<string>();
+        if (list.Count == 0) return "Not available";
+        string Label(string k) => new DateTime(int.Parse(k.Substring(0, 4)), int.Parse(k.Substring(4, 2)), 1).ToString("MMM yyyy");
+        return list.Count == 1
+            ? $"{Label(list[0])} (1 month)"
+            : $"{Label(list[0])} – {Label(list[^1])} ({list.Count} months)";
+    }
+
+    private static (string bg, string fg, string bar, string css, string label) RatioBadge(FinRiskLensAI.Core.Models.Scoring.RatioStatus status) => status switch
+    {
+        FinRiskLensAI.Core.Models.Scoring.RatioStatus.Strong => ("#e3f4ea", "#0f5137", "#2e7d4f", "strong", "Strong"),
+        FinRiskLensAI.Core.Models.Scoring.RatioStatus.Adequate => ("#fdf3d7", "#8a6d00", "#e6c34c", "adequate", "Adequate"),
+        FinRiskLensAI.Core.Models.Scoring.RatioStatus.Weak => ("#fbe0e0", "#8b1020", "#c22f3e", "weak", "Weak"),
+        _ => ("#efefef", "#777", "#bbb", "", "No data"),
+    };
+
+    private static int RiskBarPercent(FinRiskLensAI.Core.Models.Scoring.RatioStatus status) => status switch
+    {
+        FinRiskLensAI.Core.Models.Scoring.RatioStatus.Strong => 92,
+        FinRiskLensAI.Core.Models.Scoring.RatioStatus.Adequate => 58,
+        FinRiskLensAI.Core.Models.Scoring.RatioStatus.Weak => 22,
+        _ => 4,
+    };
+}
