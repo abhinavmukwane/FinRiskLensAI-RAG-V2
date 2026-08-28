@@ -45,6 +45,8 @@
     /* Dashboard sidebar logout chip */
     --brand-logout-bg: #FFD2AC;
     --brand-logout-bg-hover: #FFC291;
+    /* Scrollbar thumb (see the Scrollbars section below) */
+    --sb-thumb-color: #f37021;
 }
 
 :root[data-theme="theme2"] {
@@ -78,6 +80,8 @@
     /* Dashboard sidebar logout chip */
     --brand-logout-bg: rgba(209, 79, 79, .15);
     --brand-logout-bg-hover: rgba(113, 48, 48, .15);
+    /* Scrollbar thumb (see the Scrollbars section below) — medium-light maroon */
+    --sb-thumb-color: #C96B80;
 }
 
 /* ---------------------------------------------------------------------
@@ -140,3 +144,46 @@
 @media print {
     .frl-theme-toggle { display: none !important; }
 }
+
+/* ---------------------------------------------------------------------
+   Scrollbars — thin track/thumb, applied to every scrolling element
+   site-wide (panels, tables, sidebars, modals, and the page itself).
+   Thumb color follows the active theme (--sb-thumb-color is set per-theme
+   above: yellow on Theme 1, medium-light maroon on Theme 2); the track
+   stays the same dark slate on both.
+
+   No JS involved — a scrollbar only exists at all once its element's
+   content actually overflows, so a full-height page (content ≤ 100vh)
+   never shows one; the moment content grows past one screen, the browser
+   creates the scrollbar and it's already styled.
+   --------------------------------------------------------------------- */
+:root {
+    --sb-track-color: #232E33;
+    --sb-size: 10px;        /* one size, every scrollbar on every page */
+}
+
+/* CustLogin only — the site-wide 10px reads too heavy on this page. */
+body.sb-size-short {
+    --sb-size: 5px;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
+}
+
+*::-webkit-scrollbar {
+    width: var(--sb-size);
+    height: var(--sb-size);
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--sb-track-color);
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--sb-thumb-color);
+    border-radius: 3px;
+}
+
