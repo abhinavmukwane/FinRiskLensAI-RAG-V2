@@ -1,9 +1,10 @@
-// ============================================================================
+﻿// ============================================================================
 // Bank Statement Deep Analysis — page behaviour.
 //
 // Everything numeric is already computed server-side by
-// AaStatementAnalysisService; this file only animates, charts, filters and
-// requests the on-demand AI narrative. No analysis logic lives here.
+// AaStatementAnalysisService; this file only animates, charts and requests the
+// on-demand AI narrative. No analysis logic lives here. The transaction ledger
+// moved to aa-transactions.js when it got its own page.
 // ============================================================================
 
 (function () {
@@ -101,61 +102,14 @@
         }
     })();
 
-    // ── Transaction history: tabs + search + month drill-down ────────────
-    (function txnFilter() {
-        const table = document.getElementById('aaTxnTable');
-        if (!table) return;
-
-        const rows = Array.from(table.querySelectorAll('tbody tr'));
-        const counter = document.getElementById('aaRowCount');
-        const search = document.getElementById('aaSearch');
-        const tabs = Array.from(root.querySelectorAll('.aa-tab'));
-
-        let group = 'all';
-        let month = null;
-
-        function apply() {
-            const q = (search && search.value || '').trim().toLowerCase();
-            let shown = 0;
-
-            rows.forEach(function (tr) {
-                const inGroup = group === 'all' || (tr.dataset.groups || '').split(' ').indexOf(group) !== -1;
-                const inMonth = !month || tr.dataset.month === month;
-                const matches = !q || tr.textContent.toLowerCase().indexOf(q) !== -1;
-                const visible = inGroup && inMonth && matches;
-                tr.style.display = visible ? '' : 'none';
-                if (visible) shown++;
-            });
-
-            if (counter) {
-                counter.textContent = shown + ' of ' + rows.length + ' shown'
-                    + (month ? ' · ' + month : '');
-            }
-        }
-
-        tabs.forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                group = tab.dataset.group;
-                apply();
-            });
-        });
-
-        if (search) search.addEventListener('input', apply);
-
-        // Clicking a month row filters the history to that month (section 15).
+    // ── Month drill-down → the transaction history page ───────────────────
+    (function monthDrillDown() {
         root.querySelectorAll('.aa-month-row').forEach(function (tr) {
             tr.addEventListener('click', function () {
-                month = (month === tr.dataset.month) ? null : tr.dataset.month;
-                root.querySelectorAll('.aa-month-row').forEach(r => r.style.background = '');
-                if (month) tr.style.background = 'var(--aa-tint-2)';
-                apply();
-                table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                window.location.href = '/AccountAggregator/Transactions?month='
+                    + encodeURIComponent(tr.dataset.month || '');
             });
         });
-
-        apply();
     })();
 
     // ── Section 18: on-demand AI assessment ──────────────────────────────

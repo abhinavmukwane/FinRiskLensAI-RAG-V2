@@ -1,4 +1,4 @@
-using FinRiskLensAI.Common;
+﻿using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
 using FinRiskLensAI.Utility;
@@ -49,6 +49,18 @@ namespace FinRiskLensAI.Controllers
         /// <summary>Bank Statement Deep Analysis — the full credit-analyst view.</summary>
         [HttpGet]
         public async Task<IActionResult> DeepAnalysis(CancellationToken ct)
+        {
+            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
+            return View(await _profile.GetAaAnalysisAsync(uan, ct));
+        }
+
+        /// <summary>
+        /// Transaction history — the full statement ledger. Split out of
+        /// DeepAnalysis so that page stays a summary; the same analysis result
+        /// backs both, so classifications match exactly.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Transactions(CancellationToken ct)
         {
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
             return View(await _profile.GetAaAnalysisAsync(uan, ct));

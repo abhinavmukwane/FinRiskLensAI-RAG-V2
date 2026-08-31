@@ -1,0 +1,38 @@
+﻿@using FinRiskLensAI.Core.Models.AccountAggregator
+@model AaAnalysisResult
+@{
+    ViewBag.Title = "Transaction History";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/AaAnalysis.css" />
+
+<div class="container-fluid py-4">
+    <div class="aa-page-head d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-end mb-4 gap-3">
+        <div>
+            <div class="aa-eyebrow">
+                <i class="bi bi-list-ul"></i><span>Account Aggregator · Statement Ledger</span>
+            </div>
+            <h3 class="fhc-title mb-1">Transaction History</h3>
+            <p class="fhc-sub mb-0">
+                Every transaction in the linked statement, with the classification and
+                confidence assigned during analysis. Original narration is never rewritten.
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap flex-shrink-0">
+            <a href="/AccountAggregator/AADetails" class="btn btn-outline-theme">
+                <i class="bi bi-arrow-left me-1"></i>AA Details
+            </a>
+            <a href="/AccountAggregator/DeepAnalysis" class="btn btn-theme">
+                <i class="bi bi-graph-up-arrow me-1"></i>Deep Analysis
+            </a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_AaTransactionsBody", Model)
+</div>
+
+@if (Model.HasData)
+{
+    <script src="~/FRLScripts/AccountAggregator/aa-transactions.js"></script>
+}

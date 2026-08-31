@@ -1,4 +1,4 @@
-@using FinRiskLensAI.Core.Models.AccountAggregator
+﻿@using FinRiskLensAI.Core.Models.AccountAggregator
 @model AaAnalysisResult
 @*
     Shared Bank Statement Deep Analysis body. Rendered by the customer page
@@ -19,25 +19,6 @@
     static string Exact(decimal v) => $"₹{v:N2}";
 
     static string FillClass(int score) => score >= 70 ? "fill-good" : score >= 45 ? "fill-warn" : "fill-bad";
-
-    /// <summary>Filter groups used by the transaction-history tabs.</summary>
-    static string Groups(AaTransaction t, HashSet<AaTransaction> obligations)
-    {
-        var g = new List<string> { "all", t.IsCredit ? "credits" : "debits" };
-        if (t.Category is AaCategory.BusinessReceipt or AaCategory.TradeReceipt) g.Add("business");
-        if (t.Category is AaCategory.CashWithdrawal or AaCategory.CashDeposit) g.Add("cash");
-        if (t.Category == AaCategory.CashWithdrawal) g.Add("cashout");
-        if (t.Category == AaCategory.SelfTransfer) g.Add("self");
-        if (!string.IsNullOrWhiteSpace(t.Mode)
-            && new[] { "NEFT", "RTGS", "IMPS", "UPI", "FT", "TRANSFER" }.Any(m => t.Mode.Contains(m))) g.Add("transfers");
-        if (obligations.Contains(t)) g.Add("obligations");
-        if (t.Category is AaCategory.LoanEmi or AaCategory.NachEcs) g.Add("emi");
-        if (t.Category == AaCategory.BankCharges) g.Add("charges");
-        if (t.Category is AaCategory.InterestIncome or AaCategory.InterestPaid) g.Add("interest");
-        if (!string.IsNullOrWhiteSpace(t.RiskFlag)) g.Add("flagged");
-        if (t.Category == AaCategory.Unknown) g.Add("unknown");
-        return string.Join(" ", g);
-    }
 }
 
 @if (!Model.HasData)
@@ -49,12 +30,6 @@
         </div>
     </div>
     return;
-}
-
-@{
-    var obligationTxns = new HashSet<AaTransaction>(Model.Obligations.SelectMany(o => o.Transactions));
-    const int maxRows = 2000;
-    var rows = Model.Transactions.OrderByDescending(t => t.Date).Take(maxRows).ToList();
 }
 
 <div class="aa-analysis" id="aaAnalysis">
@@ -83,7 +58,7 @@
                 <div class="mb-2">
                     <span class="aa-grade grade-@Model.RiskGrade.ToLowerInvariant()">Risk Grade: @Model.RiskGrade</span>
                 </div>
-                <p class="aa-sub mb-2" style="font-size:13px;color:#3d4a4f;">
+                <p class="aa-sub mb-2" style="color:#3d4a4f;">
                     <strong>Bank Statement Health.</strong> @Model.ScoreExplanation
                 </p>
                 <p class="aa-sub mb-0">
@@ -161,7 +136,7 @@
                 <tbody>
                     @foreach (var m in Model.Monthly)
                     {
-                        <tr class="aa-month-row" data-month="@m.Month" style="cursor:pointer" title="Click to filter transactions to @m.MonthLabel">
+                        <tr class="aa-month-row" data-month="@m.Month" style="cursor:pointer" title="Open the transaction history filtered to @m.MonthLabel">
                             <td><strong>@m.MonthLabel</strong><br /><small class="text-muted">@m.TxnCount txns</small></td>
                             <td class="num cr">@Inr(m.Credits)</td>
                             <td class="num">@Inr(m.BusinessCredits)</td>
@@ -352,7 +327,7 @@
                                     <td><strong>@m.Metric</strong></td>
                                     <td class="num"><strong>@m.Value</strong></td>
                                     <td><span class="aa-pill conf-@(m.RiskCategory == "Low" ? "High" : m.RiskCategory == "Moderate" ? "Medium" : "Low")">@m.RiskCategory</span></td>
-                                    <td class="narr"><code style="font-size:11px">@m.Formula</code><br /><small class="text-muted">@m.Interpretation</small></td>
+                                    <td class="narr"><code style="font-size:12.5px">@m.Formula</code><br /><small class="text-muted">@m.Interpretation</small></td>
                                 </tr>
                             }
                         </tbody>
@@ -362,9 +337,9 @@
         </div>
     </div>
 
-    <!-- ══ SECTIONS 11 & 12 — OBLIGATIONS + DISCIPLINE ══ -->
+    <!-- ══ SECTION 11 — OBLIGATION / EMI (full width — seven-column table) ══ -->
     <div class="row g-3">
-        <div class="col-12 col-lg-7">
+        <div class="col-12">
             <div class="aa-card h-100">
                 <div class="aa-card-head">
                     <h6><i class="bi bi-calendar-check"></i>Obligation / EMI Analysis</h6>
@@ -399,7 +374,11 @@
                 }
             </div>
         </div>
-        <div class="col-12 col-lg-5">
+    </div>
+
+    <!-- ══ SECTIONS 12, 13 & 14 — DISCIPLINE + FREQUENCY + CONCENTRATION ══ -->
+    <div class="row g-3">
+        <div class="col-12 col-lg-4">
             <div class="aa-card h-100">
                 <div class="aa-card-head"><h6><i class="bi bi-shield-check"></i>Banking Discipline</h6></div>
                 <div class="aa-kpi-grid mb-3">
@@ -423,11 +402,7 @@
                 }
             </div>
         </div>
-    </div>
-
-    <!-- ══ SECTIONS 13 & 14 — FREQUENCY + CONCENTRATION ══ -->
-    <div class="row g-3">
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-lg-4">
             <div class="aa-card h-100">
                 <div class="aa-card-head"><h6><i class="bi bi-activity"></i>Transaction Frequency &amp; Behaviour</h6></div>
                 <div class="aa-kpi-grid">
@@ -440,7 +415,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-lg-4">
             <div class="aa-card h-100">
                 <div class="aa-card-head"><h6><i class="bi bi-pie-chart"></i>Concentration Analysis</h6></div>
                 <div class="aa-kpi-grid mb-3">
@@ -485,7 +460,7 @@
                 <div class="aa-card-head"><h6><i class="bi bi-calculator"></i>Estimated Sustainable Inflow</h6></div>
                 <div class="aa-kpi mb-3">
                     <span class="lbl">Estimated Potential Sustainable Business Inflow</span>
-                    <span class="val pos" style="font-size:22px">@Inr(Model.EstimatedSustainableInflow)</span>
+                    <span class="val pos" style="font-size:24px">@Inr(Model.EstimatedSustainableInflow)</span>
                     <span class="hint">over @Model.MonthsCovered month(s) — not audited turnover</span>
                 </div>
                 <ul class="aa-sub mb-0" style="padding-left:18px;line-height:1.9">
@@ -519,74 +494,6 @@
         </p>
         <div id="aaAiStatus" class="aa-empty" style="display:none;"></div>
         <div id="aaAiResult" style="display:none;"></div>
-    </div>
-
-    <!-- ══ SECTION 5 — TRANSACTION HISTORY BY CATEGORY ══ -->
-    <div class="aa-card">
-        <div class="aa-card-head">
-            <h6><i class="bi bi-list-ul"></i>Transaction History</h6>
-            <div class="d-flex align-items-center gap-2">
-                <input type="search" id="aaSearch" class="form-control form-control-sm" style="max-width:230px"
-                       placeholder="Search narration / amount…" aria-label="Search transactions" />
-                <span class="aa-sub" id="aaRowCount"></span>
-            </div>
-        </div>
-
-        <div class="aa-tabs" role="tablist">
-            @{
-                var tabs = new (string Key, string Label)[]
-                {
-                    ("all","All"), ("credits","Credits"), ("debits","Debits"), ("business","Business Inflows"),
-                    ("cashout","Cash Withdrawals"), ("transfers","Transfers"), ("self","Self Transfers"),
-                    ("obligations","Obligations"), ("emi","EMI/Loan"), ("charges","Charges"),
-                    ("interest","Interest"), ("flagged","Suspicious Patterns"), ("unknown","Unknown")
-                };
-            }
-            @foreach (var (key, label) in tabs)
-            {
-                <button type="button" class="aa-tab @(key == "all" ? "active" : "")" data-group="@key">@label</button>
-            }
-        </div>
-
-        @if (Model.Transactions.Count > maxRows)
-        {
-            <p class="aa-sub mb-2">
-                <i class="bi bi-info-circle me-1"></i>
-                Showing the @maxRows most recent of @Model.Transactions.Count transactions. All aggregate figures above use the full statement.
-            </p>
-        }
-
-        <div class="aa-table-wrap aa-scroll-y">
-            <table class="aa-table" id="aaTxnTable">
-                <thead>
-                    <tr>
-                        <th>Date</th><th>Txn No</th><th class="narr">Narration</th><th class="narr">Description</th>
-                        <th class="num">Credit</th><th class="num">Debit</th><th class="num">Balance</th>
-                        <th>Mode</th><th>Cheque</th><th>Classification</th><th>Conf.</th><th>Risk</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var t in rows)
-                    {
-                        <tr data-groups="@Groups(t, obligationTxns)" data-month="@t.Date.ToString("yyyy-MM")">
-                            <td>@t.Date.ToString("dd MMM yyyy")</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.TxnNo) ? "—" : (t.TxnNo.Length > 14 ? t.TxnNo[..14] + "…" : t.TxnNo))</td>
-                            <td class="narr">@t.Narration</td>
-                            <td class="narr">@(string.IsNullOrWhiteSpace(t.Description) ? "—" : t.Description)</td>
-                            <td class="num cr">@(t.Credit > 0 ? Exact(t.Credit) : "")</td>
-                            <td class="num dr">@(t.Debit > 0 ? Exact(t.Debit) : "")</td>
-                            <td class="num">@(t.Balance.HasValue ? Exact(t.Balance.Value) : "—")</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.Mode) ? "—" : t.Mode)</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.ChequeNo) ? "—" : t.ChequeNo)</td>
-                            <td><span class="aa-pill">@t.Category</span></td>
-                            <td><span class="aa-pill conf-@t.Confidence">@t.Confidence</span></td>
-                            <td>@if (t.RiskFlag != null) { <span class="aa-riskdot">@t.RiskFlag</span> }</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        <p class="aa-sub mt-2 mb-0">Original narration is never hidden or rewritten — classification is shown alongside it for verification.</p>
     </div>
 </div>
 

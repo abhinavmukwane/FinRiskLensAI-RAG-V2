@@ -1,4 +1,4 @@
-/* ============================================================================
+﻿/* ============================================================================
    Account Aggregator — Bank Statement Deep Analysis
    Scoped under .aa-analysis. Colours come from the shared theme variables
    (theme.css), so the module follows the IDBI / FinRiskLensAI theme switch.
@@ -17,6 +17,10 @@
     --aa-good-soft: #e6f4ea;
     --aa-warn-soft: #fff3e0;
     --aa-bad-soft: #fdecea;
+
+    /* Match the rest of the app: Inter for body copy, Sora for headings.
+       Both tokens are declared on :root in Dashboard.css. */
+    font-family: var(--font-body, "Inter", sans-serif);
 }
 
 /* ── Cards ──────────────────────────────────────────────────────────── */
@@ -38,7 +42,8 @@
 }
 
     .aa-analysis .aa-card-head h6 {
-        font-size: 15px;
+        font-family: var(--font-headline, "Sora", sans-serif);
+        font-size: 16px;
         font-weight: 700;
         color: var(--aa-primary);
         margin: 0;
@@ -48,7 +53,7 @@
     }
 
 .aa-analysis .aa-sub {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--aa-muted);
     margin: 0;
 }
@@ -56,7 +61,7 @@
 /* ── KPI grid ───────────────────────────────────────────────────────── */
 .aa-analysis .aa-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 12px;
 }
 
@@ -68,7 +73,7 @@
 }
 
     .aa-analysis .aa-kpi .lbl {
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: .04em;
@@ -78,7 +83,7 @@
     }
 
     .aa-analysis .aa-kpi .val {
-        font-size: 17px;
+        font-size: 20px;
         font-weight: 700;
         color: var(--aa-primary);
         line-height: 1.2;
@@ -89,7 +94,7 @@
         .aa-analysis .aa-kpi .val.pos { color: var(--aa-good); }
 
     .aa-analysis .aa-kpi .hint {
-        font-size: 10.5px;
+        font-size: 11.5px;
         color: var(--aa-muted);
         margin-top: 3px;
     }
@@ -123,12 +128,12 @@
         line-height: 1;
     }
 
-        .aa-analysis .aa-ring .center .num { font-size: 32px; font-weight: 700; color: var(--aa-primary); }
-        .aa-analysis .aa-ring .center .den { font-size: 11px; color: var(--aa-muted); margin-top: 3px; }
+        .aa-analysis .aa-ring .center .num { font-family: var(--font-headline, "Sora", sans-serif); font-size: 34px; font-weight: 700; color: var(--aa-primary); }
+        .aa-analysis .aa-ring .center .den { font-size: 12px; color: var(--aa-muted); margin-top: 3px; }
 
 .aa-analysis .aa-grade {
     display: inline-block;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     padding: 5px 14px;
     border-radius: 999px;
@@ -149,7 +154,7 @@
         justify-content: space-between;
         align-items: baseline;
         gap: 10px;
-        font-size: 12.5px;
+        font-size: 13.5px;
         margin-bottom: 5px;
     }
 
@@ -170,7 +175,7 @@
             transition: width 1s ease;
         }
 
-    .aa-analysis .aa-comp .why { font-size: 11.5px; color: var(--aa-muted); margin-top: 5px; }
+    .aa-analysis .aa-comp .why { font-size: 12.5px; color: var(--aa-muted); margin-top: 5px; }
 
 .aa-analysis .fill-good { background: var(--aa-good); }
 .aa-analysis .fill-warn { background: var(--aa-warn); }
@@ -181,13 +186,13 @@
 
 .aa-analysis table.aa-table {
     width: 100%;
-    font-size: 12.5px;
+    font-size: 13.5px;
     margin: 0;
     border-collapse: collapse;
 }
 
     .aa-analysis table.aa-table thead th {
-        font-size: 10.5px;
+        font-size: 11.5px;
         text-transform: uppercase;
         letter-spacing: .04em;
         font-weight: 700;
@@ -219,7 +224,7 @@
 /* ── Pills / badges ─────────────────────────────────────────────────── */
 .aa-analysis .aa-pill {
     display: inline-block;
-    font-size: 10.5px;
+    font-size: 11.5px;
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 999px;
@@ -234,7 +239,7 @@
 
 .aa-analysis .aa-riskdot {
     display: inline-block;
-    font-size: 10.5px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--aa-bad);
     background: var(--aa-bad-soft);
@@ -250,14 +255,14 @@
     align-items: center;
     padding: 9px 0;
     border-bottom: 1px solid #f1f5f6;
-    font-size: 12.5px;
+    font-size: 13.5px;
 }
 
     .aa-analysis .aa-cat:last-child { border-bottom: none; }
     .aa-analysis .aa-cat .nm { font-weight: 600; color: #37474d; }
-    .aa-analysis .aa-cat .nm small { display: block; font-weight: 400; color: var(--aa-muted); font-size: 11px; }
+    .aa-analysis .aa-cat .nm small { display: block; font-weight: 400; color: var(--aa-muted); font-size: 12px; }
     .aa-analysis .aa-cat .amt { text-align: right; font-weight: 700; color: var(--aa-primary); font-variant-numeric: tabular-nums; }
-    .aa-analysis .aa-cat .pct { text-align: right; color: var(--aa-muted); font-size: 11.5px; }
+    .aa-analysis .aa-cat .pct { text-align: right; color: var(--aa-muted); font-size: 12.5px; }
 
 .aa-analysis .aa-catbar {
     grid-column: 1 / -1;
@@ -283,9 +288,9 @@
 }
 
     .aa-analysis .aa-flag:last-child { margin-bottom: 0; }
-    .aa-analysis .aa-flag .ttl { font-weight: 700; font-size: 13px; margin: 0 0 3px; }
-    .aa-analysis .aa-flag .ev { font-size: 12px; color: #4d5c62; margin: 0; }
-    .aa-analysis .aa-flag .rel { font-size: 11.5px; color: var(--aa-muted); margin: 4px 0 0; font-style: italic; }
+    .aa-analysis .aa-flag .ttl { font-weight: 700; font-size: 14px; margin: 0 0 3px; }
+    .aa-analysis .aa-flag .ev { font-size: 13px; color: #4d5c62; margin: 0; }
+    .aa-analysis .aa-flag .rel { font-size: 12.5px; color: var(--aa-muted); margin: 4px 0 0; font-style: italic; }
 
 .aa-analysis .flag-High { border-left-color: var(--aa-bad); background: #fef8f8; }
     .aa-analysis .flag-High .ttl { color: var(--aa-bad); }
@@ -309,7 +314,7 @@
     border-bottom: 3px solid transparent;
     margin-bottom: -2px;
     padding: 9px 14px;
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 700;
     color: var(--aa-muted);
     cursor: pointer;
@@ -329,7 +334,7 @@
 }
 
     .aa-analysis .aa-analyst li {
-        font-size: 12.5px;
+        font-size: 13.5px;
         line-height: 1.7;
         color: #3d4a4f;
         padding-left: 2px;
@@ -344,7 +349,7 @@
 .aa-analysis .aa-ai-block { margin-bottom: 14px; }
 
     .aa-analysis .aa-ai-block h6 {
-        font-size: 11.5px;
+        font-size: 12.5px;
         text-transform: uppercase;
         letter-spacing: .05em;
         color: var(--aa-muted);
@@ -352,13 +357,13 @@
         margin: 0 0 5px;
     }
 
-    .aa-analysis .aa-ai-block p { font-size: 12.5px; line-height: 1.65; color: #3d4a4f; margin: 0; }
+    .aa-analysis .aa-ai-block p { font-size: 13.5px; line-height: 1.65; color: #3d4a4f; margin: 0; }
 
 .aa-analysis .aa-empty {
     text-align: center;
     padding: 28px 14px;
     color: var(--aa-muted);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .aa-analysis .aa-chart-wrap { position: relative; height: 260px; }
@@ -368,3 +373,116 @@
     .aa-analysis .aa-cat .pct { display: none; }
     .aa-analysis .aa-ring { width: 108px; height: 108px; }
 }
+
+/* ── Grid rhythm ────────────────────────────────────────────────────
+   Cards carry their own 20px margin-bottom, which double-counts against
+   a Bootstrap row's gutter and left uneven gaps between the paired
+   cards and the full-width ones. The row owns the spacing instead: one
+   20px gutter in both directions, and the card margin is dropped inside
+   a column. Equal-height columns still come from .h-100 on the card.
+   ------------------------------------------------------------------ */
+.aa-analysis .row {
+    --bs-gutter-x: 20px;
+    --bs-gutter-y: 20px;
+    margin-bottom: 20px;
+}
+
+    .aa-analysis .row > [class*="col-"] > .aa-card { margin-bottom: 0; }
+
+.aa-analysis .row:last-child { margin-bottom: 0; }
+
+/* ── Buttons ────────────────────────────────────────────────────────
+   .btn-theme is global (DashboardLayout.css) but .btn-outline-theme is
+   only ever defined page-scoped, so the AA screens were rendering a
+   bare Bootstrap .btn. Same geometry as the .udyam-dashboard pair so
+   every module's buttons match.
+   ------------------------------------------------------------------ */
+.aa-analysis .btn-theme,
+.aa-analysis .btn-outline-theme,
+.aa-page-head .btn-theme,
+.aa-page-head .btn-outline-theme {
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.aa-analysis .btn-theme,
+.aa-page-head .btn-theme {
+    background: var(--brand-btn-bg);
+    color: var(--brand-btn-fg);
+    border: 1px solid var(--brand-btn-bg);
+}
+
+    .aa-analysis .btn-theme:hover,
+    .aa-page-head .btn-theme:hover {
+        background: var(--brand-btn-bg-hover);
+        border-color: var(--brand-btn-bg-hover);
+        color: var(--brand-btn-fg);
+    }
+
+.aa-analysis .btn-outline-theme,
+.aa-page-head .btn-outline-theme {
+    background: #fff;
+    color: var(--brand-btn-bg);
+    border: 1px solid var(--brand-btn-bg);
+}
+
+    .aa-analysis .btn-outline-theme:hover,
+    .aa-page-head .btn-outline-theme:hover {
+        background: var(--brand-btn-bg);
+        color: var(--brand-btn-fg);
+    }
+
+/* ── Page header (shared by AADetails and DeepAnalysis) ─────────────── */
+.aa-page-head .aa-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--brand-primary);
+    margin-bottom: 4px;
+}
+
+/* Deep-analysis call-to-action card title (AADetails). */
+.aa-analysis .aa-cta-title {
+    font-family: var(--font-headline, "Sora", sans-serif);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--aa-primary);
+    margin: 0 0 6px;
+}
+
+/* ── Transaction history page ───────────────────────────────────────
+   The ledger has a page to itself, so the table gets the viewport
+   rather than the 460px cap it used when it sat under the analysis.
+   ------------------------------------------------------------------ */
+#aaTransactions .aa-scroll-y {
+    max-height: calc(100vh - 330px);
+    min-height: 420px;
+}
+
+/* Month filter carried over from a month row on the analysis page. */
+.aa-analysis .aa-month-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--aa-tint-2);
+    color: var(--aa-primary);
+    border: 1px solid var(--aa-border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+    .aa-analysis .aa-month-chip:hover {
+        background: var(--aa-bad-soft);
+        border-color: var(--aa-bad);
+        color: var(--aa-bad);
+    }
