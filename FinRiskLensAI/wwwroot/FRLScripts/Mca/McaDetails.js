@@ -19,6 +19,115 @@
         });
     });
 
+    // ── Charge chart ─────────────────────────────────────────────────────
+    // Same Chart.js setup as the Deep Analysis charts (aa-analysis.js): a
+    // responsive canvas inside a fixed-height .aa-chart-wrap.
+    //
+    // Rendered when the Charges tab is shown, and re-rendered on each return
+    // to it. Chart.js freezes bar geometry at the canvas size it sees when the
+    // chart is constructed, and a canvas still reports a default 300x150 while
+    // its panel is display:none — building it hidden yields hairline bars
+    // stacked behind the y-axis. Rebuilding while visible is cheap here (one
+    // bar per registered charge) and avoids depending on resize timing.
+    (function chargeChart() {
+        var payload = document.getElementById('mcaChargeData');
+        var canvas = document.getElementById('mcaChargeChart');
+        if (!payload || !canvas || typeof Chart === 'undefined') return;
+
+        var rows = [];
+        try { rows = JSON.parse(payload.textContent) || []; } catch (e) { return; }
+        if (!rows.length) return;
+
+        var css = getComputedStyle(document.documentElement);
+        var openColor = (css.getPropertyValue('--warning-orange') || '#b26a00').trim();
+        var closedColor = (css.getPropertyValue('--success-green') || '#2e7d32').trim();
+
+        var money = function (v) {
+            var a = Math.abs(v);
+            if (a >= 1e7) return '₹' + (v / 1e7).toFixed(2) + ' Cr';
+            if (a >= 1e5) return '₹' + (v / 1e5).toFixed(2) + ' L';
+            return '₹' + Math.round(v).toLocaleString('en-IN');
+        };
+
+        // A logarithmic bar axis needs an explicit floor: without one the bar
+        // base resolves to 0, log(0) is -Infinity and nothing is drawn. Taking
+        // a decade below the smallest charge also keeps that bar visible
+        // instead of flattening it onto the axis.
+        var amounts = rows.map(r => r.amount);
+        var axisMin = Math.pow(10, Math.floor(Math.log10(Math.min.apply(null, amounts))) - 1);
+        var axisMax = Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, amounts))));
+
+        var chart = null;
+        function render() {
+            if (chart) { chart.destroy(); chart = null; }
+            // offsetParent is null while any ancestor is display:none.
+            if (!canvas.offsetParent) return;
+
+            chart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(r => r.year),
+                    datasets: [{
+                        label: 'Charge amount',
+                        data: amounts,
+                        backgroundColor: rows.map(r => (r.open ? openColor : closedColor) + 'cc'),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: c => rows[c[0].dataIndex].label,
+                                label: function (c) {
+                                    var r = rows[c.dataIndex];
+                                    return [r.year + ' · ' + r.status, r.asset];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'logarithmic',
+                            min: axisMin,
+                            max: axisMax,
+                            // One gridline per decade; the default log ticks
+                            // crowd the axis with intermediate values.
+                            afterBuildTicks: function (scale) {
+                                var ticks = [];
+                                for (var d = Math.log10(axisMin); d <= Math.log10(axisMax) + 0.001; d++) {
+                                    ticks.push({ value: Math.pow(10, d) });
+                                }
+                                scale.ticks = ticks;
+                            },
+                            ticks: { callback: money, font: { size: 10 } },
+                            grid: { color: '#f1f5f6' }
+                        },
+                        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('.mca2-tab').forEach(function (tab) {
+            if (tab.dataset.tab === 'tab-charges') {
+                // After the tab handler above has made the panel visible.
+                tab.addEventListener('click', function () { setTimeout(render, 0); });
+            }
+        });
+
+        // If Charges is already the open tab, wait for load: a chart built
+        // before layout settles keeps the bar widths it computed then, and
+        // resize() alone does not recover them — only a rebuild does.
+        var panel = document.getElementById('tab-charges');
+        if (panel && panel.classList.contains('active')) {
+            if (document.readyState === 'complete') { setTimeout(render, 0); }
+            else { window.addEventListener('load', function () { setTimeout(render, 0); }); }
+        }
+    })();
+
     // ── Charge accordion (one open at a time) ────────────────────────────
     document.querySelectorAll('.mca2-accordion-header').forEach(function (header) {
         header.addEventListener('click', function () {

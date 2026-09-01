@@ -2579,14 +2579,12 @@ img {
 .udyam-dashboard .director-strip-card .expand-hint { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; background: var(--theme-maroon-soft); color: var(--theme-maroon); display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.3s ease; }
 .udyam-dashboard .director-strip-card:hover .expand-hint { background: var(--theme-maroon); color: #fff; }
 
-/* Charge heatmap */
-.udyam-dashboard .charge-heatmap { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-.udyam-dashboard .heatmap-cell { min-width: 52px; height: 48px; padding: 0 6px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; transition: transform 0.2s ease; cursor: default; }
-.udyam-dashboard .heatmap-cell:hover { transform: scale(1.15); }
-.udyam-dashboard .heatmap-cell .year { font-size: 9px; opacity: 0.7; }
-.udyam-dashboard .heat-low { background: var(--success-green-soft); color: var(--success-green); }
-.udyam-dashboard .heat-medium { background: var(--warning-orange-soft); color: var(--warning-orange); }
-.udyam-dashboard .heat-high { background: var(--danger-red-soft); color: var(--danger-red); }
+/* Charge chart — same wrapper contract as the Deep Analysis charts
+   (.aa-chart-wrap in AaAnalysis.css): a relative box with a fixed height so
+   Chart.js can size a responsive canvas into it. Replaces the old chip
+   "heatmap", where every chip was the same size so only the tint carried
+   the amount. */
+.udyam-dashboard .aa-chart-wrap { position: relative; height: 260px; }
 
 /* Verification grid */
 .udyam-dashboard .verif-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }

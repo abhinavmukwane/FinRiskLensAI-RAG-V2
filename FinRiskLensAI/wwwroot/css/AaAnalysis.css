@@ -221,6 +221,132 @@
 
 .aa-analysis .aa-scroll-y { max-height: 460px; overflow-y: auto; }
 
+/* ── Stacked two-field cells ────────────────────────────────────────
+   The ledger carries twelve fields. One field per column overflowed the
+   card and pushed Balance, Mode, Classification and Risk behind a
+   horizontal scrollbar, so related fields now share a column and stack —
+   the same pairing the origination case list uses.
+   ------------------------------------------------------------------- */
+.aa-analysis table.aa-table-stacked { table-layout: fixed; }
+
+    .aa-analysis table.aa-table-stacked thead th {
+        white-space: normal;
+        vertical-align: bottom;
+        padding: 8px 12px;
+    }
+
+        .aa-analysis table.aa-table-stacked thead th .th-a,
+        .aa-analysis table.aa-table-stacked thead th .th-b { display: block; line-height: 1.4; }
+
+        .aa-analysis table.aa-table-stacked thead th .th-b { font-weight: 600; opacity: .72; }
+
+    .aa-analysis table.aa-table-stacked td { padding: 10px 12px; vertical-align: top; }
+
+/* Widths total 100%, so the table can never outgrow the card. */
+.aa-analysis table.aa-table-stacked .col-when { width: 14%; }
+.aa-analysis table.aa-table-stacked .col-narr { width: 30%; }
+.aa-analysis table.aa-table-stacked .col-amt { width: 16%; }
+.aa-analysis table.aa-table-stacked .col-mode { width: 12%; }
+.aa-analysis table.aa-table-stacked .col-class { width: 18%; }
+.aa-analysis table.aa-table-stacked .col-risk { width: 10%; }
+
+.aa-analysis .aa-stack { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+    .aa-analysis .aa-stack .ln {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        color: #22343a;
+    }
+
+        .aa-analysis .aa-stack .ln > i {
+            flex: 0 0 auto;
+            font-size: 12px;
+            line-height: 1.55;
+            color: var(--aa-primary);
+            opacity: .8;
+        }
+
+        /* Narration wraps rather than clipping — it is the evidence the
+           classification is checked against and is never hidden. */
+        .aa-analysis .aa-stack .ln .tx { min-width: 0; overflow-wrap: anywhere; }
+
+        .aa-analysis .aa-stack .ln.sub { font-size: 12px; font-weight: 500; color: var(--aa-muted); }
+
+            .aa-analysis .aa-stack .ln.sub > i { color: var(--aa-muted); opacity: .85; }
+
+/* Money column: figures hug the right edge and never break mid-amount. */
+.aa-analysis table.aa-table-stacked td.num .aa-stack .ln { justify-content: flex-end; }
+.aa-analysis table.aa-table-stacked td.num .aa-stack .ln .tx { white-space: nowrap; }
+
+/* Identifiers are single-line with an ellipsis; the full value is in the
+   title attribute, so wrapping a UUID over two lines buys nothing. */
+.aa-analysis table.aa-table-stacked .col-when .ln.sub .tx,
+.aa-analysis table.aa-table-stacked .col-narr .ln.sub .tx {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Classification / confidence are pills, so the line needs no icon slot. */
+.aa-analysis table.aa-table-stacked .col-class .ln { display: block; }
+
+/* The fixed budget holds at every width, so the ledger never grows a
+   horizontal scrollbar; below lg it just gets tighter type and padding. */
+@media (max-width: 991.98px) {
+    .aa-analysis table.aa-table-stacked thead th,
+    .aa-analysis table.aa-table-stacked td { padding: 8px 6px; }
+
+    .aa-analysis .aa-stack .ln { font-size: 12px; gap: 4px; }
+    .aa-analysis .aa-stack .ln.sub { font-size: 11px; }
+}
+
+/* On a phone six columns cannot hold their content, so each transaction
+   becomes a card and the pairs reflow into a two-up grid. Nothing is
+   dropped -- the same fields are shown, just stacked instead of ruled. */
+@media (max-width: 767.98px) {
+    .aa-analysis table.aa-table-stacked,
+    .aa-analysis table.aa-table-stacked tbody,
+    .aa-analysis table.aa-table-stacked td { display: block; width: auto; }
+
+    .aa-analysis table.aa-table-stacked thead { display: none; }
+
+    .aa-analysis table.aa-table-stacked tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
+        border: 1px solid var(--aa-border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .aa-analysis table.aa-table-stacked td { border: 0; padding: 0; }
+
+    /* The desktop percentage budget would squeeze the grid cells to a
+       character wide, so the widths are handed back to the grid. */
+    .aa-analysis table.aa-table-stacked .col-when,
+    .aa-analysis table.aa-table-stacked .col-narr,
+    .aa-analysis table.aa-table-stacked .col-amt,
+    .aa-analysis table.aa-table-stacked .col-mode,
+    .aa-analysis table.aa-table-stacked .col-class,
+    .aa-analysis table.aa-table-stacked .col-risk { width: auto; min-width: 0; }
+
+    /* Narration is the widest field and carries the evidence. */
+    .aa-analysis table.aa-table-stacked .col-narr { grid-column: 1 / -1; }
+
+    /* Card cells all read left-to-right; nothing is column-aligned now. */
+    .aa-analysis table.aa-table-stacked td.num { text-align: left; }
+    .aa-analysis table.aa-table-stacked td.num .aa-stack .ln { justify-content: flex-start; }
+
+    .aa-analysis table.aa-table-stacked .col-when .ln.sub .tx,
+    .aa-analysis table.aa-table-stacked .col-narr .ln.sub .tx { white-space: normal; overflow: visible; }
+}
+
 /* ── Pills / badges ─────────────────────────────────────────────────── */
 .aa-analysis .aa-pill {
     display: inline-block;

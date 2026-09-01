@@ -14,6 +14,10 @@
 @functions {
     static string Exact(decimal v) => $"₹{v:N2}";
 
+    /// <summary>Clips a long identifier for the cell; the full value stays in the tooltip.</summary>
+    static string Clip(string? s, int n) =>
+        string.IsNullOrWhiteSpace(s) ? "—" : (s.Length > n ? s[..n] + "…" : s);
+
     /// <summary>Filter groups used by the transaction-history tabs.</summary>
     static string Groups(AaTransaction t, HashSet<AaTransaction> obligations)
     {
@@ -91,31 +95,79 @@
             </p>
         }
 
+        @*
+            Twelve fields no longer get twelve columns. Related pairs share a
+            cell and stack — the layout the origination case list uses — so the
+            ledger fits the card width and Balance / Mode / Classification stay
+            on screen instead of sitting behind a horizontal scrollbar.
+        *@
         <div class="aa-table-wrap aa-scroll-y">
-            <table class="aa-table" id="aaTxnTable">
+            <table class="aa-table aa-table-stacked" id="aaTxnTable">
                 <thead>
                     <tr>
-                        <th>Date</th><th>Txn No</th><th class="narr">Narration</th><th class="narr">Description</th>
-                        <th class="num">Credit</th><th class="num">Debit</th><th class="num">Balance</th>
-                        <th>Mode</th><th>Cheque</th><th>Classification</th><th>Conf.</th><th>Risk</th>
+                        <th class="col-when"><span class="th-a">Date</span><span class="th-b">Txn No</span></th>
+                        <th class="col-narr"><span class="th-a">Narration</span><span class="th-b">Description</span></th>
+                        <th class="col-amt num"><span class="th-a">Credit / Debit</span><span class="th-b">Balance</span></th>
+                        <th class="col-mode"><span class="th-a">Mode</span><span class="th-b">Cheque</span></th>
+                        <th class="col-class"><span class="th-a">Classification</span><span class="th-b">Confidence</span></th>
+                        <th class="col-risk"><span class="th-a">Risk</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var t in rows)
                     {
                         <tr data-groups="@Groups(t, obligationTxns)" data-month="@t.Date.ToString("yyyy-MM")">
-                            <td>@t.Date.ToString("dd MMM yyyy")</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.TxnNo) ? "—" : (t.TxnNo.Length > 14 ? t.TxnNo[..14] + "…" : t.TxnNo))</td>
-                            <td class="narr">@t.Narration</td>
-                            <td class="narr">@(string.IsNullOrWhiteSpace(t.Description) ? "—" : t.Description)</td>
-                            <td class="num cr">@(t.Credit > 0 ? Exact(t.Credit) : "")</td>
-                            <td class="num dr">@(t.Debit > 0 ? Exact(t.Debit) : "")</td>
-                            <td class="num">@(t.Balance.HasValue ? Exact(t.Balance.Value) : "—")</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.Mode) ? "—" : t.Mode)</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.ChequeNo) ? "—" : t.ChequeNo)</td>
-                            <td><span class="aa-pill">@t.Category</span></td>
-                            <td><span class="aa-pill conf-@t.Confidence">@t.Confidence</span></td>
-                            <td>@if (t.RiskFlag != null) { <span class="aa-riskdot">@t.RiskFlag</span> }</td>
+                            <td class="col-when">
+                                <div class="aa-stack">
+                                    <span class="ln"><i class="bi bi-calendar3"></i><span class="tx">@t.Date.ToString("dd MMM yyyy")</span></span>
+                                    <span class="ln sub" title="@t.TxnNo"><i class="bi bi-hash"></i><span class="tx">@Clip(t.TxnNo, 16)</span></span>
+                                </div>
+                            </td>
+                            <td class="col-narr">
+                                <div class="aa-stack">
+                                    <span class="ln"><i class="bi bi-card-text"></i><span class="tx">@t.Narration</span></span>
+                                    <span class="ln sub"><i class="bi bi-file-earmark-text"></i><span class="tx">@(string.IsNullOrWhiteSpace(t.Description) ? "—" : t.Description)</span></span>
+                                </div>
+                            </td>
+                            <td class="col-amt num">
+                                <div class="aa-stack">
+                                    @if (t.Credit > 0)
+                                    {
+                                        <span class="ln cr"><i class="bi bi-arrow-down-left-circle"></i><span class="tx">@Exact(t.Credit)</span></span>
+                                    }
+                                    else if (t.Debit > 0)
+                                    {
+                                        <span class="ln dr"><i class="bi bi-arrow-up-right-circle"></i><span class="tx">@Exact(t.Debit)</span></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="ln"><span class="tx">—</span></span>
+                                    }
+                                    <span class="ln sub"><i class="bi bi-wallet2"></i><span class="tx">@(t.Balance.HasValue ? Exact(t.Balance.Value) : "—")</span></span>
+                                </div>
+                            </td>
+                            <td class="col-mode">
+                                <div class="aa-stack">
+                                    <span class="ln"><i class="bi bi-credit-card-2-front"></i><span class="tx">@(string.IsNullOrWhiteSpace(t.Mode) ? "—" : t.Mode)</span></span>
+                                    <span class="ln sub"><i class="bi bi-receipt"></i><span class="tx">@(string.IsNullOrWhiteSpace(t.ChequeNo) ? "—" : t.ChequeNo)</span></span>
+                                </div>
+                            </td>
+                            <td class="col-class">
+                                <div class="aa-stack">
+                                    <span class="ln"><span class="aa-pill">@t.Category</span></span>
+                                    <span class="ln sub"><span class="aa-pill conf-@t.Confidence">@t.Confidence</span></span>
+                                </div>
+                            </td>
+                            <td class="col-risk">
+                                @if (t.RiskFlag != null)
+                                {
+                                    <span class="aa-riskdot">@t.RiskFlag</span>
+                                }
+                                else
+                                {
+                                    <span class="aa-sub">—</span>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>
