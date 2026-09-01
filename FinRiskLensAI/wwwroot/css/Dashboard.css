@@ -2573,11 +2573,28 @@ img {
 .udyam-dashboard .mini-donut .center-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--theme-maroon); }
 
 /* Director strip */
-.udyam-dashboard .director-strip { display: flex; gap: 16px; overflow-x: auto; padding: 4px 0 8px; -webkit-overflow-scrolling: touch; }
-.udyam-dashboard .director-strip-card { flex: 0 0 280px; border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; background: #fff; cursor: pointer; transition: all 0.3s ease; position: relative; }
+/* Director cards. The horizontal scroll strip was replaced by a Bootstrap
+   three-up grid, so the card no longer needs a fixed flex basis. */
+.udyam-dashboard .director-strip-card { border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; background: #fff; cursor: pointer; transition: all 0.3s ease; position: relative; }
 .udyam-dashboard .director-strip-card:hover { transform: translateY(-4px); border-color: var(--theme-maroon); box-shadow: 0 10px 30px rgba(var(--brand-primary-rgb), 0.08); }
 .udyam-dashboard .director-strip-card .expand-hint { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; background: var(--theme-maroon-soft); color: var(--theme-maroon); display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.3s ease; }
 .udyam-dashboard .director-strip-card:hover .expand-hint { background: var(--theme-maroon); color: #fff; }
+
+
+/* Director facts: a dotted bullet list rather than ruled label/value rows.
+   Bullets are the existing .status-dot swatches. */
+.udyam-dashboard .director-facts { font-size: 12px; color: var(--text-muted-2); }
+.udyam-dashboard .director-facts li { display: flex; align-items: center; margin-bottom: 8px; }
+.udyam-dashboard .director-facts li:last-child { margin-bottom: 0; }
+.udyam-dashboard .director-facts strong { color: var(--theme-maroon); font-weight: 700; margin-left: 5px; }
+
+/* Board-screening actions, footed like the stat row in the reference card:
+   ruled off and pinned to the bottom so every card in a row ends level.
+   Sizing and tokens follow the .din-badge / .pill-type pills above them. */
+.udyam-dashboard .director-screen { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--brand-tint-bg-2); }
+.udyam-dashboard .director-screen .lbl { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted-2); }
+.udyam-dashboard .screen-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--card-border); background: #fff; color: var(--theme-maroon); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; transition: all 0.15s ease; }
+.udyam-dashboard .screen-btn:hover { background: var(--theme-maroon-soft); border-color: var(--theme-maroon); }
 
 /* Charge chart — same wrapper contract as the Deep Analysis charts
    (.aa-chart-wrap in AaAnalysis.css): a relative box with a fixed height so

@@ -231,8 +231,28 @@
     }
 
     document.querySelectorAll('.director-strip-card').forEach(function (card) {
-        card.addEventListener('click', function () {
+        card.addEventListener('click', function (e) {
+            // The screening buttons live inside the card; a click on one of
+            // them must not also open the DIN profile.
+            if (e.target.closest('.screen-btn')) return;
             showDirector(card.dataset.din, card.dataset.name);
+        });
+    });
+
+    // ── Board screening (OFAC / AML) ─────────────────────────────────────
+    // UI only for now: no screening service is wired up. Each button raises
+    // a 'frl:board-screen' event carrying the director's DIN and the list to
+    // check, which is the single place to hook a real provider in.
+    document.querySelectorAll('.screen-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.dispatchEvent(new CustomEvent('frl:board-screen', {
+                detail: {
+                    list: btn.dataset.screen,
+                    din: btn.dataset.din,
+                    name: btn.dataset.name
+                }
+            }));
         });
     });
 

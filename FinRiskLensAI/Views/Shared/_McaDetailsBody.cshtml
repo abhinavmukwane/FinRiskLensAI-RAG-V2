@@ -225,27 +225,57 @@
     <div class="tab-panel" id="tab-directors">
 
         <h6 class="card-heading mb-3"><i class="bi bi-people-fill me-2"></i>Board of Directors</h6>
-        <div class="director-strip mb-4">
+        @* Three-up grid rather than a horizontal scroll strip, so the whole
+           board is visible without scrolling sideways. Bootstrap's grid already
+           lays out the stat rows on this page, so no new layout CSS is needed. *@
+        <div class="row g-3 mb-4">
             @foreach (var d in Model.Directors)
             {
-                <div class="director-strip-card" data-din="@d.Din" data-name="@d.Name">
-                    <div class="expand-hint"><i class="bi bi-arrows-fullscreen"></i></div>
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="director-avatar">@d.Initials</div>
-                        <div>
-                            <h6 class="director-name">@d.Name</h6>
-                            <p class="director-meta">@(d.IsActive ? "Active Director" : "Former Director")</p>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="director-strip-card h-100 d-flex flex-column" data-din="@d.Din" data-name="@d.Name">
+                        <div class="expand-hint"><i class="bi bi-arrows-fullscreen"></i></div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="director-avatar">@d.Initials</div>
+                            <div>
+                                <h6 class="director-name">@d.Name</h6>
+                                <p class="director-meta">@(d.IsActive ? "Active Director" : "Former Director")</p>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="din-badge">DIN: @d.Din</span>
+                            <span class="pill-type"><i class="bi bi-patch-check-fill me-1"></i>DIN Verified</span>
+                        </div>
+                        @* Facts as a dotted bullet list in the reference card's
+                           format, rather than the ruled label/value rows this card
+                           used before. The dots reuse the existing .status-dot
+                           swatches, so the colour already means the same thing here
+                           as everywhere else on the page. *@
+                        <ul class="director-facts list-unstyled mb-0">
+                            <li><span class="status-dot green"></span>Appointed<strong>@d.AppointedText</strong></li>
+                            <li>
+                                <span class="status-dot @(d.IsActive ? "green" : "grey")"></span>
+                                Status<strong>@(d.IsActive ? "Active" : "Ceased")</strong>
+                            </li>
+                            <li><span class="status-dot green"></span>DIN verified with MCA</li>
+                            <li><span class="status-dot orange"></span>Click card for full profile</li>
+                        </ul>
+
+                        @* Screening actions, footed like the stat row in the reference
+                           card: ruled off and pushed to the bottom (mt-auto) so every
+                           card in a row ends level. The card itself opens the DIN
+                           profile, so these buttons stop the click in McaDetails.js. *@
+                        <div class="director-screen mt-auto">
+                            <span class="lbl">Board Screening</span>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="screen-btn" data-screen="ofac" data-din="@d.Din" data-name="@d.Name">
+                                    <i class="bi bi-globe2"></i>OFAC
+                                </button>
+                                <button type="button" class="screen-btn" data-screen="aml" data-din="@d.Din" data-name="@d.Name">
+                                    <i class="bi bi-shield-check"></i>AML
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        <span class="din-badge">DIN: @d.Din</span>
-                        <span class="pill-type"><i class="bi bi-patch-check-fill me-1"></i>DIN Verified</span>
-                    </div>
-                    <ul class="profile-list list-unstyled mb-0" style="font-size:12px;">
-                        <li><span>Appointed</span><strong>@d.AppointedText</strong></li>
-                        <li><span>Status</span><strong>@(d.IsActive ? "Active" : "Ceased")</strong></li>
-                        <li class="no-border"><span>Profile</span><strong class="status-active" style="font-size:12px;"><i class="bi bi-dot"></i>Click to view</strong></li>
-                    </ul>
                 </div>
             }
         </div>
