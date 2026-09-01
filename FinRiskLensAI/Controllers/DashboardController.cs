@@ -87,8 +87,15 @@ namespace FinRiskLensAI.Controllers
             }
         }
 
-        public IActionResult CustDashboard()
+        /// <summary>
+        /// The "Lets get start" verification hub. ViewBag.ItrFetched tells the view
+        /// whether to grey out the ITR "Fetch Details" launcher — once itr.json exists
+        /// for this UAN there is nothing left to fetch until a real re-fetch flow exists.
+        /// </summary>
+        public async Task<IActionResult> CustDashboard(CancellationToken ct)
         {
+            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
+            ViewBag.ItrFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Itr, ct);
             return View();
         }
 
