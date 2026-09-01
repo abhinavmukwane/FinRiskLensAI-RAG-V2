@@ -87,8 +87,15 @@ namespace FinRiskLensAI.Controllers
             }
         }
 
-        public IActionResult CustDashboard()
+        /// <summary>
+        /// The "Lets get start" verification hub. ViewBag.ItrFetched tells the view
+        /// whether to grey out the ITR "Fetch Details" launcher — once itr.json exists
+        /// for this UAN there is nothing left to fetch until a real re-fetch flow exists.
+        /// </summary>
+        public async Task<IActionResult> CustDashboard(CancellationToken ct)
         {
+            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
+            ViewBag.ItrFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Itr, ct);
             return View();
         }
 
@@ -286,6 +293,63 @@ namespace FinRiskLensAI.Controllers
 
         // MCADetails moved to McaController (/Mca/MCADetails), backed by the
         // common IStaticResponseService over m_StaticResponces (MCAResponce/DINResponce).
+
+        /// <summary>
+        /// Fetches the MSME's ITR (Income Tax Return) record: a dummy response built
+        /// from the MSME's own real onboarded identity (company name, PAN, GSTIN,
+        /// email, mobile, registered address from Udyam) — only the financial figures
+        /// inside are fabricated — written into the MSME's blob folder as
+        /// <c>itr.json</c>. Triggered by the "Fetch ITR Details" button in the Income
+        /// Tax Return Verification modal; the User ID/password fields there are a
+        /// UI-only consent gate, like the GST/AA verification modals — nothing typed
+        /// into them is ever sent to or read by the server.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> SeedItrData(CancellationToken ct)
+        {
+            var user = HttpContext.Session.GetCurrentUser();
+            var uan = user?.UdyamNumber;
+            if (string.IsNullOrWhiteSpace(uan))
+                return Json(new { status = false, message = "No Udyam number in session." });
+
+            try
+            {
+                var alreadyPresent = await _store.ExistsAsync(uan, MsmeDataFiles.Itr, ct);
+                if (!alreadyPresent)
+                {
+                    var udyam = await _profile.GetUdyamAsync(uan);
+                    var entityName = udyam?.HasData == true ? udyam.EnterpriseName : user!.NameOfEnterprise;
+                    var constitution = udyam?.HasData == true ? udyam.OrganizationType : "PROPRIETORSHIP";
+
+                    var itrJson = _dummyData.GetDummyItr(
+                        uan: uan,
+                        entityName: entityName ?? uan,
+                        constitutionType: constitution ?? "PROPRIETORSHIP",
+                        pan: user!.PanNumber ?? udyam?.Pan,
+                        gstin: user.GstinNumber ?? udyam?.Gstin,
+                        email: user.Email,
+                        mobile: user.MobileNumber,
+                        city: udyam?.City,
+                        state: udyam?.State,
+                        pincode: udyam?.Pin);
+
+                    await _store.UploadAsync(uan, MsmeDataFiles.Itr, itrJson, ct);
+                }
+
+                _logger.LogInformation("Seed ITR {Uan}: {Result}.", uan, alreadyPresent ? "already present" : "fetched");
+
+                return Json(new
+                {
+                    status = true,
+                    message = alreadyPresent ? "ITR record already present." : "ITR details fetched and verified."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ITR seed failed for {Uan}", uan);
+                return Json(new { status = false, message = "Could not fetch the ITR details. Please try again." });
+            }
+        }
 
         /// <summary>
         /// Sends the "report ready" email for the logged-in MSME's current score.

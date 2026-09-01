@@ -17,5 +17,23 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Common
         /// MCA director entry so the DIN profile stays in sync with the company's board.
         /// </summary>
         string GetDummyDin(string din, string directorName, string? pan = null);
+
+        /// <summary>
+        /// Dummy ITR (Income Tax Return) API response (JSON), mirroring the real ITR
+        /// vendor's response contract. Shape depends on <paramref name="constitutionType"/>:
+        /// "PROPRIETORSHIP" gets the presumptive-taxation ITR-4 (SUGAM) shape; anything
+        /// else (partnership, LLP, company) gets the books-of-account ITR-5 shape, the
+        /// only two response shapes documented for this API so far.
+        /// <para>
+        /// Only the financial figures are fabricated — identity fields (name, PAN,
+        /// GSTIN, email, mobile, address) use the real onboarded values whenever the
+        /// caller supplies them, falling back to a random-but-valid value only for
+        /// whichever ones are missing.
+        /// </para>
+        /// </summary>
+        string GetDummyItr(string uan, string entityName, string constitutionType,
+            string? pan = null, string? gstin = null, string? email = null, string? mobile = null,
+            string? addressLine1 = null, string? city = null, string? state = null, string? pincode = null,
+            string assessmentYear = "2025-26");
     }
 }

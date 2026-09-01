@@ -92,9 +92,18 @@
                             <h6 class="mb-1">ITR</h6>
                             <small class="text-muted">Income Tax Return Verification</small>
                         </div>
-                        <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#itrModal" data-title="Fetch ITR Details">
-                            Fetch Details
-                        </button>
+                        @if (ViewBag.ItrFetched == true)
+                        {
+                            <button class="btn btn-submit" disabled title="ITR details already fetched">
+                                <i class="bi bi-check-circle me-1"></i>Already Fetched
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#itrModal" data-title="Fetch ITR Details">
+                                Fetch Details
+                            </button>
+                        }
                     </div>
                 </div>
 
@@ -540,7 +549,7 @@
                     <label class="form-label fw-semibold">
                         User ID
                     </label>
-                    <input type="text" class="form-control custom-input"  placeholder="Enter User ID">
+                    <input type="text" id="itrUserId" class="form-control custom-input" placeholder="Enter User ID">
                 </div>
 
                 <!-- Password -->
@@ -548,16 +557,16 @@
                     <label class="form-label fw-semibold">
                         Password
                     </label>
-                    <input type="password" class="form-control custom-input" placeholder="Enter Password">
+                    <input type="password" id="itrPassword" class="form-control custom-input" placeholder="Enter Password">
                 </div>
 
                 <!-- Consent -->
                 <div class="consent-box">
 
                     <div class="form-check">
-                        <input class="form-check-input rv-checkbox" type="checkbox" id="consentCheck">
+                        <input class="form-check-input rv-checkbox" type="checkbox" id="itrConsent">
 
-                        <label class="form-check-label" for="consentCheck">
+                        <label class="form-check-label" for="itrConsent">
                             I authorize the platform to securely access my
                             <strong>ITR Registration details</strong> for
                             verification purposes. I understand that my data
@@ -567,10 +576,11 @@
                     </div>
 
                 </div>
+                <div id="itrFetchStatus" class="small mt-2"></div>
             </div>
 
               <div class="modal-footer border-0 pt-0">
-                <button class="btn btn-theme w-100"> Fetch ITR Details</button>
+                <button type="button" id="fetchItrBtn" class="btn btn-theme w-100">Fetch ITR Details</button>
             </div>
 
         </div>
@@ -700,6 +710,41 @@
                 if (aaWin) aaWin.close();
                 status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
                 btn.disabled = false;
+            }
+        });
+
+        // ---------- Fetch ITR: validate consent, then seed the ITR record ----------
+        document.getElementById('fetchItrBtn').addEventListener('click', async function () {
+            const userId = document.getElementById('itrUserId');
+            const pwd = document.getElementById('itrPassword');
+            const consent = document.getElementById('itrConsent');
+            const status = document.getElementById('itrFetchStatus');
+            status.textContent = '';
+
+            let ok = true;
+            userId.classList.toggle('is-invalid', !userId.value.trim());
+            if (!userId.value.trim()) ok = false;
+            pwd.classList.toggle('is-invalid', !pwd.value.trim());
+            if (!pwd.value.trim()) ok = false;
+            consent.classList.toggle('is-invalid', !consent.checked);
+            if (!consent.checked) { status.innerHTML = '<span class="text-danger">Please accept the consent to continue.</span>'; ok = false; }
+            if (!ok) return;
+
+            this.disabled = true;
+            status.innerHTML = '<span class="text-muted">Fetching ITR details…</span>';
+            try {
+                const resp = await fetch('/Dashboard/SeedItrData');
+                const res = await resp.json();
+                if (res.status) {
+                    status.innerHTML = '<span class="text-success">' + res.message + '</span>';
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    status.innerHTML = '<span class="text-danger">' + res.message + '</span>';
+                    this.disabled = false;
+                }
+            } catch (e) {
+                status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
+                this.disabled = false;
             }
         });
    </script>
