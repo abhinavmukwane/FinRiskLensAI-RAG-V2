@@ -113,9 +113,18 @@
                             <h6 class="mb-1">MCA</h6>
                             <small class="text-muted">Corporate Affairs &amp; Director Verification</small>
                         </div>
-                        <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#mcaModal">
-                            Fetch Details
-                        </button>
+                        @if (ViewBag.McaFetched == true)
+                        {
+                            <button class="btn btn-submit" disabled title="MCA details already fetched">
+                                <i class="bi bi-check-circle me-1"></i>Already Fetched
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#mcaModal">
+                                Fetch Details
+                            </button>
+                        }
                     </div>
                 </div>
 
