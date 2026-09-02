@@ -1,4 +1,4 @@
-/* Extracted from FinancialHealthCard.cshtml */
+﻿/* Extracted from FinancialHealthCard.cshtml */
     .fhc-wrap { padding: 24px; max-width: 1320px; margin: 0 auto; font-family: var(--font-data, 'Inter', sans-serif); }
     .fhc-card { background: #fff; border: 1px solid var(--brand-tint-border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 2px 10px rgba(var(--brand-primary-dark-rgb),.05); height: 100%; }
     .fhc-title { font-family: var(--font-headline, 'Sora', sans-serif); font-weight: 700; color: var(--brand-primary-dark); }
@@ -13,11 +13,11 @@
     .band-HighRisk { background: #fbe0e0; color: #8b1020; }
 
     .stat-tile { background: var(--brand-tint-bg); border: 1px solid var(--brand-tint-border); border-radius: 12px; padding: 12px 14px; }
-    .stat-tile .v { font-family: var(--font-headline, 'Sora', sans-serif); font-weight: 700; font-size: 1.15rem; color: #2b2026; }
+    .stat-tile .v { font-family: var(--font-headline, 'Sora', sans-serif); font-weight: 700; font-size: 1.15rem; color: var(--brand-ink); }
     .stat-tile .k { font-size: .72rem; color: var(--brand-secondary); text-transform: uppercase; letter-spacing: .06em; }
 
     .dim-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
-    .dim-name { flex: 0 0 210px; font-size: .85rem; color: #2b2026; }
+    .dim-name { flex: 0 0 210px; font-size: .85rem; color: var(--brand-ink); }
     .dim-track { flex: 1; height: 10px; border-radius: 999px; background: var(--brand-tint-bg-2); overflow: hidden; }
     .dim-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--brand-btn-bg), var(--brand-btn-bg-hover)); }
     .dim-val { flex: 0 0 90px; text-align: right; font-size: .82rem; font-weight: 600; color: var(--brand-primary-dark); }

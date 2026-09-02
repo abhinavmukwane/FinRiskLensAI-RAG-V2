@@ -1,4 +1,4 @@
-/* Extracted from AAConsentCallback.cshtml */
+﻿/* Extracted from AAConsentCallback.cshtml */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -121,7 +121,7 @@
         }
         .detail-row:last-child { border-bottom: none; }
         .detail-label { color: var(--brand-secondary); font-weight: 400; font-size: 12px; }
-        .detail-value { font-weight: 500; color: #2b2026; font-size: 11px; }
+        .detail-value { font-weight: 500; color: var(--brand-ink); font-size: 11px; }
 
         .chip-approved { background: #e3f4ea; color: #0f5137; padding: 3px 10px; border-radius: 20px; font-size: 10px; }
         .chip-rejected { background: #fbe0e0; color: #8b1020; padding: 3px 10px; border-radius: 20px; font-size: 10px; }

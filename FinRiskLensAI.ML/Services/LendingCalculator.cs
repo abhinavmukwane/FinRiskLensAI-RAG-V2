@@ -1,4 +1,4 @@
-using FinRiskLensAI.Core.Models.Scoring;
+﻿using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.ML.Features;
 
 namespace FinRiskLensAI.ML.Services
@@ -127,10 +127,18 @@ namespace FinRiskLensAI.ML.Services
                 "Share of B2B suppliers whose returns are filed per GSTR-2B — non-filing vendors put the MSME's ITC at risk");
 
             // ── Financial-statement ratios from ITR (business filers with books only)
-            Add("EBITDA Margin (ITR)", f.ItrEbitdaMargin ?? 0,
-                f.ItrEbitdaMargin.HasValue ? $"{f.ItrEbitdaMargin:P1}" : "N/A", "≥ 10%",
-                !f.ItrEbitdaMargin.HasValue ? RatioStatus.NotAvailable : f.ItrEbitdaMargin >= 0.10 ? RatioStatus.Strong : f.ItrEbitdaMargin >= 0.05 ? RatioStatus.Adequate : RatioStatus.Weak,
-                $"Operating profitability from the ITR P&L{(f.ItrFinancialsYear != null ? $" (AY {f.ItrFinancialsYear})" : "")} — PBIDTA over business turnover");
+            // PBT, not EBITDA: the ITR response reports no PBIDTA or depreciation line,
+            // so an "EBITDA margin" here would be a relabelled PBT margin. Same threshold
+            // band would flatter the borrower, so the bar is set for a post-interest figure.
+            Add("Profit Before Tax Margin (ITR)", f.ItrPbtMargin ?? 0,
+                f.ItrPbtMargin.HasValue ? $"{f.ItrPbtMargin:P1}" : "N/A", "≥ 8%",
+                !f.ItrPbtMargin.HasValue ? RatioStatus.NotAvailable : f.ItrPbtMargin >= 0.08 ? RatioStatus.Strong : f.ItrPbtMargin >= 0.04 ? RatioStatus.Adequate : RatioStatus.Weak,
+                $"Operating profitability from the ITR P&L{(f.ItrFinancialsYear != null ? $" (AY {f.ItrFinancialsYear})" : "")} — profit before tax over turnover");
+
+            Add("Debt to Equity (ITR)", f.ItrDebtToEquity ?? 0,
+                f.ItrDebtToEquity.HasValue ? $"{f.ItrDebtToEquity:0.00}x" : "N/A", "≤ 2.00x",
+                !f.ItrDebtToEquity.HasValue ? RatioStatus.NotAvailable : f.ItrDebtToEquity <= 2.0 ? RatioStatus.Strong : f.ItrDebtToEquity <= 3.0 ? RatioStatus.Adequate : RatioStatus.Weak,
+                "Outside liabilities over partners'/members' capital from the ITR balance sheet — how much of the business is funded by borrowing");
 
             Add("Net Profit Margin (ITR)", f.ItrNetProfitMargin ?? 0,
                 f.ItrNetProfitMargin.HasValue ? $"{f.ItrNetProfitMargin:P1}" : "N/A", "≥ 5%",

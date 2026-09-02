@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    FinRiskLens AI — brand theme tokens (switchable)
 
    Theme 1 (default) — IDBI Bank:
@@ -47,6 +47,31 @@
     --brand-logout-bg-hover: #FFC291;
     /* Scrollbar thumb (see the Scrollbars section below) */
     --sb-thumb-color: #f37021;
+    /* Chart "track" / backdrop series (the Maximum bars, the residual slice).
+       --brand-tint-bg-2 was used for this, but it is a *surface* colour — at
+       #E8F3F5 on a white card the bar was all but invisible. This is the same
+       hue at ~35% over white: clearly readable, still recessive against the
+       accent-coloured Earned bar. */
+    --brand-chart-track: #ACD1D6;
+
+    /* ── Surfaces ──────────────────────────────────────────────────────
+       The page background and the card/hover tones stacked on it. These
+       were a single hardcoded warm ramp on :root in Dashboard.css and
+       Index.css, derived from the maroon seed — correct for Theme 2, but
+       Theme 1 inherited a rose-tinted page under a teal UI. Same lightness
+       ladder as Theme 2 (95 / 92 / 87 / 82 / 77 / 71), cool cast.
+       ------------------------------------------------------------------ */
+    --brand-surface: #F7FBFC;              /* page background */
+    --brand-surface-low: #F1F7F8;
+    --brand-surface-mid: #E9F1F3;
+    --brand-surface-high: #E2EBED;
+    --brand-surface-highest: #DBE5E8;
+    --brand-surface-dim: #D2DEE1;
+    --brand-on-surface: #161D1F;           /* body text  16.4:1 on surface */
+    --brand-on-surface-variant: #415256;   /* muted text  7.9:1 */
+    --brand-outline: #66787E;              /* hairlines   4.4:1 */
+    --brand-ivory: #F5FAFB;
+    --brand-ink: #1B282C;
 }
 
 :root[data-theme="theme2"] {
@@ -82,6 +107,21 @@
     --brand-logout-bg-hover: rgba(113, 48, 48, .15);
     /* Scrollbar thumb (see the Scrollbars section below) — medium-light maroon */
     --sb-thumb-color: #C96B80;
+    /* Chart track — see the Theme 1 note above. */
+    --brand-chart-track: #D6ADB9;
+
+    /* ── Surfaces — the original warm ramp, unchanged. See Theme 1 above. */
+    --brand-surface: #fff8f5;              /* page background */
+    --brand-surface-low: #fbf2ed;
+    --brand-surface-mid: #f5ece7;
+    --brand-surface-high: #efe6e2;
+    --brand-surface-highest: #e9e1dc;
+    --brand-surface-dim: #e1d8d4;
+    --brand-on-surface: #1e1b18;
+    --brand-on-surface-variant: #564144;
+    --brand-outline: #897174;
+    --brand-ivory: #FBF8F3;
+    --brand-ink: #2B2026;
 }
 
 /* ---------------------------------------------------------------------
@@ -186,4 +226,3 @@ body.sb-size-short {
     background: var(--sb-thumb-color);
     border-radius: 3px;
 }
-

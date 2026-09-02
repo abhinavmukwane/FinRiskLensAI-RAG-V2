@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    GST ANALYSIS PAGE — /Dashboard/GSTAnalysis only.
    Ported from the design mockup (gst.css + the mockup dashboard.css
    tokens). Everything is scoped under .gst-analysis so the mockup's
@@ -22,9 +22,9 @@
     --color-danger-light: #fdecea;
     --color-surface: #ffffff;
     --color-surface-glass: rgba(255, 255, 255, 0.85);
-    --color-text-primary: #1e1b18;
-    --color-text-secondary: #564144;
-    --color-text-muted: #897174;
+    --color-text-primary: var(--brand-on-surface);
+    --color-text-secondary: var(--brand-on-surface-variant);
+    --color-text-muted: var(--brand-outline);
     --color-border: var(--brand-tint-border);
     --radius-sm: 8px;
     --radius-md: 12px;

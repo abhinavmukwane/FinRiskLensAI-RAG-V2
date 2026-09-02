@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // Corporate Affairs (MCA) — Corporate Intelligence Report page behavior.
 // All data is server-rendered by McaController; this script handles tabs,
 // the charge accordion, and the director DIN popup, whose data is fetched
@@ -38,9 +38,27 @@
         try { rows = JSON.parse(payload.textContent) || []; } catch (e) { return; }
         if (!rows.length) return;
 
-        var css = getComputedStyle(document.documentElement);
-        var openColor = (css.getPropertyValue('--warning-orange') || '#b26a00').trim();
-        var closedColor = (css.getPropertyValue('--success-green') || '#2e7d32').trim();
+        // --success-green and friends are declared on .udyam-dashboard, NOT on
+        // :root — reading them off documentElement always returned '' and fell
+        // through to the hardcoded fallbacks, so the bars never followed the
+        // theme. Resolve against the page wrapper, where the tokens live.
+        var scope = canvas.closest('.udyam-dashboard') || document.documentElement;
+
+        // Read on every render, never once at load: a CSS variable captured
+        // into a JS string is a snapshot, and flipping data-theme cannot reach
+        // a colour already baked into a Chart.js dataset.
+        function palette() {
+            var css = getComputedStyle(scope);
+            function token(name, fallback) { return (css.getPropertyValue(name) || fallback).trim(); }
+            return {
+                // Open charges take the theme accent so the chart follows the
+                // theme switch; satisfied stays green, semantic in either palette.
+                open: token('--brand-accent', '#f37021'),
+                closed: token('--success-green', '#2e7d32'),
+                grid: token('--card-border', '#f1f5f6'),
+                ink: token('--brand-primary-dark', '#0C5560')
+            };
+        }
 
         var money = function (v) {
             var a = Math.abs(v);
@@ -63,6 +81,8 @@
             // offsetParent is null while any ancestor is display:none.
             if (!canvas.offsetParent) return;
 
+            var pal = palette();
+
             chart = new Chart(canvas, {
                 type: 'bar',
                 data: {
@@ -70,7 +90,7 @@
                     datasets: [{
                         label: 'Charge amount',
                         data: amounts,
-                        backgroundColor: rows.map(r => (r.open ? openColor : closedColor) + 'cc'),
+                        backgroundColor: rows.map(r => (r.open ? pal.open : pal.closed) + "cc"),
                         borderRadius: 4
                     }]
                 },
@@ -79,11 +99,24 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            // Explicit colours: the default tooltip inherits a
+                            // near-transparent background here and the text was
+                            // unreadable against the bars.
+                            backgroundColor: pal.ink,
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255,255,255,.25)',
+                            borderWidth: 1,
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            titleFont: { size: 12, weight: '700' },
+                            bodyFont: { size: 12 },
                             callbacks: {
                                 title: c => rows[c[0].dataIndex].label,
                                 label: function (c) {
                                     var r = rows[c.dataIndex];
-                                    return [r.year + ' · ' + r.status, r.asset];
+                                    return [money(r.amount), r.year + ' · ' + r.status, r.asset];
                                 }
                             }
                         }
@@ -103,7 +136,7 @@
                                 scale.ticks = ticks;
                             },
                             ticks: { callback: money, font: { size: 10 } },
-                            grid: { color: '#f1f5f6' }
+                            grid: { color: pal.grid }
                         },
                         x: { ticks: { font: { size: 10 } }, grid: { display: false } }
                     }
@@ -126,6 +159,13 @@
             if (document.readyState === 'complete') { setTimeout(render, 0); }
             else { window.addEventListener('load', function () { setTimeout(render, 0); }); }
         }
+
+        // Theme switch: the toggle flips data-theme, but the colours above are
+        // already plain strings inside the chart. render() rebuilds from a
+        // fresh palette(), which is why no page refresh is needed. Skipped
+        // while the panel is hidden — render() no-ops there, and the tab
+        // handler rebuilds on the next visit anyway.
+        document.addEventListener('frl-theme-changed', function () { setTimeout(render, 0); });
     })();
 
     // ── Charge accordion (one open at a time) ────────────────────────────

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    DESIGN TOKENS — copy this :root block as-is into any layout
    page that reuses these components.
    ============================================================ */
@@ -9,22 +9,22 @@
     --color-on-primary-container: #ff8298;
     --color-on-error-container: #93000a;
     --color-primary-fixed: #ffd9dd;
-    --color-surface-dim: #e1d8d4;
-    --color-surface-variant: #e9e1dc;
-    --color-surface-bright: #fff8f5;
-    --color-on-surface: #1e1b18;
+    --color-surface-dim: var(--brand-surface-dim);
+    --color-surface-variant: var(--brand-surface-highest);
+    --color-surface-bright: var(--brand-surface);
+    --color-on-surface: var(--brand-on-surface);
     --color-tertiary-fixed-dim: #95d4b2;
     --color-primary-container: var(--brand-primary-strong);
     --color-secondary-container: var(--brand-secondary-container);
-    --color-surface-container-high: #efe6e2;
+    --color-surface-container-high: var(--brand-surface-high);
     --color-secondary-fixed-dim: #ffb2bd;
-    --color-surface-container: #f5ece7;
+    --color-surface-container: var(--brand-surface-mid);
     --color-on-tertiary: #ffffff;
     --color-on-tertiary-fixed: #002113;
     --color-on-error: #ffffff;
     --color-primary-fixed-dim: #ffb2bc;
     --color-on-primary: #ffffff;
-    --color-surface-container-low: #fbf2ed;
+    --color-surface-container-low: var(--brand-surface-low);
     --color-primary: var(--brand-primary-dark);
     --color-error: #ba1a1a;
     --color-secondary: var(--brand-secondary);
@@ -32,12 +32,12 @@
     --color-surface-container-lowest: #ffffff;
     --color-tertiary-container: #00482f;
     --color-on-secondary-container: var(--brand-secondary);
-    --color-on-surface-variant: #564144;
-    --color-background: #fff8f5;
-    --color-outline: #897174;
-    --color-surface-container-highest: #e9e1dc;
+    --color-on-surface-variant: var(--brand-on-surface-variant);
+    --color-background: var(--brand-surface);
+    --color-outline: var(--brand-outline);
+    --color-surface-container-highest: var(--brand-surface-highest);
     --color-tertiary: #002f1e;
-    --color-surface: #fff8f5;
+    --color-surface: var(--brand-surface);
     --color-secondary-fixed: #ffd9dd;
     --color-outline-variant: var(--brand-tint-border);
     --color-tertiary-fixed: #b1f0cd;
@@ -2516,8 +2516,10 @@ img {
 .udyam-dashboard .hero-stat-item .value { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 22px; line-height: 1.2; }
 .udyam-dashboard .hero-stat-item .label { font-size: 11px; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
 
-/* Tabs */
-.udyam-dashboard .mca2-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--card-border); margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Tabs — wrap onto a second line rather than scrolling. overflow-x:auto put a
+   full site-wide scrollbar (10px, themed thumb) under four tabs; .aa-tabs has
+   always wrapped, so this matches it. */
+.udyam-dashboard .mca2-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 2px solid var(--card-border); margin-bottom: 24px; }
 .udyam-dashboard .mca2-tab { padding: 12px 20px; font-size: 13px; font-weight: 700; color: var(--text-muted-2); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s ease; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; }
 .udyam-dashboard .mca2-tab:hover { color: var(--theme-maroon); }
 .udyam-dashboard .mca2-tab.active { color: var(--theme-maroon); border-bottom-color: var(--theme-maroon); }
@@ -2657,3 +2659,32 @@ img {
     .udyam-dashboard .split-panel { flex-direction: column; }
     .udyam-dashboard .split-left { flex: none; max-width: 100%; }
 }
+
+/* Charge Timeline legend (MCA → Charges tab). Swatches instead of colour
+   names in the copy, so the caption stays correct when the theme switches
+   the accent from orange to gold. */
+.udyam-dashboard .mca2-chart-legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 12px;
+    color: var(--text-muted-2);
+    margin-bottom: 14px;
+}
+
+    .udyam-dashboard .mca2-chart-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+.udyam-dashboard .mca2-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+    .udyam-dashboard .mca2-swatch.open { background: var(--brand-accent); }
+    .udyam-dashboard .mca2-swatch.satisfied { background: var(--success-green); }

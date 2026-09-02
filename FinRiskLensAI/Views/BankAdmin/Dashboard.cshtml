@@ -1,4 +1,4 @@
-@model FinRiskLensAI.Models.BankDashboardViewModel
+﻿@model FinRiskLensAI.Models.BankDashboardViewModel
 @using FinRiskLensAI.Common
 @{
     ViewBag.Title = "Portfolio Dashboard";
@@ -169,11 +169,18 @@ else
     {
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
         <script>
-            // Brand colours follow the active theme (see ~/css/theme.css)
-            const css = getComputedStyle(document.documentElement);
-            const BRAND = (css.getPropertyValue('--brand-btn-bg') || '#F58220').trim();
-            const PRIMARY = (css.getPropertyValue('--brand-primary') || '#117A8B').trim();
-            const TINT = (css.getPropertyValue('--brand-tint-bg-2') || '#E8F3F5').trim();
+            // Brand colours follow the active theme (see ~/css/theme.css).
+            // Re-read on each call: a CSS variable captured into a JS string is
+            // a snapshot, so the data-theme flip never reaches a colour already
+            // baked into a chart. See the frl-theme-changed hook at the bottom.
+            const palette = () => {
+                const css = getComputedStyle(document.documentElement);
+                return {
+                    brand: (css.getPropertyValue('--brand-btn-bg') || '#F58220').trim(),
+                    primary: (css.getPropertyValue('--brand-primary') || '#117A8B').trim()
+                };
+            };
+            let { brand: BRAND, primary: PRIMARY } = palette();
 
             // Band colours stay semantic — red means risk in any theme
             const BAND_COLORS = ['#2e7d4f', '#7fae5e', '#e6c34c', '#e08a3c', '#c22f3e'];
@@ -185,10 +192,12 @@ else
             const activity = @Html.Raw(Json.Serialize(s.ActivityMix));
             const products = @Html.Raw(Json.Serialize(s.ProductMix));
 
+            const charts = {};
+
             const noLegend = { legend: { display: false } };
             const intAxis = { y: { beginAtZero: true, ticks: { precision: 0 } } };
 
-            new Chart(document.getElementById('bandChart'), {
+            charts.bandChart = new Chart(document.getElementById('bandChart'), {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(bands),
@@ -204,7 +213,7 @@ else
                 const [y, m] = k.split('-');
                 return new Date(y, m - 1).toLocaleString('en', { month: 'short' }) + " '" + y.slice(2);
             };
-            new Chart(document.getElementById('trendChart'), {
+            charts.trendChart = new Chart(document.getElementById('trendChart'), {
                 type: 'line',
                 data: {
                     labels: Object.keys(trend).map(monthLabel),
@@ -216,7 +225,7 @@ else
                 options: { maintainAspectRatio: false, plugins: noLegend, scales: intAxis }
             });
 
-            new Chart(document.getElementById('histChart'), {
+            charts.histChart = new Chart(document.getElementById('histChart'), {
                 type: 'bar',
                 data: {
                     labels: Object.keys(hist),
@@ -225,7 +234,7 @@ else
                 options: { maintainAspectRatio: false, plugins: noLegend, scales: intAxis }
             });
 
-            new Chart(document.getElementById('stateChart'), {
+            charts.stateChart = new Chart(document.getElementById('stateChart'), {
                 type: 'bar',
                 data: {
                     labels: Object.keys(states),
@@ -237,7 +246,7 @@ else
                 }
             });
 
-            new Chart(document.getElementById('activityChart'), {
+            charts.activityChart = new Chart(document.getElementById('activityChart'), {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(activity),
@@ -258,7 +267,7 @@ else
                 document.getElementById('productChart').closest('.bp-chart-box').innerHTML =
                     '<div class="bp-chart-empty">No scored customers with a recommended product yet.</div>';
             } else {
-                new Chart(document.getElementById('productChart'), {
+                charts.productChart = new Chart(document.getElementById('productChart'), {
                     type: 'bar',
                     data: { labels: pKeys, datasets: [{ data: Object.values(products), backgroundColor: BRAND, borderRadius: 6 }] },
                     options: {
@@ -267,6 +276,34 @@ else
                     }
                 });
             }
+
+            // Theme switch — recolour in place, no page refresh. Only the two
+            // brand-driven colours move; BAND_COLORS and the activity palette's
+            // fixed entries stay put because they are semantic (red means risk
+            // in either theme).
+            document.addEventListener('frl-theme-changed', function () {
+                ({ brand: BRAND, primary: PRIMARY } = palette());
+
+                if (charts.trendChart) {
+                    const ds = charts.trendChart.data.datasets[0];
+                    ds.borderColor = BRAND;
+                    ds.backgroundColor = BRAND + '25';
+                    charts.trendChart.update();
+                }
+                if (charts.stateChart) {
+                    charts.stateChart.data.datasets[0].backgroundColor = PRIMARY;
+                    charts.stateChart.update();
+                }
+                if (charts.activityChart) {
+                    const ds = charts.activityChart.data.datasets[0];
+                    ds.backgroundColor = [PRIMARY, BRAND, '#7fae5e', '#c98a2b', '#8a6d00', '#5c8a99'];
+                    charts.activityChart.update();
+                }
+                if (charts.productChart) {
+                    charts.productChart.data.datasets[0].backgroundColor = BRAND;
+                    charts.productChart.update();
+                }
+            });
         </script>
     }
 }

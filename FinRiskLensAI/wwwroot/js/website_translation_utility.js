@@ -1,4 +1,4 @@
-var currentScript = document.currentScript;
+﻿var currentScript = document.currentScript;
 // var TRANSLATION_PLUGIN_API_KEY = currentScript.getAttribute('secretKey');
 // var posX = currentScript.getAttribute("data-pos-x") || 100;
 // var posY = currentScript.getAttribute("data-pos-y") || 5;
@@ -735,13 +735,17 @@ if (sessionStorage.getItem("translationCache")) {
   translationCache = JSON.parse(sessionStorage.getItem("translationCache"));
 }
 
-  var cssLink = document.createElement("link");
-  cssLink.rel = "stylesheet";
-  cssLink.href = `${TRANSLATION_PLUGIN_API_BASE_URL}/v3/website_translation_utility.css`;
-  // cssLink.href = `./plugin.css`;
-
-  // Append link to the head
-  document.head.appendChild(cssLink);
+  // The plugin stylesheet is vendored at ~/css/bhashini-plugin.css and linked
+  // from each layout's <head>. Fetching it here instead meant it arrived a
+  // network round-trip AFTER the markup below was already in the DOM, so the
+  // language list flashed as a bare bulleted list on every page load.
+  //
+  // To go back to the live vendor copy, uncomment these three lines and drop
+  // the <link> from _Layout / _DashboardLayout / _CustOnboardingLayout.
+  // var cssLink = document.createElement("link");
+  // cssLink.rel = "stylesheet";
+  // cssLink.href = `${TRANSLATION_PLUGIN_API_BASE_URL}/v3/website_translation_utility.css`;
+  // document.head.appendChild(cssLink);
 
 
 var getPoweredByText = (lang) => {

@@ -1,4 +1,4 @@
-namespace FinRiskLensAI.Core.Models.Scoring
+﻿namespace FinRiskLensAI.Core.Models.Scoring
 {
     /// <summary>
     /// All engineered features for one MSME, extracted from the raw source payloads
@@ -81,6 +81,46 @@ namespace FinRiskLensAI.Core.Models.Scoring
         public double? ItrNetProfitMargin { get; set; }
         public double? ItrDebtorDays { get; set; }
         public double? ItrAssetTurnover { get; set; }
+
+        // ── ITR filing quality (single-year vendor response)
+        /// <summary>"ITR-4 (SUGAM)" for presumptive filers, "ITR-5" for books-of-account filers.</summary>
+        public string? ItrFormType { get; set; }
+        public string? ItrAssessmentYear { get; set; }
+        /// <summary>139(1) = filed by the due date, 139(4) = belated, 139(5) = revised.</summary>
+        public string? ItrFilingSection { get; set; }
+        public bool ItrEVerified { get; set; }
+        public bool ItrReturnProcessed { get; set; }
+        /// <summary>Tax audit required under 44AB (turnover over the threshold).</summary>
+        public bool ItrAuditApplicable { get; set; }
+        /// <summary>Audit required <i>and</i> Form 3CA/3CB actually filed.</summary>
+        public bool ItrAuditCompleted { get; set; }
+        /// <summary>A demand was raised on assessment — taxes short-paid.</summary>
+        public bool ItrHasTaxDemand { get; set; }
+        /// <summary>Taxes paid ÷ total tax and interest, 0..1. 1 = fully discharged.</summary>
+        public double ItrTaxPaidRatio { get; set; }
+        /// <summary>Interest u/s 234A — charged only when the return itself was late.</summary>
+        public double ItrLateFilingInterest { get; set; }
+        /// <summary>Interest u/s 234B + 234C — advance-tax shortfall, a cash-planning signal.</summary>
+        public double ItrAdvanceTaxInterest { get; set; }
+
+        // ── ITR financials (from the P&L / balance-sheet summary)
+        /// <summary>Profit before tax ÷ turnover. The vendor response has no PBIDTA line,
+        /// so this is the closest honest operating-margin proxy — see also
+        /// <see cref="ItrEbitdaMargin"/>, which stays null on this response shape.</summary>
+        public double? ItrPbtMargin { get; set; }
+        public double ItrTotalAssets { get; set; }
+        /// <summary>Partners'/members' capital — the net-worth line the return reports.</summary>
+        public double ItrNetWorth { get; set; }
+        /// <summary>Outside liabilities ÷ capital. Null when the return reports no capital.</summary>
+        public double? ItrDebtToEquity { get; set; }
+
+        /// <summary>True for 44AD/44ADA presumptive returns (ITR-4), which carry no real books.</summary>
+        public bool ItrIsPresumptive { get; set; }
+        /// <summary>Cash turnover ÷ total turnover for presumptive filers, 0..1.</summary>
+        public double ItrCashTurnoverShare { get; set; }
+
+        /// <summary>Vendor-computed GST-vs-ITR turnover variance, in percent. Null when absent.</summary>
+        public double? ItrGstTurnoverVariancePct { get; set; }
 
         // ── AA bank statements (cash flow + transaction quality + debt)
         public SortedDictionary<string, double> AaMonthlyCredits { get; } = new();

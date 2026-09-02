@@ -1,4 +1,4 @@
-/* ==========================================
+﻿/* ==========================================
    FinRiskLens AI — Consolidated Design System
    Single CSS file for index.html & CustomerOnboarding.html
    ========================================== */
@@ -9,15 +9,15 @@
     --bs-primary-rgb: var(--brand-primary-dark-rgb);
     --bs-secondary: var(--brand-secondary);
     --bs-secondary-rgb: var(--brand-secondary-rgb);
-    --bs-body-bg: #fff8f5;
-    --bs-body-color: #1e1b18;
+    --bs-body-bg: var(--brand-surface);
+    --bs-body-color: var(--brand-on-surface);
     --primary-container: var(--brand-primary-strong);
     --secondary-container: var(--brand-secondary-container);
-    --surface-container: #f5ece7;
-    --surface-container-low: #fbf2ed;
-    --surface-container-high: #efe6e2;
-    --on-surface-variant: #564144;
-    --outline: #897174;
+    --surface-container: var(--brand-surface-mid);
+    --surface-container-low: var(--brand-surface-low);
+    --surface-container-high: var(--brand-surface-high);
+    --on-surface-variant: var(--brand-on-surface-variant);
+    --outline: var(--brand-outline);
     --outline-variant: var(--brand-tint-border);
     --success-custom: #0f5137;
     /* Onboarding palette */
@@ -26,8 +26,8 @@
     --maroon-deep: var(--brand-primary-deep);
     --gold: var(--brand-accent);
     --gold-soft: var(--brand-accent-soft);
-    --ivory: #FBF8F3;
-    --ink: #2B2026;
+    --ivory: var(--brand-ivory);
+    --ink: var(--brand-ink);
     --slate: #6E6470;
     --line: #E7DFD8;
     --green: #1E8A5F;

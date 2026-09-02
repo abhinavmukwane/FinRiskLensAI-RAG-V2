@@ -1,4 +1,4 @@
-@model FinRiskLensAI.Models.FinancialReportViewModel
+﻿@model FinRiskLensAI.Models.FinancialReportViewModel
 @using FinRiskLensAI.Core.Models.Scoring
 @{
     Layout = null;
@@ -615,7 +615,7 @@ window.addEventListener('load', function () {
                 labels: dims.map(d => d.dimension),
                 datasets: [
                     { label: 'Earned', data: dims.map(d => d.score), backgroundColor: maroon, borderRadius: 6 },
-                    { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: frlBrand.getPropertyValue('--brand-tint-bg-2').trim() || '#f2e6ea', borderRadius: 6 }
+                    { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: frlBrand.getPropertyValue('--brand-chart-track').trim() || '#D6ADB9', borderRadius: 6 }
                 ]
             },
             options: {

@@ -37,9 +37,17 @@
         try { data = JSON.parse(el.textContent) || []; } catch (e) { return; }
         if (!data.length) return;
 
-        const css = getComputedStyle(document.documentElement);
-        const primary = (css.getPropertyValue('--brand-primary') || '#117A8B').trim();
-        const accent = (css.getPropertyValue('--brand-accent') || '#f37021').trim();
+        // Re-read on every call: a CSS variable captured into a JS string is a
+        // snapshot, so flipping data-theme can never reach a colour already
+        // baked into a Chart.js dataset. See the frl-theme-changed hook below.
+        const palette = () => {
+            const css = getComputedStyle(document.documentElement);
+            return {
+                primary: (css.getPropertyValue('--brand-primary') || '#117A8B').trim(),
+                accent: (css.getPropertyValue('--brand-accent') || '#f37021').trim()
+            };
+        };
+        let { primary, accent } = palette();
         const labels = data.map(d => d.label);
 
         const money = v => {
@@ -54,9 +62,11 @@
             x: { ticks: { font: { size: 10 } }, grid: { display: false } }
         };
 
+        let monthlyChart = null, balanceChart = null;
+
         const monthly = document.getElementById('aaMonthlyChart');
         if (monthly) {
-            new Chart(monthly, {
+            monthlyChart = new Chart(monthly, {
                 data: {
                     labels,
                     datasets: [
@@ -80,7 +90,7 @@
         const balanceEl = document.getElementById('aaBalanceChart');
         const balances = data.filter(d => d.balance !== null && d.balance !== undefined);
         if (balanceEl && balances.length) {
-            new Chart(balanceEl, {
+            balanceChart = new Chart(balanceEl, {
                 type: 'line',
                 data: {
                     labels: balances.map(d => d.label),
@@ -100,6 +110,26 @@
                 }
             });
         }
+
+        // Theme switch — recolour in place. Chart.js datasets hold plain colour
+        // strings, so the data-theme flip alone never reaches an already-drawn
+        // canvas (this is why the page used to need a refresh). Net Flow keeps
+        // its green: it is a semantic up/down line, not a brand accent.
+        document.addEventListener('frl-theme-changed', function () {
+            ({ primary, accent } = palette());
+
+            if (monthlyChart) {
+                monthlyChart.data.datasets[0].backgroundColor = primary + 'cc';
+                monthlyChart.data.datasets[1].backgroundColor = accent + 'cc';
+                monthlyChart.update();
+            }
+            if (balanceChart) {
+                const ds = balanceChart.data.datasets[0];
+                ds.borderColor = primary;
+                ds.backgroundColor = primary + '22';
+                balanceChart.update();
+            }
+        });
     })();
 
     // ── Month drill-down → the transaction history page ───────────────────

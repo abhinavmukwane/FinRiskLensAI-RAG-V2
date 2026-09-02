@@ -1,4 +1,4 @@
-namespace FinRiskLensAI.Core.Models.Scoring
+﻿namespace FinRiskLensAI.Core.Models.Scoring
 {
     /// <summary>Bank-statement behaviour analysis from the AA data (underwriting deep-dive).</summary>
     public class BankStatementAnalysis
@@ -59,10 +59,28 @@ namespace FinRiskLensAI.Core.Models.Scoring
         public bool HasFinancials { get; set; }
         public string? SourceYear { get; set; }
         public double BusinessTurnover { get; set; }
-        public double? EbitdaMargin { get; set; }        // PBIDTA / turnover
+        /// <summary>PBIDTA / turnover. Null on the current ITR response, which carries
+        /// no PBIDTA line — use <see cref="PbtMargin"/> for the operating signal.</summary>
+        public double? EbitdaMargin { get; set; }
+        public double? PbtMargin { get; set; }           // profit before tax / turnover
         public double? NetProfitMargin { get; set; }     // PAT / turnover
         public double? DebtorDays { get; set; }          // sundry debtors / turnover × 365
         public double? AssetTurnover { get; set; }       // turnover / total assets
+        public double TotalAssets { get; set; }
+        public double NetWorth { get; set; }             // partners'/members' capital
+        public double? DebtToEquity { get; set; }        // outside liabilities / capital
+
+        // ── Filing quality (single assessment year, from the ITR vendor response)
+        public string? FormType { get; set; }
+        public string? FilingSection { get; set; }
+        public bool IsPresumptive { get; set; }
+        public bool EVerified { get; set; }
+        public bool ReturnProcessed { get; set; }
+        public bool AuditApplicable { get; set; }
+        public bool AuditCompleted { get; set; }
+        public bool HasTaxDemand { get; set; }
+        /// <summary>Absolute GST-vs-ITR declared-turnover variance, in percent.</summary>
+        public double? GstTurnoverVariancePct { get; set; }
     }
 
     /// <summary>Sector risk classification from the Udyam NIC code.</summary>

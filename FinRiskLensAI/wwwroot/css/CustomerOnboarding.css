@@ -1,11 +1,11 @@
-:root {
+﻿:root {
     --maroon: var(--brand-primary-strong);
     --maroon-dark: var(--brand-primary-dark);
     --maroon-deep: var(--brand-primary-deep);
     --gold: var(--brand-accent);
     --gold-soft: var(--brand-accent-soft);
-    --ivory: #FBF8F3;
-    --ink: #2B2026;
+    --ivory: var(--brand-ivory);
+    --ink: var(--brand-ink);
     --slate: #6E6470;
     --line: #E7DFD8;
     --green: #1E8A5F;

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -14,6 +14,10 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery/dist/jquery.js"></script>
     <link href="~/css/theme.css" rel="stylesheet" />
+    @* Vendored Bhashini plugin stylesheet. Must be a <head> link, not the
+       runtime-injected remote one the plugin JS used to append — that landed
+       after its own markup and flashed the raw language list on every load. *@
+    <link href="~/css/bhashini-plugin.css" rel="stylesheet" asp-append-version="true" />
     <script src="~/js/theme.js"></script>
     <link href="~/css/CustomerOnboarding.css" rel="stylesheet" />
     <link href="~/css/index.css" rel="stylesheet" />

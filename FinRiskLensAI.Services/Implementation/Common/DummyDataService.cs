@@ -1,4 +1,4 @@
-using FinRiskLensAI.Core.Interfaces.IServices.Common;
+﻿using FinRiskLensAI.Core.Interfaces.IServices.Common;
 using FinRiskLensAI.Core.Models.Onboarding;
 using Newtonsoft.Json;
 
@@ -239,10 +239,10 @@ namespace FinRiskLensAI.Services.Implementation.Common
         /// itr_response_partnership_llp_itr5.json) — the only two response shapes this API
         /// has documented so far, so partnerships, LLPs and companies all share the ITR-5 one.
         /// <para>
-        /// Note: this mirrors the <b>real vendor API</b> shape, which is not the shape
-        /// FinRiskLensAI.ML.Features.ItrFeatureExtractor currently parses (that extractor
-        /// still expects the raw income-tax-department ITR JSON schema). Wiring this into
-        /// the scoring pipeline needs that extractor rewritten first.
+        /// This mirrors the <b>real vendor API</b> shape, and is what
+        /// FinRiskLensAI.ML.Features.ItrFeatureExtractor parses — both branches below feed
+        /// the scoring pipeline. Changing a field name here means changing the extractor
+        /// with it, or the feature silently stops being read.
         /// </para>
         /// </summary>
         public string GetDummyItr(string uan, string entityName, string constitutionType,

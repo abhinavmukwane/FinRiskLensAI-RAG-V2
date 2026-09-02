@@ -1,4 +1,4 @@
-using FinRiskLensAI.Core.Interfaces;
+﻿using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.ML.Features;
 using FinRiskLensAI.ML.MachineLearning;
 using FinRiskLensAI.Core.Models.Scoring;
@@ -165,9 +165,22 @@ namespace FinRiskLensAI.ML.Services
                     SourceYear = f.ItrFinancialsYear,
                     BusinessTurnover = f.ItrBusinessTurnover,
                     EbitdaMargin = f.ItrEbitdaMargin,
+                    PbtMargin = f.ItrPbtMargin,
                     NetProfitMargin = f.ItrNetProfitMargin,
                     DebtorDays = f.ItrDebtorDays,
-                    AssetTurnover = f.ItrAssetTurnover
+                    AssetTurnover = f.ItrAssetTurnover,
+                    TotalAssets = f.ItrTotalAssets,
+                    NetWorth = f.ItrNetWorth,
+                    DebtToEquity = f.ItrDebtToEquity,
+                    FormType = f.ItrFormType,
+                    FilingSection = f.ItrFilingSection,
+                    IsPresumptive = f.ItrIsPresumptive,
+                    EVerified = f.ItrEVerified,
+                    ReturnProcessed = f.ItrReturnProcessed,
+                    AuditApplicable = f.ItrAuditApplicable,
+                    AuditCompleted = f.ItrAuditCompleted,
+                    HasTaxDemand = f.ItrHasTaxDemand,
+                    GstTurnoverVariancePct = f.ItrGstTurnoverVariancePct
                 };
 
             if (f.HasUdyam)
@@ -236,10 +249,35 @@ namespace FinRiskLensAI.ML.Services
             }
             if (f.HasItr)
             {
-                total += 0.35 * (0.6 * f.ItrFilingTimeliness + 0.4 * Math.Min(1, f.ItrYearsFiled / 3.0));
+                total += 0.35 * ItrCompliance(f);
                 weight += 0.35;
             }
             return Math.Clamp(weight > 0 ? total / weight : 0, 0, 1);
+        }
+
+        /// <summary>
+        /// ITR filing quality, 0..1. The vendor response covers a single assessment
+        /// year, so this reads how well <i>that</i> return was handled rather than
+        /// counting years filed — a count that can only ever be 1 and used to cost a
+        /// fully compliant filer two-thirds of the sub-score.
+        /// </summary>
+        private static double ItrCompliance(MsmeFeatureSet f)
+        {
+            var score = 0.50 * f.ItrFilingTimeliness             // filed by the due date
+                      + 0.15 * (f.ItrEVerified ? 1 : 0)          // e-verified — an unverified return is invalid
+                      + 0.15 * (f.ItrReturnProcessed ? 1 : 0)    // accepted and processed by CPC
+                      + 0.20 * f.ItrTaxPaidRatio;                // liability actually discharged
+
+            // A required tax audit that wasn't filed is a compliance failure in itself.
+            if (f.ItrAuditApplicable && !f.ItrAuditCompleted) score -= 0.15;
+
+            // An open demand means the self-assessment fell short.
+            if (f.ItrHasTaxDemand) score -= 0.10;
+
+            // Advance-tax interest is a cash-planning signal, not evasion — a light touch.
+            if (f.ItrAdvanceTaxInterest > 0) score -= 0.05;
+
+            return Math.Clamp(score, 0, 1);
         }
 
         private static double BusinessStability(MsmeFeatureSet f)

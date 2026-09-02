@@ -1,4 +1,4 @@
-@model FinRiskLensAI.Models.FinancialHealthCardViewModel
+﻿@model FinRiskLensAI.Models.FinancialHealthCardViewModel
 @*
     Shared Financial Health Card body — the score gauge, six dimensions,
     bank lending assessment, recommended credit products and the charts.
@@ -534,11 +534,11 @@
                 return {
                     maroon: cs.getPropertyValue('--brand-btn-bg').trim() || '#f37021',
                     rose: cs.getPropertyValue('--brand-secondary').trim() || '#974354',
-                    tint2: cs.getPropertyValue('--brand-tint-bg-2').trim() || '#f2e6ea',
+                    track: cs.getPropertyValue('--brand-chart-track').trim() || '#D6ADB9',
                     accent: cs.getPropertyValue('--brand-btn-bg-hover').trim() || '#c98a2b'
                 };
             }
-            let { maroon, rose, tint2, accent } = readBrandColors();
+            let { maroon, rose, track, accent } = readBrandColors();
             const charts = {};
 
             // ── Score meter: 5 band segments + needle
@@ -706,7 +706,7 @@
                     labels: dims.map(d => d.dimension),
                     datasets: [
                         { label: 'Earned', data: dims.map(d => d.score), backgroundColor: maroon, borderRadius: 6 },
-                        { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: tint2, borderRadius: 6 }
+                        { label: 'Maximum', data: dims.map(d => d.maxPoints), backgroundColor: track, borderRadius: 6 }
                     ]
                 },
                 options: {
@@ -721,7 +721,7 @@
             // change alone (data-theme flip) never reaches an already-drawn
             // canvas. See frlSetTheme in ~/js/theme.js for the dispatch side.
             document.addEventListener('frl-theme-changed', function () {
-                ({ maroon, rose, tint2, accent } = readBrandColors());
+                ({ maroon, rose, track, accent } = readBrandColors());
 
                 if (charts.gauge) charts.gauge.update();               // needle reads `maroon` live at draw time
 
@@ -732,7 +732,7 @@
                 }
                 if (charts.bar) {
                     charts.bar.data.datasets[0].backgroundColor = maroon;
-                    charts.bar.data.datasets[1].backgroundColor = tint2;
+                    charts.bar.data.datasets[1].backgroundColor = track;
                     charts.bar.update();
                 }
                 if (charts.balance) {
