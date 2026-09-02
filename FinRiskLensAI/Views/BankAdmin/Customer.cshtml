@@ -21,6 +21,7 @@
     <link href="~/css/FinancialHealthCard.css" rel="stylesheet" />
     <link href="~/css/Dashboard.css" rel="stylesheet" />
     <link href="~/css/GstAnalysis.css" rel="stylesheet" />
+    <link href="~/css/AaAnalysis.css" rel="stylesheet" />
 }
 
 <div class="bp-crumb">
@@ -137,6 +138,12 @@ else if (c != null)
         <button type="button" class="@Tab("gst")" data-pane="gst" role="tab">
             <i class="bi bi-receipt"></i><span>GST Analysis</span>
         </button>
+        <button type="button" class="@Tab("aa")" data-pane="aa" role="tab">
+            <i class="bi bi-diagram-3"></i><span>AA Details</span>
+        </button>
+        <button type="button" class="@Tab("itr")" data-pane="itr" role="tab">
+            <i class="bi bi-file-earmark-text"></i><span>ITR Details</span>
+        </button>
         <button type="button" class="@Tab("mca")" data-pane="mca" role="tab">
             <i class="bi bi-building-check"></i><span>Corporate (MCA)</span>
         </button>
@@ -171,6 +178,26 @@ else if (c != null)
             }
         </section>
 
+        <section class="@Pane("itr")" data-pane="itr">
+            @if (Model.Itr != null)
+            {
+                @await Html.PartialAsync("_ItrDetailsBody", Model.Itr)
+            }
+        </section>
+
+        @* Both AA panels: the linked accounts the customer sees on /AADetails,
+           then the full deep analysis from /DeepAnalysis. *@
+        <section class="@Pane("aa")" data-pane="aa">
+            @if (Model.Aa != null)
+            {
+                <div class="container-fluid py-4">
+                    @{ ViewData["ShowAiPanel"] = false; }
+                    @await Html.PartialAsync("_AaAccountsBody", Model.Aa)
+                    @await Html.PartialAsync("_AaAnalysisBody", Model.Aa)
+                </div>
+            }
+        </section>
+
         <section class="@Pane("mca")" data-pane="mca">
             @if (Model.Mca != null)
             {
@@ -188,6 +215,12 @@ else if (c != null)
 }
 
 @section Scripts {
+    @* _ItrDetailsBody and _McaDetailsBody both use the .mca2-tabs strip; the
+       switcher is scoped per strip so the two do not fight on this page. The AA
+       body draws Chart.js canvases. *@
+    <script src="~/FRLScripts/Common/panel-tabs.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="~/FRLScripts/AccountAggregator/aa-analysis.js" asp-append-version="true"></script>
     <script>
         // Tab switching. Every pane is rendered server-side, so switching is purely
         // show/hide — no refetch, and charts inside a pane keep their state.

@@ -481,6 +481,13 @@
     </div>
 
     <!-- ══ SECTION 18 — AI DEEP INSIGHTS ══ -->
+    @* The AI panel POSTs to /AccountAggregator/AiInsights, which is
+       [CustDashboardAuthorize] and takes the UAN from the *customer* session.
+       A bank officer has a bank session, so the call would fail — and if it did
+       not, it would answer for the wrong UAN. Callers outside the customer's own
+       page set ViewData["ShowAiPanel"] = false to leave it out. *@
+    @if (ViewData["ShowAiPanel"] as bool? ?? true)
+    {
     <div class="aa-card aa-ai" id="aaAiCard">
         <div class="aa-card-head">
             <h6><i class="bi bi-stars"></i>FinRiskLens AI — Deep Insights</h6>
@@ -495,6 +502,7 @@
         <div id="aaAiStatus" class="aa-empty" style="display:none;"></div>
         <div id="aaAiResult" style="display:none;"></div>
     </div>
+    }
 </div>
 
 @* Monthly series for the charts — small, aggregate-only payload. *@

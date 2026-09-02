@@ -1,4 +1,6 @@
-﻿using FinRiskLensAI.Core.Models.Common;
+﻿using FinRiskLensAI.Core.Models.AccountAggregator;
+using FinRiskLensAI.Core.Models.Common;
+using FinRiskLensAI.Core.Models.Itr;
 using FinRiskLensAI.Core.Models.GST;
 using FinRiskLensAI.Core.Models.Mca;
 using FinRiskLensAI.Core.Models.Onboarding;
@@ -31,13 +33,16 @@ namespace FinRiskLensAI.Core.Models.Admin
         public BankCustomerRow? Customer { get; set; }
         public string? LoadError { get; set; }
 
-        /// <summary>Which tab to open on load: score | udyam | gst | mca | security.</summary>
+        /// <summary>Which tab to open on load: score | udyam | gst | itr | aa | mca | security.</summary>
         public string ActiveTab { get; set; } = "score";
 
         public FinancialHealthCardViewModel? Card { get; set; }
         public UdyamDetailsViewModel? Udyam { get; set; }
         public GSTAnalysisViewModel? Gst { get; set; }
         public McaDetailsViewModel? Mca { get; set; }
+        public ItrDetailsViewModel? Itr { get; set; }
+        /// <summary>Backs both AA panels — linked accounts and the deep analysis.</summary>
+        public AaAnalysisResult? Aa { get; set; }
         public IpVerificationViewModel? IpAudit { get; set; }
     }
 }

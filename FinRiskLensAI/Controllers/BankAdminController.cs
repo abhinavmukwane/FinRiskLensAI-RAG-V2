@@ -130,6 +130,8 @@ namespace FinRiskLensAI.Controllers
                 model.Udyam = await _profile.GetUdyamAsync(model.Uan);
                 model.Gst = await _profile.GetGstAsync(model.Uan,
                     model.Customer.EnterpriseName, model.Customer.PanNumber);
+                model.Itr = await _profile.GetItrAsync(model.Uan, ct);
+                model.Aa = await _profile.GetAaAnalysisAsync(model.Uan, ct);
                 model.Mca = await _profile.GetMcaAsync(model.Uan, ct);
                 model.IpAudit = await _profile.GetIpAuditAsync(model.Uan, model.Customer.IPAddress, ct);
             }
