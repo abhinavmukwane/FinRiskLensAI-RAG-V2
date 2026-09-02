@@ -1,4 +1,4 @@
-namespace FinRiskLensAI.Models
+﻿namespace FinRiskLensAI.Core.Models.Common
 {
     public class ErrorViewModel
     {

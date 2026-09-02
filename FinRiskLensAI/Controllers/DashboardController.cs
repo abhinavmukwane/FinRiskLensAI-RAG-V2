@@ -1,3 +1,4 @@
+﻿using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
@@ -6,7 +7,6 @@ using FinRiskLensAI.Core.Interfaces.IServices.GST;
 using FinRiskLensAI.Core.Models.Mca;
 using FinRiskLensAI.Core.Models.Storage;
 using FinRiskLensAI.Core.Models.Universal;
-using FinRiskLensAI.Models;
 using FinRiskLensAI.Utility;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

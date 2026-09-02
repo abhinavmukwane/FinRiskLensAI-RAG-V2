@@ -1,6 +1,7 @@
+﻿using FinRiskLensAI.Core.Models.AccountAggregator;
+using FinRiskLensAI.Core.Models.Common;
 using System.Diagnostics;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
-using FinRiskLensAI.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinRiskLensAI.Controllers

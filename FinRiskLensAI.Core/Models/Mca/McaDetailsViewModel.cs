@@ -1,6 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace FinRiskLensAI.Models
+namespace FinRiskLensAI.Core.Models.Mca
 {
     /// <summary>
     /// ViewModel for /Mca/MCADetails — fully computed by McaController from the

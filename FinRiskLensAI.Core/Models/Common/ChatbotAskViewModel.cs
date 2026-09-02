@@ -1,6 +1,5 @@
-using FinRiskLensAI.Core.Models.Common;
-
-namespace FinRiskLensAI.Models
+﻿
+namespace FinRiskLensAI.Core.Models.Common
 {
     /// <summary>
     /// One chatbot question from the browser. PageContext (the full screen

@@ -1,8 +1,10 @@
-using FinRiskLensAI.Controllers;
+﻿using FinRiskLensAI.Controllers;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
+using FinRiskLensAI.Core.Models.Common;
+using FinRiskLensAI.Core.Models.GST;
 using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.GST;
 using FinRiskLensAI.Core.Interfaces.IServices.OnBoarding;
@@ -10,7 +12,6 @@ using FinRiskLensAI.Core.Models.Mca;
 using FinRiskLensAI.Core.Models.Onboarding;
 using FinRiskLensAI.Core.Models.Storage;
 using FinRiskLensAI.Core.Models.Universal;
-using FinRiskLensAI.Models;
 using Newtonsoft.Json;
 
 namespace FinRiskLensAI.Common

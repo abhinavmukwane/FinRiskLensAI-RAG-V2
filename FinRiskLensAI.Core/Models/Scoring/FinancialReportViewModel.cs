@@ -1,7 +1,7 @@
+﻿using FinRiskLensAI.Core.Models.Onboarding;
 using FinRiskLensAI.Core.Interfaces;
-using FinRiskLensAI.Core.Models.Scoring;
 
-namespace FinRiskLensAI.Models
+namespace FinRiskLensAI.Core.Models.Scoring
 {
     /// <summary>
     /// ViewModel for /Report/FinancialReport — the printable, single-page version

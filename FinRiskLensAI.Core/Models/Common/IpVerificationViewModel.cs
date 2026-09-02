@@ -1,6 +1,6 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 
-namespace FinRiskLensAI.Models
+namespace FinRiskLensAI.Core.Models.Common
 {
     /// <summary>
     /// Source-IP security audit shown in the dashboard popup, parsed from the

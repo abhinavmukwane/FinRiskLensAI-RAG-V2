@@ -1,7 +1,6 @@
-using FinRiskLensAI.Core.Models.Scoring;
-using FinRiskLensAI.Core.Interfaces;
+﻿using FinRiskLensAI.Core.Interfaces;
 
-namespace FinRiskLensAI.Models
+namespace FinRiskLensAI.Core.Models.Scoring
 {
     public class FinancialHealthCardViewModel
     {

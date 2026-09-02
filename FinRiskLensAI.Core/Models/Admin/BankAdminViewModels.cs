@@ -1,6 +1,10 @@
-using FinRiskLensAI.Core.Models.Admin;
+﻿using FinRiskLensAI.Core.Models.Common;
+using FinRiskLensAI.Core.Models.GST;
+using FinRiskLensAI.Core.Models.Mca;
+using FinRiskLensAI.Core.Models.Onboarding;
+using FinRiskLensAI.Core.Models.Scoring;
 
-namespace FinRiskLensAI.Models
+namespace FinRiskLensAI.Core.Models.Admin
 {
     public class BankDashboardViewModel
     {

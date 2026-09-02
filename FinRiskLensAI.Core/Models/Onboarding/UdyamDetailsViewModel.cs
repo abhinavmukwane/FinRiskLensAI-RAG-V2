@@ -1,4 +1,4 @@
-namespace FinRiskLensAI.Models
+﻿namespace FinRiskLensAI.Core.Models.Onboarding
 {
     /// <summary>
     /// ViewModel for /Udyam/UdyamDetails. Fully computed by UdyamController

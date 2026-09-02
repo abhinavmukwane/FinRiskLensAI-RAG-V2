@@ -1,4 +1,4 @@
-namespace FinRiskLensAI.Models
+﻿namespace FinRiskLensAI.Core.Models.GST
 {
     /// <summary>
     /// ViewModel for /Dashboard/GSTAnalysis. Populated by DashboardController

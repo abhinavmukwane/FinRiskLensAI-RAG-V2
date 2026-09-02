@@ -1,7 +1,7 @@
+﻿using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
-using FinRiskLensAI.Models;
 using FinRiskLensAI.Utility;
 using Microsoft.AspNetCore.Mvc;
 
