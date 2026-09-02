@@ -3,6 +3,7 @@ using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
+using FinRiskLensAI.Core.Models.Itr;
 using FinRiskLensAI.Core.Models.Common;
 using FinRiskLensAI.Core.Models.GST;
 using FinRiskLensAI.Core.Models.AccountAggregator;
@@ -13,6 +14,7 @@ using FinRiskLensAI.Core.Models.Onboarding;
 using FinRiskLensAI.Core.Models.Storage;
 using FinRiskLensAI.Core.Models.Universal;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace FinRiskLensAI.Common
 {
@@ -130,6 +132,65 @@ namespace FinRiskLensAI.Common
             {
                 _logger.LogError(ex, "Failed loading Udyam details for {Uan}", uan);
                 model.LoadError = "Could not load the Udyam details right now. Please try again later.";
+                return model;
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  ITR — Income Tax Return analysis
+        // ─────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Reads the ITR vendor response already stored in blob storage (never
+        /// re-calls the ITR API) and builds the page model from it.
+        /// </summary>
+        public async Task<ItrDetailsViewModel> GetItrAsync(string? uan, CancellationToken ct = default)
+        {
+            var model = new ItrDetailsViewModel { Uan = uan };
+
+            if (string.IsNullOrWhiteSpace(uan))
+            {
+                model.LoadError = "No Udyam number is linked to this account, so there are no ITR details to display.";
+                return model;
+            }
+
+            string? json;
+            try
+            {
+                json = await _store.DownloadAsync(uan, MsmeDataFiles.Itr, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed reading ITR response from blob for {Uan}", uan);
+                model.LoadError = "Could not read the Income Tax Return right now. Please try again later.";
+                return model;
+            }
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                model.LoadError = $"No Income Tax Return has been fetched for {uan} yet. "
+                                + "Use the ITR option on the dashboard to fetch it.";
+                return model;
+            }
+
+            try
+            {
+                var root = JObject.Parse(json);
+
+                // The vendor reports failures in-band; a non-SUCCESS body carries no return.
+                var status = root.Value<string>("status");
+                if (!string.IsNullOrWhiteSpace(status)
+                    && !status.Equals("SUCCESS", StringComparison.OrdinalIgnoreCase))
+                {
+                    model.LoadError = root.Value<string>("message") ?? "The ITR service returned no data.";
+                    return model;
+                }
+
+                return ItrController.BuildAnalysis(root, uan);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed parsing ITR response for {Uan}", uan);
+                model.LoadError = "The stored Income Tax Return could not be read.";
                 return model;
             }
         }

@@ -1,7 +1,7 @@
 ﻿// ============================================================================
 // Corporate Affairs (MCA) — Corporate Intelligence Report page behavior.
-// All data is server-rendered by McaController; this script handles tabs,
-// the charge accordion, and the director DIN popup, whose data is fetched
+// All data is server-rendered by McaController; this script handles the charge
+// chart, the charge accordion, and the director DIN popup, whose data is fetched
 // ON CLICK from /Mca/GetDinDetail (DINResponce in m_StaticResponces).
 // ============================================================================
 
@@ -9,15 +9,8 @@
     'use strict';
 
     // ── Tabs ─────────────────────────────────────────────────────────────
-    document.querySelectorAll('.mca2-tab').forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            document.querySelectorAll('.mca2-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            var panel = document.getElementById(tab.dataset.tab);
-            if (panel) panel.classList.add('active');
-        });
-    });
+    // Switching itself lives in ~/FRLScripts/Common/panel-tabs.js, shared with
+    // the ITR page. Only the chart rebuild below is MCA-specific.
 
     // ── Charge chart ─────────────────────────────────────────────────────
     // Same Chart.js setup as the Deep Analysis charts (aa-analysis.js): a
@@ -146,7 +139,8 @@
 
         document.querySelectorAll('.mca2-tab').forEach(function (tab) {
             if (tab.dataset.tab === 'tab-charges') {
-                // After the tab handler above has made the panel visible.
+                // Registered after panel-tabs.js, so by the time this runs that
+                // handler has already made the panel visible.
                 tab.addEventListener('click', function () { setTimeout(render, 0); });
             }
         });

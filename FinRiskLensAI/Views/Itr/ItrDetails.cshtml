@@ -1,0 +1,13 @@
+﻿@model FinRiskLensAI.Core.Models.Itr.ItrDetailsViewModel
+@{
+    ViewBag.Title = "ITR Details";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@* Body is shared with the bank portal Customer 360 — see _ItrDetailsBody. *@
+@await Html.PartialAsync("_ItrDetailsBody", Model)
+
+@if (Model.HasData)
+{
+    <script src="~/FRLScripts/Common/panel-tabs.js" asp-append-version="true"></script>
+}

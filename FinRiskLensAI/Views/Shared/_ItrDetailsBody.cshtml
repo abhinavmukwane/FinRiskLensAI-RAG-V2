@@ -1,0 +1,509 @@
+﻿@model FinRiskLensAI.Core.Models.Itr.ItrDetailsViewModel
+@*
+    Shared Income Tax Return body. Rendered by the customer page
+    (Views/Itr/ItrDetails) and reusable from the bank portal Customer 360,
+    so both surfaces show identical figures from one code path.
+
+    Pure presentation — every number and every observation is computed in
+    ItrController.BuildAnalysis from the itr.json stored in the MSME's blob
+    folder. Reuses the .udyam-dashboard component styles (hero banner, tabs,
+    dash-card, observations) that the Udyam and MCA pages already share.
+*@
+
+@functions {
+    static string Money(long v)
+    {
+        var abs = Math.Abs(v);
+        if (abs >= 10000000) return $"₹{v / 10000000m:0.##} Cr";
+        if (abs >= 100000) return $"₹{v / 100000m:0.##} L";
+        return $"₹{v:N0}";
+    }
+
+    static string Exact(long v) => $"₹{v:N0}";
+}
+
+@if (!Model.HasData)
+{
+    <div class="container-fluid py-4 udyam-dashboard">
+        <div class="alert alert-warning rounded-4">
+            <i class="bi bi-info-circle me-2"></i>
+            @(Model.LoadError ?? "No Income Tax Return is available for your account.")
+        </div>
+    </div>
+    return;
+}
+
+@* Design-reference fonts, same pair the MCA report uses. *@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="container-fluid py-4 udyam-dashboard">
+
+    <!-- ===== HERO BANNER — filing health + quick stats ===== -->
+    <div class="hero-banner d-flex flex-column flex-md-row align-items-center gap-4">
+        <div class="hero-score-ring">
+            <svg viewBox="0 0 120 120">
+                <circle class="gauge-track" cx="60" cy="60" r="54"></circle>
+                <circle class="gauge-progress" cx="60" cy="60" r="54"
+                        style="stroke-dasharray:339; stroke-dashoffset:@(339 - 339 * Model.Score / 100);"></circle>
+            </svg>
+            <div class="score-value">
+                <span>@Model.Score</span>
+                <small>/ 100</small>
+            </div>
+        </div>
+        <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span style="font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; opacity:0.7;">
+                    <i class="bi bi-patch-check-fill me-1"></i>@Model.FormType &middot; @Model.ReturnStatus
+                </span>
+            </div>
+            <h2>Income Tax Return Analysis</h2>
+            <p>@Model.EntityName &middot; PAN: @Model.PanMasked &middot; AY @Model.AssessmentYear</p>
+            <div class="hero-stats">
+                <div class="hero-stat-item"><div class="value">@Money(Model.GrossTotalIncome)</div><div class="label">Gross Income</div></div>
+                <div class="hero-stat-item"><div class="value">@Money(Model.TotalTaxAndInterest)</div><div class="label">Tax + Interest</div></div>
+                <div class="hero-stat-item">
+                    <div class="value">@(Model.HasFinancials ? Money(Model.RevenueFromOperations) : Model.HasPresumptive ? Money(Model.PresumptiveTurnover) : "—")</div>
+                    <div class="label">Turnover</div>
+                </div>
+                <div class="hero-stat-item"><div class="value">@(Model.FiledOnTime ? "On time" : "Late")</div><div class="label">Filing</div></div>
+                <div class="hero-stat-item"><div class="value">@Model.RiskLabel</div><div class="label">Risk</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TABS ===== -->
+    <div class="mca2-tabs" role="tablist">
+        <button class="mca2-tab active" data-tab="tab-itr-overview"><i class="bi bi-grid-1x2"></i>Overview</button>
+        <button class="mca2-tab" data-tab="tab-itr-tax"><i class="bi bi-calculator"></i>Income &amp; Tax</button>
+        <button class="mca2-tab" data-tab="tab-itr-financials"><i class="bi bi-graph-up"></i>Financials</button>
+        <button class="mca2-tab" data-tab="tab-itr-compliance"><i class="bi bi-shield-check"></i>Compliance</button>
+    </div>
+
+    <!-- ===================== TAB 1: OVERVIEW ===================== -->
+    <div class="tab-panel active" id="tab-itr-overview">
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-7">
+                <div class="split-panel h-100">
+                    <div class="split-left d-flex flex-column justify-content-between">
+                        <div>
+                            <h6 class="card-label">Filing Snapshot</h6>
+                            <ul class="mini-list">
+                                <li><span>Form</span><strong>@Model.FormType</strong></li>
+                                <li><span>Assessment Year</span><strong>@Model.AssessmentYear</strong></li>
+                                <li><span>Financial Year</span><strong>@Model.FinancialYear</strong></li>
+                            </ul>
+                        </div>
+                        <div class="mt-4">
+                            <h6 class="card-label">Status</h6>
+                            <ul class="mini-list">
+                                <li><span>Filed On</span><strong>@Model.FilingDateText</strong></li>
+                                <li><span>Due Date</span><strong>@Model.DueDateText</strong></li>
+                                <li><span>Return</span><strong>@Model.ReturnStatus</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="split-right">
+                        <h6 class="card-heading"><i class="bi bi-building me-2"></i>Assessee Profile</h6>
+                        <ul class="profile-list list-unstyled mb-0">
+                            <li><span>Name</span><strong>@Model.EntityName</strong></li>
+                            <li><span>Constitution</span><strong>@Model.ConstitutionType</strong></li>
+                            <li><span>PAN</span><strong>@Model.PanMasked</strong></li>
+                            <li><span>GSTIN</span><strong>@Model.GstinMasked</strong></li>
+                            @if (!string.IsNullOrWhiteSpace(Model.Llpin))
+                            {
+                                <li><span>LLPIN</span><strong>@Model.Llpin</strong></li>
+                            }
+                            <li><span>Formed On</span><strong>@Model.DateOfFormationText</strong></li>
+                            <li><span>Registered Address</span><strong>@Model.RegisteredAddress</strong></li>
+                            <li><span>Email</span><strong>@Model.Email</strong></li>
+                            <li><span>Acknowledgement</span><strong>@Model.AcknowledgementNumber</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-stars me-2"></i>AI Observations</h6>
+                    <ul class="signal-list list-unstyled mb-0">
+                        @foreach (var o in Model.Observations)
+                        {
+                            <li class="@o.CssClass"><i class="bi @o.Icon me-2"></i>@o.Text</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-5">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-cash-coin me-2"></i>Income Summary</h6>
+                    <ul class="profile-list list-unstyled mb-0">
+                        <li><span>Business / Profession</span><strong>@Exact(Model.BusinessIncome)</strong></li>
+                        <li><span>House Property</span><strong>@Exact(Model.HousePropertyIncome)</strong></li>
+                        <li><span>Capital Gains</span><strong>@Exact(Model.CapitalGains)</strong></li>
+                        <li><span>Other Sources</span><strong>@Exact(Model.OtherSourcesIncome)</strong></li>
+                        <li><span>Gross Total Income</span><strong>@Exact(Model.GrossTotalIncome)</strong></li>
+                        <li><span>Chapter VI-A Deductions</span><strong>@Exact(Model.TotalDeductions)</strong></li>
+                        <li><span>Total Income</span><strong>@Exact(Model.TotalIncome)</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-7">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-bank me-2"></i>Bank Accounts on Return</h6>
+                    @if (Model.BankAccounts.Count == 0)
+                    {
+                        <p class="text-muted mb-0" style="font-size:13px;">No bank account is reported on this return.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0" style="font-size:13px;">
+                                <thead>
+                                    <tr><th>Bank</th><th>Account</th><th>IFSC</th><th>Type</th><th>Refund</th></tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var b in Model.BankAccounts)
+                                    {
+                                        <tr>
+                                            <td><strong>@b.BankName</strong></td>
+                                            <td>@b.AccountMasked</td>
+                                            <td>@b.Ifsc</td>
+                                            <td>@b.AccountType</td>
+                                            <td>
+                                                @if (b.IsRefundAccount)
+                                                {
+                                                    <span class="badge-soft badge-success"><i class="bi bi-check-circle-fill me-1"></i>Yes</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== TAB 2: INCOME & TAX ===================== -->
+    <div class="tab-panel" id="tab-itr-tax">
+
+        @if (Model.HasPresumptive)
+        {
+            <div class="dash-card mb-4">
+                <h6 class="card-heading"><i class="bi bi-percent me-2"></i>Presumptive Scheme &mdash; Section @Model.SchemeSection</h6>
+                <p style="font-size:12px; color:var(--text-muted-2); margin-bottom:14px;">
+                    Income is declared at a flat rate of turnover, so no audited books support these figures.
+                </p>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3"><div class="stat-block"><div class="v">@Money(Model.PresumptiveTurnover)</div><div class="k">Gross Turnover</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-block"><div class="v">@Money(Model.TurnoverBanking)</div><div class="k">Through Banking</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-block"><div class="v">@Money(Model.TurnoverCash)</div><div class="k">In Cash (@Model.CashTurnoverSharePct.ToString("0.#")%)</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-block"><div class="v">@Model.EffectiveRateText</div><div class="k">Declared Rate</div></div></div>
+                </div>
+            </div>
+        }
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-6">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-calculator me-2"></i>Tax Computation</h6>
+                    <ul class="profile-list list-unstyled mb-0">
+                        <li><span>Rate Applied</span><strong>@Model.TaxRateText</strong></li>
+                        <li><span>Tax on Total Income</span><strong>@Exact(Model.TaxOnTotalIncome)</strong></li>
+                        <li><span>Surcharge</span><strong>@Exact(Model.Surcharge)</strong></li>
+                        <li><span>Health &amp; Education Cess</span><strong>@Exact(Model.Cess)</strong></li>
+                        <li><span>Total Tax Liability</span><strong>@Exact(Model.TotalTaxLiability)</strong></li>
+                        <li><span>Interest u/s 234A</span><strong>@Exact(Model.Interest234A)</strong></li>
+                        <li><span>Interest u/s 234B</span><strong>@Exact(Model.Interest234B)</strong></li>
+                        <li><span>Interest u/s 234C</span><strong>@Exact(Model.Interest234C)</strong></li>
+                        <li><span>Total Tax &amp; Interest</span><strong>@Exact(Model.TotalTaxAndInterest)</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-wallet2 me-2"></i>Taxes Paid</h6>
+                    <ul class="profile-list list-unstyled mb-3">
+                        <li><span>Advance Tax</span><strong>@Exact(Model.AdvanceTax)</strong></li>
+                        <li><span>TDS</span><strong>@Exact(Model.Tds)</strong></li>
+                        <li><span>TCS</span><strong>@Exact(Model.Tcs)</strong></li>
+                        <li><span>Self Assessment Tax</span><strong>@Exact(Model.SelfAssessmentTax)</strong></li>
+                        <li><span>Total Taxes Paid</span><strong>@Exact(Model.TotalTaxesPaid)</strong></li>
+                    </ul>
+
+                    <div class="d-flex align-items-center gap-2">
+                        @if (Model.HasTaxDemand)
+                        {
+                            <span class="badge-soft badge-danger">
+                                <i class="bi bi-exclamation-octagon-fill me-1"></i>Demand @Exact(Model.RefundOrDemandAmount)
+                            </span>
+                        }
+                        else if (Model.RefundOrDemandType.Equals("REFUND", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <span class="badge-soft badge-success">
+                                <i class="bi bi-arrow-down-circle-fill me-1"></i>Refund @Exact(Model.RefundOrDemandAmount)
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge-soft badge-success"><i class="bi bi-check-circle-fill me-1"></i>Fully discharged &mdash; no refund or demand</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.DeductionRows.Count > 0)
+        {
+            <div class="dash-card mb-4">
+                <h6 class="card-heading"><i class="bi bi-scissors me-2"></i>Chapter VI-A Deductions</h6>
+                <ul class="profile-list list-unstyled mb-0">
+                    @foreach (var d in Model.DeductionRows)
+                    {
+                        <li><span>@d.Label</span><strong>@d.AmountText</strong></li>
+                    }
+                    <li><span>Total</span><strong>@Exact(Model.TotalDeductions)</strong></li>
+                </ul>
+            </div>
+        }
+    </div>
+
+    <!-- ===================== TAB 3: FINANCIALS ===================== -->
+    <div class="tab-panel" id="tab-itr-financials">
+
+        @if (!Model.HasFinancials && !Model.HasBalanceSheet)
+        {
+            <div class="dash-card mb-4">
+                <p class="text-muted mb-0" style="font-size:13px;">
+                    <i class="bi bi-info-circle me-2"></i>
+                    This is a presumptive return under section @Model.SchemeSection. Presumptive filers are not
+                    required to maintain books, so the return carries no profit &amp; loss account or balance sheet.
+                </p>
+            </div>
+        }
+
+        @if (Model.HasFinancials)
+        {
+            <div class="dash-card mb-4">
+                <h6 class="card-heading"><i class="bi bi-graph-up me-2"></i>Profit &amp; Loss &mdash; @Model.PeriodText</h6>
+                <div class="row g-3">
+                    <div class="col-6 col-md-4"><div class="stat-block"><div class="v">@Money(Model.RevenueFromOperations)</div><div class="k">Revenue from Operations</div></div></div>
+                    <div class="col-6 col-md-4"><div class="stat-block"><div class="v">@Money(Model.OtherIncome)</div><div class="k">Other Income</div></div></div>
+                    <div class="col-6 col-md-4"><div class="stat-block"><div class="v">@Money(Model.TotalExpenses)</div><div class="k">Total Expenses</div></div></div>
+                    <div class="col-6 col-md-4"><div class="stat-block"><div class="v">@Money(Model.NetProfitBeforeTax)</div><div class="k">Profit Before Tax</div></div></div>
+                    <div class="col-6 col-md-4"><div class="stat-block"><div class="v">@Money(Model.NetProfitAfterTax)</div><div class="k">Profit After Tax</div></div></div>
+                    <div class="col-6 col-md-4">
+                        <div class="stat-block">
+                            <div class="v">@(Model.NetMarginPct.HasValue ? Model.NetMarginPct.Value.ToString("0.##") + "%" : "—")</div>
+                            <div class="k">Net Margin</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.HasBalanceSheet)
+        {
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-lg-6">
+                    <div class="dash-card h-100">
+                        <h6 class="card-heading"><i class="bi bi-clipboard-data me-2"></i>Balance Sheet &mdash; @Model.BalanceSheetDateText</h6>
+                        <ul class="profile-list list-unstyled mb-0">
+                            <li><span>Partners' / Members' Capital</span><strong>@Exact(Model.TotalPartnersCapital)</strong></li>
+                            <li><span>Total Liabilities</span><strong>@Exact(Model.TotalLiabilities)</strong></li>
+                            <li><span>Total Assets</span><strong>@Exact(Model.TotalAssets)</strong></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="dash-card h-100">
+                        <h6 class="card-heading"><i class="bi bi-speedometer me-2"></i>Key Ratios</h6>
+                        <p style="font-size:12px; color:var(--text-muted-2); margin-bottom:14px;">
+                            Computed from the figures on this return only &mdash; a dash means the return does not carry the source line.
+                        </p>
+                        <ul class="profile-list list-unstyled mb-0">
+                            <li>
+                                <span>Profit Before Tax Margin</span>
+                                <strong>@(Model.PbtMarginPct.HasValue ? Model.PbtMarginPct.Value.ToString("0.##") + "%" : "—")</strong>
+                            </li>
+                            <li>
+                                <span>Net Profit Margin</span>
+                                <strong>@(Model.NetMarginPct.HasValue ? Model.NetMarginPct.Value.ToString("0.##") + "%" : "—")</strong>
+                            </li>
+                            <li>
+                                <span>Asset Turnover</span>
+                                <strong>@(Model.AssetTurnover.HasValue ? Model.AssetTurnover.Value.ToString("0.00") + "x" : "—")</strong>
+                            </li>
+                            <li>
+                                <span>Debt to Equity</span>
+                                <strong>@(Model.DebtToEquity.HasValue ? Model.DebtToEquity.Value.ToString("0.00") + "x" : "—")</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.Partners.Count > 0)
+        {
+            <div class="dash-card mb-4">
+                <h6 class="card-heading mb-3"><i class="bi bi-people-fill me-2"></i>Partners</h6>
+                <div class="row g-3">
+                    @foreach (var p in Model.Partners)
+                    {
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="director-strip-card h-100">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="director-avatar">@p.Initials</div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="director-name">@p.Name</h6>
+                                        <span class="din-badge">PAN @p.PanMasked</span>
+                                    </div>
+                                </div>
+                                <ul class="mini-list mt-3 mb-0">
+                                    <li><span>Profit Share</span><strong>@p.SharePercent.ToString("0.##")%</strong></li>
+                                    <li><span>Capital Balance</span><strong>@p.CapitalText</strong></li>
+                                    <li><span>Working Partner</span><strong>@(p.IsWorkingPartner ? "Yes" : "No")</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <ul class="profile-list list-unstyled mb-0 mt-4">
+                    <li><span>Remuneration to Partners</span><strong>@Exact(Model.TotalRemuneration)</strong></li>
+                    <li><span>Interest on Capital</span><strong>@Exact(Model.TotalInterestOnCapital)</strong></li>
+                    <li><span>Allowable u/s 40(b)</span><strong>@Exact(Model.Allowable40b)</strong></li>
+                    <li><span>Disallowed</span><strong>@Exact(Model.Disallowed40b)</strong></li>
+                </ul>
+            </div>
+        }
+    </div>
+
+    <!-- ===================== TAB 4: COMPLIANCE ===================== -->
+    <div class="tab-panel" id="tab-itr-compliance">
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-7">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-sliders me-2"></i>Filing &amp; Tax Health Breakdown</h6>
+                    <p style="font-size:12px; color:var(--text-muted-2); margin-bottom:16px;">
+                        Each component carries a weight and a reason &mdash; nothing here is a black box.
+                    </p>
+                    @foreach (var c in Model.ScoreComponents)
+                    {
+                        <div class="score-comp">
+                            <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1" style="font-size:13px;">
+                                <strong>@c.Name</strong>
+                                <span style="white-space:nowrap; font-weight:700;">@c.Points / @c.MaxPoints</span>
+                            </div>
+                            <div class="score-bar"><span class="@c.FillCss" style="width:@c.Percent%"></span></div>
+                            <div class="score-why">@c.Reason</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading mb-3"><i class="bi bi-card-checklist me-2"></i>Verification Matrix</h6>
+                    <div class="verif-grid">
+                        @foreach (var v in Model.VerificationItems)
+                        {
+                            <div class="verif-item" style="@(v.Pass ? "" : "border-color:var(--danger-red-soft);")">
+                                <i class="bi @(v.Pass ? "bi-check-circle-fill pass" : "bi-x-circle-fill fail")"></i> @v.Label
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-6">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-shield-check me-2"></i>Filing &amp; Verification</h6>
+                    <ul class="profile-list list-unstyled mb-0">
+                        <li><span>Filing Type</span><strong>@Model.FilingType</strong></li>
+                        <li><span>Filing Section</span><strong>@Model.FilingSection</strong></li>
+                        <li><span>Filing Mode</span><strong>@Model.FilingMode</strong></li>
+                        <li><span>E-Verification</span><strong>@Model.EVerificationStatus (@Model.EVerificationDateText)</strong></li>
+                        <li><span>Verified By</span><strong>@Model.VerifiedByName, @Model.VerifierDesignation</strong></li>
+                        <li><span>Verified On</span><strong>@Model.VerificationDateText</strong></li>
+                        <li><span>Place</span><strong>@Model.VerificationPlace</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="dash-card h-100">
+                    <h6 class="card-heading"><i class="bi bi-file-earmark-check me-2"></i>Tax Audit</h6>
+                    @if (!Model.AuditApplicable)
+                    {
+                        <p class="text-muted mb-0" style="font-size:13px;">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Turnover is below the section 44AB threshold, so no tax audit is required for this year.
+                        </p>
+                    }
+                    else
+                    {
+                        <ul class="profile-list list-unstyled mb-0">
+                            <li><span>Section</span><strong>@Model.AuditSection</strong></li>
+                            <li><span>Auditor</span><strong>@Model.AuditorName</strong></li>
+                            <li><span>Membership No.</span><strong>@Model.AuditorMembership</strong></li>
+                            <li><span>UDIN</span><strong>@Model.Udin</strong></li>
+                            <li><span>Form 3CA/3CB Filed</span><strong>@Model.AuditFilingDateText</strong></li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (Model.HasGstReconciliation)
+        {
+            <div class="dash-card mb-4">
+                <h6 class="card-heading"><i class="bi bi-arrow-left-right me-2"></i>GST &mdash; ITR Turnover Reconciliation</h6>
+                <p style="font-size:12px; color:var(--text-muted-2); margin-bottom:14px;">
+                    Turnover declared to the GST department against turnover declared on this return. A wide gap is a
+                    data-integrity signal worth resolving before lending, not proof of wrongdoing.
+                </p>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3"><div class="stat-block"><div class="v">@Money(Model.GstReportedTurnover)</div><div class="k">GST Reported</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-block"><div class="v">@Money(Model.ItrDeclaredTurnover)</div><div class="k">ITR Declared</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-block"><div class="v">@Money(Model.VarianceAmount)</div><div class="k">Variance</div></div></div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-block">
+                            <div class="v">@Model.VariancePercent.ToString("0.##")%</div>
+                            <div class="k">Variance</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    @if (Model.ReconciliationWithinTolerance)
+                    {
+                        <span class="badge-soft badge-success"><i class="bi bi-check-circle-fill me-1"></i>@Model.ReconciliationStatus</span>
+                    }
+                    else
+                    {
+                        <span class="badge-soft badge-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>@Model.ReconciliationStatus</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
