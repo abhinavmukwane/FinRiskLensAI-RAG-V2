@@ -2517,7 +2517,7 @@ img {
 .udyam-dashboard .hero-stat-item .label { font-size: 11px; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* Tabs */
-.udyam-dashboard .mca2-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--card-border); margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.udyam-dashboard .mca2-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--card-border); margin-bottom: 24px;  -webkit-overflow-scrolling: touch; }
 .udyam-dashboard .mca2-tab { padding: 12px 20px; font-size: 13px; font-weight: 700; color: var(--text-muted-2); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s ease; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; }
 .udyam-dashboard .mca2-tab:hover { color: var(--theme-maroon); }
 .udyam-dashboard .mca2-tab.active { color: var(--theme-maroon); border-bottom-color: var(--theme-maroon); }

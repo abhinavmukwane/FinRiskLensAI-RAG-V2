@@ -1,3 +1,5 @@
+using FinRiskLensAI.Core.Models.AccountAggregator;
+
 namespace FinRiskLensAI.Core.Interfaces.IServices.Common
 {
     public interface IDummyDataService
@@ -30,10 +32,21 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Common
         /// caller supplies them, falling back to a random-but-valid value only for
         /// whichever ones are missing.
         /// </para>
+        /// <para>
+        /// <paramref name="aaAccounts"/> — the MSME's real linked bank accounts from the
+        /// Account Aggregator statement (<c>CustomerProfileBuilder.GetAaAnalysisAsync</c>
+        /// → <c>AaAnalysisResult.Accounts</c>). <c>bank_details</c> is built from these;
+        /// only when no AA data exists yet does it fall back to one random-but-valid account.
+        /// </para>
+        /// <para>
+        /// <paramref name="assessmentYear"/> defaults to the assessment year for the most
+        /// recently completed Indian financial year (April–March) as of today — never a
+        /// fixed value — so the return always looks like it was just filed.
+        /// </para>
         /// </summary>
         string GetDummyItr(string uan, string entityName, string constitutionType,
             string? pan = null, string? gstin = null, string? email = null, string? mobile = null,
             string? addressLine1 = null, string? city = null, string? state = null, string? pincode = null,
-            string assessmentYear = "2025-26");
+            IReadOnlyList<AaAccountInfo>? aaAccounts = null, string? assessmentYear = null);
     }
 }
