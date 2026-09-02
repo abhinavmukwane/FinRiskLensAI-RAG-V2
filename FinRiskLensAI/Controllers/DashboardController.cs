@@ -320,8 +320,23 @@ namespace FinRiskLensAI.Controllers
                 if (!alreadyPresent)
                 {
                     var udyam = await _profile.GetUdyamAsync(uan);
+                    var aa = await _profile.GetAaAnalysisAsync(uan, ct);
                     var entityName = udyam?.HasData == true ? udyam.EnterpriseName : user!.NameOfEnterprise;
                     var constitution = udyam?.HasData == true ? udyam.OrganizationType : "PROPRIETORSHIP";
+
+                    // UdyamDetailsViewModel only carries City/District/State/Pin — the actual
+                    // street line (flat/building/road) lives solely in the raw Udyam JSON, so
+                    // it's read directly here rather than fabricating a "Shop No." placeholder
+                    // when the real registered address is already on file.
+                    string? addressLine1 = null;
+                    var udyamJson = await _store.DownloadAsync(uan, MsmeDataFiles.Udyam, ct);
+                    if (udyamJson != null)
+                    {
+                        var main = JObject.Parse(udyamJson).SelectToken("main_details");
+                        var parts = new[] { main?.Value<string>("flat"), main?.Value<string>("name_of_building"), main?.Value<string>("road") }
+                            .Where(p => !string.IsNullOrWhiteSpace(p));
+                        addressLine1 = parts.Any() ? string.Join(", ", parts) : null;
+                    }
 
                     var itrJson = _dummyData.GetDummyItr(
                         uan: uan,
@@ -331,9 +346,11 @@ namespace FinRiskLensAI.Controllers
                         gstin: user.GstinNumber ?? udyam?.Gstin,
                         email: user.Email,
                         mobile: user.MobileNumber,
+                        addressLine1: addressLine1,
                         city: udyam?.City,
                         state: udyam?.State,
-                        pincode: udyam?.Pin);
+                        pincode: udyam?.Pin,
+                        aaAccounts: aa.HasData ? aa.Accounts : null);
 
                     await _store.UploadAsync(uan, MsmeDataFiles.Itr, itrJson, ct);
                 }

@@ -1,4 +1,5 @@
 ﻿using FinRiskLensAI.Core.Interfaces.IServices.Common;
+using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Onboarding;
 using Newtonsoft.Json;
 
@@ -248,7 +249,7 @@ namespace FinRiskLensAI.Services.Implementation.Common
         public string GetDummyItr(string uan, string entityName, string constitutionType,
             string? pan = null, string? gstin = null, string? email = null, string? mobile = null,
             string? addressLine1 = null, string? city = null, string? state = null, string? pincode = null,
-            string assessmentYear = "2025-26")
+            IReadOnlyList<AaAccountInfo>? aaAccounts = null, string? assessmentYear = null)
         {
             var rng = Random.Shared;
             string D(int n) => new(Enumerable.Range(0, n).Select(_ => (char)('0' + rng.Next(10))).ToArray());
@@ -267,7 +268,11 @@ namespace FinRiskLensAI.Services.Implementation.Common
             var fallbackEmail = $"{entityName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.ToLowerInvariant() ?? "info"}.{D(3)}@example.com";
             email = string.IsNullOrWhiteSpace(email) ? fallbackEmail : email.Trim();
 
-            var ayStart = int.TryParse(assessmentYear?.Split('-').ElementAtOrDefault(0), out var ay) ? ay : DateTime.Today.Year;
+            // No hardcoded year — default to the assessment year for the most recently
+            // completed Indian financial year (Apr-Mar) as of today, so the return
+            // always looks freshly filed regardless of when this runs.
+            assessmentYear = string.IsNullOrWhiteSpace(assessmentYear) ? ComputeAssessmentYear() : assessmentYear.Trim();
+            var ayStart = int.TryParse(assessmentYear.Split('-').ElementAtOrDefault(0), out var ay) ? ay : DateTime.Today.Year;
             var fyStart = ayStart - 1;
             var financialYear = $"{fyStart}-{(fyStart + 1) % 100:00}";
             var filingDate = new DateTime(ayStart, rng.Next(7, 11), rng.Next(1, 28));
@@ -276,7 +281,7 @@ namespace FinRiskLensAI.Services.Implementation.Common
             var address = new
             {
                 line1 = string.IsNullOrWhiteSpace(addressLine1)
-                    ? $"{(rng.Next(2) == 0 ? "Shop No." : "Gat No.")} {rng.Next(1, 200)}, {stateName} Industrial Area"
+                    ? $"{(rng.Next(2) == 0 ? "Shop No." : "Gate No.")} {rng.Next(1, 200)}, {stateName} Industrial Area"
                     : addressLine1.Trim(),
                 city = string.IsNullOrWhiteSpace(city) ? stateName : city.Trim(),
                 state = stateName,
@@ -284,17 +289,29 @@ namespace FinRiskLensAI.Services.Implementation.Common
                 country = "India"
             };
 
-            var bankDetails = new[]
-            {
-                new
+            // Real linked accounts from the Account Aggregator statement, when available —
+            // only falls back to one random-but-valid account when the MSME hasn't
+            // completed AA consent yet, so there's still a bank_details entry to show.
+            var bankDetails = aaAccounts != null && aaAccounts.Count > 0
+                ? aaAccounts.Select((acc, idx) => new
                 {
-                    bank_name = new[] { "State Bank of India", "Bank of Maharashtra", "HDFC Bank", "ICICI Bank", "Punjab National Bank" }[rng.Next(5)],
-                    account_number_masked = "XXXXXXXX" + D(4),
-                    ifsc_code = $"{L(4)}0{D(6)}",
-                    account_type = "Current",
-                    is_refund_account = true
-                }
-            };
+                    bank_name = string.IsNullOrWhiteSpace(acc.FipName) || acc.FipName == "-" ? "Bank" : acc.FipName,
+                    account_number_masked = string.IsNullOrWhiteSpace(acc.MaskedAccountNumber) || acc.MaskedAccountNumber == "-" ? "XXXXXXXX" + D(4) : acc.MaskedAccountNumber,
+                    ifsc_code = string.IsNullOrWhiteSpace(acc.IfscCode) || acc.IfscCode == "-" ? $"{L(4)}0{D(6)}" : acc.IfscCode,
+                    account_type = string.IsNullOrWhiteSpace(acc.Type) || acc.Type == "-" ? "Current" : acc.Type,
+                    is_refund_account = idx == 0
+                }).ToArray()
+                : new[]
+                {
+                    new
+                    {
+                        bank_name = new[] { "State Bank of India", "Bank of Maharashtra", "HDFC Bank", "ICICI Bank", "Punjab National Bank" }[rng.Next(5)],
+                        account_number_masked = "XXXXXXXX" + D(4),
+                        ifsc_code = $"{L(4)}0{D(6)}",
+                        account_type = "Current",
+                        is_refund_account = true
+                    }
+                };
 
             var isProprietorship = string.Equals(constitutionType?.Trim(), "PROPRIETORSHIP", StringComparison.OrdinalIgnoreCase)
                 || (constitutionType?.Contains("Proprietor", StringComparison.OrdinalIgnoreCase) ?? false);
@@ -595,6 +612,19 @@ namespace FinRiskLensAI.Services.Implementation.Common
             };
 
             return JsonConvert.SerializeObject(response);
+        }
+
+        /// <summary>
+        /// The Indian assessment year (AY) for the most recently completed financial
+        /// year (Apr-Mar) as of today, e.g. "2026-27" if run any time from Apr 2026
+        /// through Mar 2027 — never a fixed value. <paramref name="cyclesAgo"/> steps
+        /// back whole AY cycles (1 = last year's AY) for callers that need history.
+        /// </summary>
+        private static string ComputeAssessmentYear(int cyclesAgo = 0)
+        {
+            var today = DateTime.Today;
+            var ayStartYear = (today.Month >= 4 ? today.Year : today.Year - 1) - cyclesAgo;
+            return $"{ayStartYear}-{(ayStartYear + 1) % 100:00}";
         }
 
         /// <summary>GST-vs-ITR declared turnover reconciliation, kept within the vendor's "tolerance" band.</summary>
