@@ -43,8 +43,8 @@
         const palette = () => {
             const css = getComputedStyle(document.documentElement);
             return {
-                primary: (css.getPropertyValue('--brand-primary') || '#117A8B').trim(),
-                accent: (css.getPropertyValue('--brand-accent') || '#f37021').trim()
+                primary: (css.getPropertyValue('--brand-primary') || '#00836C').trim(),
+                accent: (css.getPropertyValue('--brand-accent') || '#F37021').trim()
             };
         };
         let { primary, accent } = palette();

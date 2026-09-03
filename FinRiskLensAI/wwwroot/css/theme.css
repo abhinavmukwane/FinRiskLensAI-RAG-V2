@@ -1,10 +1,11 @@
 ﻿/* =====================================================================
    FinRiskLens AI — brand theme tokens (switchable)
 
-   Theme 1 (default) — IDBI Bank:
-       Surfey Green  #117A8B  (primary text / left of crescent)
-       Orange Passion #f37021 (right of crescent)
-       White         #FFFFFF
+   Theme 1 (default) — IDBI Bank's own site palette:
+       Dark Green   #00836C   primary
+       Light Green  #4FA9A7   secondary
+       Orange       #F37021   accent / action buttons
+       Yellow       #FFAA0A   secondary accent
    Theme 2 — classic maroon & gold (the original FinRiskLens palette).
 
    The active theme is the data-theme attribute on <html>, set by
@@ -15,63 +16,75 @@
 
 :root,
 :root[data-theme="theme1"] {
-    --brand-primary: #117A8B;          /* Surfey Green */
-    --brand-primary-strong: #0F6E7D;
-    --brand-primary-hover: #0D606E;
-    --brand-primary-dark: #0C5560;
-    --brand-primary-deep: #073840;
-    --brand-secondary: #4A8E9C;
-    --brand-secondary-container: #9CD2DC;
-    --brand-accent: #f37021;           /* Orange Passion */
+    /* The four brand colours, verbatim from IDBI. Everything below is
+       derived from them — shades step toward black, tints toward white —
+       so the whole theme moves if IDBI ever revises one of these. */
+    --brand-primary: #00836C;          /* Dark Green */
+    --brand-primary-strong: #00735F;
+    --brand-primary-hover: #006452;
+    --brand-primary-dark: #005647;
+    --brand-primary-deep: #00372D;
+    --brand-secondary: #4FA9A7;        /* Light Green */
+    --brand-secondary-container: #9ED0CF;
+    --brand-accent: #F37021;           /* Orange */
     --brand-accent-soft: #FCD9B8;
     --brand-accent-deep: #B35F0C;
+    /* Yellow is the fourth brand colour — a categorical accent for chart
+       series and highlights. It carries dark text only: white on #FFAA0A
+       measures 1.91:1, so never pair it with --brand-btn-fg. */
+    --brand-accent-alt: #FFAA0A;       /* Yellow */
+    --brand-accent-alt-soft: #FFE9BC;
     --brand-on-primary: #ffffff;
-    --brand-on-primary-muted: #C9E5EA; /* light text on primary gradients */
-    --brand-on-primary-faint: #9FCAD3;
-    --brand-tint-bg: #F1F8F9;          /* faint primary-tinted surface */
-    --brand-tint-bg-2: #E8F3F5;
-    --brand-tint-border: #CFE4E8;      /* primary-tinted hairline */
-    --brand-primary-rgb: 17, 122, 139;
-    --brand-primary-dark-rgb: 12, 85, 96;
-    --brand-secondary-rgb: 74, 142, 156;
-    --brand-accent-rgb: 245, 130, 32;
+    --brand-on-primary-muted: #C7E4DF; /* light text on primary gradients */
+    --brand-on-primary-faint: #9ED0C7;
+    --brand-tint-bg: #F4F9F8;          /* faint primary-tinted surface */
+    --brand-tint-bg-2: #EBF5F3;
+    --brand-tint-border: #D4EAE6;      /* primary-tinted hairline */
+    --brand-primary-rgb: 0, 131, 108;
+    --brand-primary-dark-rgb: 0, 86, 71;
+    --brand-secondary-rgb: 79, 169, 167;
+    /* These read 245,130,32 before — the RGB of #F58220, an older orange
+       the hex tokens had already moved off. Now they match #F37021. */
+    --brand-accent-rgb: 243, 112, 33;
     --brand-accent-soft-rgb: 252, 217, 184;
     --brand-accent-deep-rgb: 179, 95, 12;
-    /* Action buttons — IDBI theme uses Orange Passion */
-    --brand-btn-bg: #f37021;
-    --brand-btn-bg-hover: #D96C0B;
+    --brand-accent-alt-rgb: 255, 170, 10;
+    /* Action buttons — IDBI theme uses the brand orange */
+    --brand-btn-bg: #F37021;
+    --brand-btn-bg-hover: #D96114;
     --brand-btn-fg: #ffffff;
-    --brand-btn-bg-rgb: 245, 130, 32;
+    --brand-btn-bg-rgb: 243, 112, 33;
     /* Dashboard sidebar logout chip */
     --brand-logout-bg: #FFD2AC;
     --brand-logout-bg-hover: #FFC291;
     /* Scrollbar thumb (see the Scrollbars section below) */
-    --sb-thumb-color: #f37021;
+    --sb-thumb-color: #F37021;
     /* Chart "track" / backdrop series (the Maximum bars, the residual slice).
        --brand-tint-bg-2 was used for this, but it is a *surface* colour — at
-       #E8F3F5 on a white card the bar was all but invisible. This is the same
-       hue at ~35% over white: clearly readable, still recessive against the
+       #EBF5F3 on a white card the bar was all but invisible. This is the same
+       hue at ~38% over white: clearly readable, still recessive against the
        accent-coloured Earned bar. */
-    --brand-chart-track: #ACD1D6;
+    --brand-chart-track: #9ED0C7;
 
     /* ── Surfaces ──────────────────────────────────────────────────────
        The page background and the card/hover tones stacked on it. These
        were a single hardcoded warm ramp on :root in Dashboard.css and
        Index.css, derived from the maroon seed — correct for Theme 2, but
-       Theme 1 inherited a rose-tinted page under a teal UI. Same lightness
-       ladder as Theme 2 (95 / 92 / 87 / 82 / 77 / 71), cool cast.
+       Theme 1 inherited a rose-tinted page under a green UI. Same lightness
+       ladder as Theme 2 (95 / 92 / 87 / 82 / 77 / 71), tinted with the
+       brand's dark green.
        ------------------------------------------------------------------ */
-    --brand-surface: #F7FBFC;              /* page background */
-    --brand-surface-low: #F1F7F8;
-    --brand-surface-mid: #E9F1F3;
-    --brand-surface-high: #E2EBED;
-    --brand-surface-highest: #DBE5E8;
-    --brand-surface-dim: #D2DEE1;
-    --brand-on-surface: #161D1F;           /* body text  16.4:1 on surface */
-    --brand-on-surface-variant: #415256;   /* muted text  7.9:1 */
-    --brand-outline: #66787E;              /* hairlines   4.4:1 */
-    --brand-ivory: #F5FAFB;
-    --brand-ink: #1B282C;
+    --brand-surface: #F6FBFA;              /* page background */
+    --brand-surface-low: #F0F8F6;
+    --brand-surface-mid: #E6F3F0;
+    --brand-surface-high: #DBEEEA;
+    --brand-surface-highest: #D1E9E5;
+    --brand-surface-dim: #C2E1DC;
+    --brand-on-surface: #14201C;           /* body text  16.0:1 on surface */
+    --brand-on-surface-variant: #3C534D;   /* muted text   7.9:1 */
+    --brand-outline: #62786F;              /* hairlines    4.5:1 */
+    --brand-ivory: #F5FAF9;
+    --brand-ink: #172724;
 }
 
 :root[data-theme="theme2"] {
@@ -85,6 +98,12 @@
     --brand-accent: #D4A537;
     --brand-accent-soft: #F3E2B2;
     --brand-accent-deep: #725C1E;
+    /* Fourth categorical colour, the counterpart to Theme 1's yellow. Bronze
+       rather than another gold so a four-slice chart stays readable next to
+       --brand-accent. Dark text only, as with Theme 1. */
+    --brand-accent-alt: #B8763A;
+    --brand-accent-alt-soft: #F0D8BE;
+    --brand-accent-alt-rgb: 184, 118, 58;
     --brand-on-primary: #ffffff;
     --brand-on-primary-muted: #F0C9D5;
     --brand-on-primary-faint: #D79AAB;

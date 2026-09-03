@@ -5,11 +5,11 @@
    ========================================================================== */
 
 .aa-analysis {
-    --aa-border: var(--brand-tint-border, #CFE4E8);
-    --aa-tint: var(--brand-tint-bg, #F1F8F9);
-    --aa-tint-2: var(--brand-tint-bg-2, #E8F3F5);
-    --aa-primary: var(--brand-primary, #117A8B);
-    --aa-accent: var(--brand-accent, #f37021);
+    --aa-border: var(--brand-tint-border, #D4EAE6);
+    --aa-tint: var(--brand-tint-bg, #F4F9F8);
+    --aa-tint-2: var(--brand-tint-bg-2, #EBF5F3);
+    --aa-primary: var(--brand-primary, #00836C);
+    --aa-accent: var(--brand-accent, #F37021);
     --aa-muted: #6b7a80;
     --aa-good: #1d7a4c;
     --aa-warn: #b26a00;

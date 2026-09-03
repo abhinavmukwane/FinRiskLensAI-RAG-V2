@@ -56,7 +56,8 @@
             primary: v('--brand-primary', '#8b1538'),
             secondary: v('--brand-secondary', '#897174'),
             secondaryContainer: v('--brand-secondary-container', '#d08c9f'),
-            chartTrack: v('--brand-chart-track', '#D6ADB9'),
+            chartTrack: v('--brand-chart-track', '#9ED0C7'),
+            accentAlt: v('--brand-accent-alt', '#FFAA0A'),
             accent: v('--brand-accent', '#b26a00')
         };
     }
@@ -105,7 +106,7 @@
             series: [28, 18, 13, 41],
             chart: { type: 'donut', height: 180, fontFamily: 'Inter, sans-serif' },
             labels: ['Microsoft Corp', 'Redington India', 'Persistent Systems', 'Other Vendors'],
-            colors: [p.primary, p.secondary, p.accent, p.chartTrack],
+            colors: [p.primary, p.secondary, p.accent, p.accentAlt],
             legend: { show: false },
             dataLabels: { enabled: false },
             plotOptions: {
@@ -188,7 +189,7 @@
     function applyChartTheme() {
         var p = getBrandPalette();
         if (charts.revenue) charts.revenue.updateOptions({ colors: [p.primary, p.secondary] });
-        if (charts.vendor) charts.vendor.updateOptions({ colors: [p.primary, p.secondary, p.accent, p.chartTrack] });
+        if (charts.vendor) charts.vendor.updateOptions({ colors: [p.primary, p.secondary, p.accent, p.accentAlt] });
         if (charts.taxPayment) charts.taxPayment.updateOptions({ colors: [p.accent, p.primary] });
         if (charts.stabilityRadar) charts.stabilityRadar.updateOptions({ colors: [p.primary], fill: { opacity: 0.1, colors: [p.primary] }, markers: { colors: [p.primary] } });
         if (charts.forecast) charts.forecast.updateOptions({ colors: [p.primary, p.secondaryContainer] });

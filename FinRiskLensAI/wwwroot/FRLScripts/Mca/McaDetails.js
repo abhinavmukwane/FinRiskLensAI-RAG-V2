@@ -46,10 +46,10 @@
             return {
                 // Open charges take the theme accent so the chart follows the
                 // theme switch; satisfied stays green, semantic in either palette.
-                open: token('--brand-accent', '#f37021'),
+                open: token('--brand-accent', '#F37021'),
                 closed: token('--success-green', '#2e7d32'),
                 grid: token('--card-border', '#f1f5f6'),
-                ink: token('--brand-primary-dark', '#0C5560')
+                ink: token('--brand-primary-dark', '#005647')
             };
         }
 
