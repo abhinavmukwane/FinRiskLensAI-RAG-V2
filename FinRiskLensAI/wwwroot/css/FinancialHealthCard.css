@@ -32,9 +32,6 @@
     .reco-amt { font-family: var(--font-headline, 'Sora', sans-serif); font-weight: 700; color: var(--brand-primary-dark); }
 
     .gauge-box { position: relative; max-width: 340px; margin: 0 auto; }
-    .gauge-center { position: absolute; left: 0; right: 0; bottom: -6px; text-align: center; pointer-events: none; }
-    .gauge-score { font-family: var(--font-headline, 'Sora', sans-serif); font-size: 2.6rem; font-weight: 800; color: var(--brand-primary-dark); line-height: 1; }
-    .gauge-of { font-size: .78rem; color: var(--brand-secondary); }
 
     .lending-notes { background: var(--brand-tint-bg); border: 1px solid var(--brand-tint-border); border-radius: 12px; padding: 14px 16px; }
     .lending-notes-head { font-size: .72rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--brand-secondary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }

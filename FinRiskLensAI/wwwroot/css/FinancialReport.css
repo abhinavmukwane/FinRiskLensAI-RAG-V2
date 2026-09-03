@@ -157,9 +157,6 @@ body{
 
 .gauge-box{ position:relative; max-width:340px; margin:0 auto; width:100%; }
 .gauge-box canvas{ width:100% !important; height:auto !important; }
-.gauge-center{ position:absolute; left:0; right:0; bottom:2%; text-align:center; pointer-events:none; }
-.gauge-score{ font-family:var(--font-headline); font-size:2.7rem; font-weight:800; color:var(--maroon-deep); line-height:1; }
-.gauge-of{ font-size:.78rem; color:var(--rose); }
 .band-legend{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-top:14px; font-size:.68rem; }
 .band-legend span{ display:inline-flex; align-items:center; gap:5px; color:var(--ink-soft); }
 .band-legend i{ width:9px; height:9px; border-radius:3px; display:inline-block; }

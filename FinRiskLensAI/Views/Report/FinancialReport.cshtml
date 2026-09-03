@@ -19,6 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="~/FRLScripts/Common/score-gauge.js" asp-append-version="true"></script>
 
 <link rel="stylesheet" href="~/css/theme.css" />
 <script src="~/js/theme.js"></script>
@@ -224,10 +225,10 @@
                     <div class="fhc-section-label justify-content-center"><i class="bi bi-speedometer2"></i>Overall Financial Health Score</div>
                     <div class="gauge-box">
                         <canvas id="scoreGauge"></canvas>
-                        <div class="gauge-center">
-                            <div class="gauge-score">@r.OverallScore.ToString("0")</div>
-                            <div class="gauge-of">out of 1000</div>
-                        </div>
+                        @* The score is drawn into the gauge centre by
+                           score-gauge.js. Canvas text is invisible to assistive
+                           technology, so the same value stays in the DOM for it. *@
+                        <div class="visually-hidden">@r.OverallScore.ToString("0") out of 1000</div>
                     </div>
                     <div class="mt-2">
                         <span class="band-chip band-@r.ScoreBand"><i class="bi bi-patch-check-fill"></i> @r.ScoreBand</span>
@@ -551,42 +552,9 @@ window.addEventListener('load', function () {
     const maroon = frlBrand.getPropertyValue('--brand-btn-bg').trim() || '#f37021';
     const rose = frlBrand.getPropertyValue('--brand-secondary').trim() || '#974354';
 
-    const bandColors = ['#c22f3e', '#e08a3c', '#e6c34c', '#7fae5e', '#2e7d4f'];
-    const needle = {
-        id: 'needle',
-        afterDatasetsDraw(chart) {
-            const { ctx } = chart;
-            const meta = chart.getDatasetMeta(0).data[0];
-            const cx = meta.x, cy = meta.y, r = meta.outerRadius;
-            const angle = Math.PI + (score / 1000) * Math.PI;
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
-            ctx.beginPath();
-            ctx.moveTo(0, -4); ctx.lineTo(r * 0.82, 0); ctx.lineTo(0, 4);
-            ctx.fillStyle = maroon; ctx.fill();
-            ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill();
-            ctx.restore();
-        }
-    };
-    if (document.getElementById('scoreGauge')) {
-        new Chart(document.getElementById('scoreGauge'), {
-            type: 'doughnut',
-            data: { datasets: [{
-                data: [350, 150, 150, 150, 200],
-                backgroundColor: bandColors, borderWidth: 2, borderColor: '#fff'
-            }]},
-            options: {
-                responsive: true,
-                rotation: -90, circumference: 180, cutout: '72%',
-                aspectRatio: 1.9,
-                layout: { padding: { bottom: 4 } },
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                animation: { animateRotate: true }
-            },
-            plugins: [needle]
-        });
-    }
+    // Gauge geometry, band colours and the centre fill live in
+    // ~/FRLScripts/Common/score-gauge.js, shared with the Financial Health Card.
+    window.frlScoreGauge(document.getElementById('scoreGauge'), score, maroon);
 
     if (document.getElementById('radarChart')) {
         new Chart(document.getElementById('radarChart'), {
