@@ -1365,7 +1365,7 @@ img {
 
     /* Verified tag */
     .udyam-dashboard .verified-tag {
-        color: var(--success-green);
+        /*color: var(--success-green);*/
         font-size: 12px;
         font-weight: 700;
         letter-spacing: .04em;
@@ -2499,6 +2499,57 @@ img {
 .udyam-dashboard .hero-stat-item { text-align: center; }
 .udyam-dashboard .hero-stat-item .value { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 22px; line-height: 1.2; }
 .udyam-dashboard .hero-stat-item .label { font-size: 11px; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Light page header — same recipe as .gst-analysis .business-header-card
+   (white-to-tint gradient card, icon box, verified tag, title/subtitle,
+   optional stat row) plus an inline score gauge on GST's own pattern
+   (.gauge-wrapper/gauge-center-content). Used by ITR and Udyam Details in
+   place of the dark .hero-banner, so all three "detail" pages read as one
+   family instead of GST looking different from Udyam/ITR/MCA. MCA keeps
+   .hero-banner as-is. */
+    .udyam-dashboard .info-header-card {
+        background: linear-gradient(135deg, #ffffff 0%, var(--brand-tint-bg-2) 100%);
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        padding: 45px 40px;
+        margin-bottom: 28px;
+    }
+.udyam-dashboard .info-header-logo {
+    width: 64px; height: 64px; border-radius: 14px; flex-shrink: 0;
+    background: var(--brand-tint-bg);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--theme-maroon); font-size: 26px;
+}
+.udyam-dashboard .info-score-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted-2); margin-bottom: 2px; }
+.udyam-dashboard .info-score-ring { width: 100px; height: 100px; position: relative; flex-shrink: 0; }
+.udyam-dashboard .info-score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.udyam-dashboard .info-score-ring .gauge-track { stroke: var(--brand-tint-bg-2); stroke-width: 10; }
+.udyam-dashboard .info-score-ring .gauge-progress { stroke: var(--theme-maroon); stroke-width: 10; }
+.udyam-dashboard .info-score-ring .score-value { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.udyam-dashboard .info-score-ring .score-value span { font-size: 24px; font-weight: 700; color: var(--theme-maroon); line-height: 1; }
+.udyam-dashboard .info-score-ring .score-value small { font-size: 10px; color: var(--text-muted-2); }
+
+/* Dark variant — same card, filled with the theme's own gradient (matches
+   .hero-banner) with all text/gauge colors flipped to read on it. Add
+   alongside .info-header-card: class="info-header-card info-header-dark". */
+.udyam-dashboard .info-header-card.info-header-dark {
+    background: linear-gradient(135deg, var(--theme-maroon) 0%, var(--brand-primary-deep) 100%);
+    border-color: transparent;
+    color: #fff;
+}
+.udyam-dashboard .info-header-dark .fhc-title,
+.udyam-dashboard .info-header-dark .fhc-sub { color: #fff; }
+.udyam-dashboard .info-header-dark .fhc-sub { opacity: .85; }
+.udyam-dashboard .info-header-dark .info-score-ring .gauge-track { stroke: rgba(255,255,255,.18); }
+/* Exact match to .hero-score-ring on the MCA page — same #4caf50 arc,
+   same white score number, not --success-green (#2e7d32, a darker shade). */
+.udyam-dashboard .info-header-dark .info-score-ring .gauge-progress { stroke: #4caf50; }
+.udyam-dashboard .info-header-dark .info-score-ring .score-value span { color: #fff; }
+.udyam-dashboard .info-header-dark .info-score-ring .score-value small { color: rgba(255,255,255,.7); }
+
+@media (max-width: 767px) {
+    .udyam-dashboard .info-header-card { padding: 22px 20px; }
+}
 
 /* Tabs — wrap onto a second line rather than scrolling. overflow-x:auto put a
    full site-wide scrollbar (10px, themed thumb) under four tabs; .aa-tabs has

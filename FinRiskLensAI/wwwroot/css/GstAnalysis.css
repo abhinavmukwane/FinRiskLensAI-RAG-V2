@@ -111,10 +111,13 @@
 
 .gst-analysis .card-heading i { color: var(--color-primary); }
 
-/* Business Header Card */
+/* Business Header Card — theme-based gradient (matches the MCA/Udyam page
+   banners: --color-primary → --color-primary-hover, i.e. brand-primary-dark
+   → brand-primary-deep), not the page's own light glass-card default. See
+   the dark-text overrides below for title/labels/gauge. */
 .gst-analysis .business-header-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-    border: 1px solid var(--color-border);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+    border: 1px solid transparent;
 }
 
 .gst-analysis .header-logo-box {
@@ -145,9 +148,15 @@
 
 .gst-analysis .header-info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 24px;
     width: 100%;
+}
+@media (max-width: 767px) {
+    .gst-analysis .header-info-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .gst-analysis .header-info-grid { grid-template-columns: 1fr; }
 }
 
 .gst-analysis .header-info-item { display: flex; flex-direction: column; }
@@ -165,6 +174,31 @@
     color: var(--color-text-primary);
     font-weight: 600;
 }
+
+/* Header text/gauge colors — white, to read on the dark gradient set above.
+   Scoped to .business-header-card only, since .header-logo-box /
+   .header-info-item / .gauge-* are reused elsewhere on this page (e.g. the
+   ITC gauge further down) in their normal light colors. */
+.gst-analysis .business-header-card {
+    color: #fff;
+}
+.gst-analysis .business-header-card .header-logo-box {
+    background: rgba(255, 255, 255, .14);
+    border-color: rgba(255, 255, 255, .22);
+    color: #fff;
+    box-shadow: none;
+}
+.gst-analysis .business-header-card .fhc-title,
+.gst-analysis .business-header-card .fhc-sub { color: #fff; }
+.gst-analysis .business-header-card .fhc-sub { opacity: .85; }
+.gst-analysis .business-header-card .header-info-item span { color: rgba(255, 255, 255, .65); }
+.gst-analysis .business-header-card .header-info-item strong { color: #fff; }
+/* Same exact green as .hero-score-ring on MCA (#4caf50, not --color-success
+   #2e7d32 — a darker shade used for this page's other, light-card gauges). */
+.gst-analysis .business-header-card .gauge-circle-bg { stroke: rgba(255, 255, 255, .18); }
+.gst-analysis .business-header-card .gauge-circle-progress.success { stroke: #4caf50; }
+.gst-analysis .business-header-card .gauge-center-val { color: #fff; }
+.gst-analysis .business-header-card .gauge-center-label { color: rgba(255, 255, 255, .7); }
 
 /* KPI Cards */
 .gst-analysis .kpi-grid {
