@@ -1,0 +1,52 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "24AAGFR2210M1Z4",
+        "rtnprd": "052026",
+        "itcsumm": {
+          "itcavl": {
+            "iamt": 49011.96,
+            "camt": 36758.97,
+            "samt": 36758.97,
+            "csamt": 0.0
+          },
+          "itcunavl": {
+            "iamt": 3920.96,
+            "camt": 2940.72,
+            "samt": 2940.72,
+            "csamt": 0.0
+          }
+        },
+        "docdata": {
+          "b2b": [
+            {
+              "ctin": "24VEND00PAN0Z1",
+              "trdnm": "Vendor 1",
+              "supfildt": "15-05-2026"
+            },
+            {
+              "ctin": "24VEND01PAN1Z1",
+              "trdnm": "Vendor 2",
+              "supfildt": "15-05-2026"
+            },
+            {
+              "ctin": "24VEND02PAN2Z1",
+              "trdnm": "Vendor 3",
+              "supfildt": "15-05-2026"
+            },
+            {
+              "ctin": "24VEND03PAN3Z1",
+              "trdnm": "Vendor 4",
+              "supfildt": "15-05-2026"
+            },
+            {
+              "ctin": "24VEND04PAN4Z1",
+              "trdnm": "Vendor 5"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

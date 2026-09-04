@@ -1,0 +1,24 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "09AFQPN8123L1Z2",
+        "ret_period": "062026",
+        "sec_sum": [
+          {
+            "sec_nm": "B2B",
+            "ttl_tax": 12519.79,
+            "ttl_val": 69554.4,
+            "ttl_rec": 3
+          },
+          {
+            "sec_nm": "B2CS",
+            "ttl_tax": 47098.27,
+            "ttl_val": 261657.05,
+            "ttl_rec": 40
+          }
+        ]
+      }
+    }
+  }
+}

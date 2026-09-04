@@ -1,0 +1,49 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "24AAGFR2210M1Z4",
+        "ret_period": "082026",
+        "sup_details": {
+          "osup_det": {
+            "txval": 1121734.98,
+            "iamt": 80764.92,
+            "camt": 60573.69,
+            "samt": 60573.69
+          },
+          "osup_zero": {
+            "txval": 0.0,
+            "iamt": 0.0
+          },
+          "osup_nil_exmp": {
+            "txval": 0.0
+          }
+        },
+        "itc_elg": {
+          "itc_net": {
+            "iamt": 50074.25,
+            "camt": 37555.69,
+            "samt": 37555.69,
+            "csamt": 0.0
+          }
+        },
+        "tx_pmt": {
+          "pdcash": [
+            {
+              "iamt": 30690.67,
+              "camt": 23018.0,
+              "samt": 23018.0,
+              "csamt": 0.0
+            }
+          ],
+          "pditc": {
+            "iamt": 50074.25,
+            "camt": 37555.69,
+            "samt": 37555.69,
+            "csamt": 0.0
+          }
+        }
+      }
+    }
+  }
+}

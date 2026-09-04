@@ -1,0 +1,111 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "27AABCS4417K1Z8",
+        "ret_period": "032026",
+        "hsn": {
+          "hsn_b2b": [
+            {
+              "hsn_sc": "72081100",
+              "desc": "Product line 1",
+              "uqc": "KGS",
+              "qty": 100,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081237",
+              "desc": "Product line 2",
+              "uqc": "KGS",
+              "qty": 125,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081374",
+              "desc": "Product line 3",
+              "uqc": "KGS",
+              "qty": 150,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081511",
+              "desc": "Product line 4",
+              "uqc": "KGS",
+              "qty": 175,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081648",
+              "desc": "Product line 5",
+              "uqc": "KGS",
+              "qty": 200,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081785",
+              "desc": "Product line 6",
+              "uqc": "KGS",
+              "qty": 225,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081922",
+              "desc": "Product line 7",
+              "uqc": "KGS",
+              "qty": 250,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72082059",
+              "desc": "Product line 8",
+              "uqc": "KGS",
+              "qty": 275,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72082196",
+              "desc": "Product line 9",
+              "uqc": "KGS",
+              "qty": 300,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72082333",
+              "desc": "Product line 10",
+              "uqc": "KGS",
+              "qty": 325,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72082470",
+              "desc": "Product line 11",
+              "uqc": "KGS",
+              "qty": 350,
+              "txval": 505500.26,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72082607",
+              "desc": "Product line 12",
+              "uqc": "KGS",
+              "qty": 375,
+              "txval": 505500.26,
+              "rt": 18.0
+            }
+          ],
+          "hsn_b2c": []
+        }
+      }
+    }
+  }
+}

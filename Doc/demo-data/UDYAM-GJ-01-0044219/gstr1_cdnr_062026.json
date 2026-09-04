@@ -1,0 +1,32 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "24AAGFR2210M1Z4",
+        "ret_period": "062026",
+        "cdnr": [
+          {
+            "ctin": "24AAGFR2210M1Z4",
+            "nt": [
+              {
+                "nt_num": "CN-062026",
+                "nt_dt": "15-06-2026",
+                "ntty": "C",
+                "val": 66932.32,
+                "itms": [
+                  {
+                    "num": 1,
+                    "itm_det": {
+                      "txval": 56722.3,
+                      "rt": 18.0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

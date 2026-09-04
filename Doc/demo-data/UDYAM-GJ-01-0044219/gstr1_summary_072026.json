@@ -1,0 +1,24 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "24AAGFR2210M1Z4",
+        "ret_period": "072026",
+        "sec_sum": [
+          {
+            "sec_nm": "B2B",
+            "ttl_tax": 107817.59,
+            "ttl_val": 598986.63,
+            "ttl_rec": 5
+          },
+          {
+            "sec_nm": "B2CS",
+            "ttl_tax": 99523.93,
+            "ttl_val": 552910.74,
+            "ttl_rec": 40
+          }
+        ]
+      }
+    }
+  }
+}

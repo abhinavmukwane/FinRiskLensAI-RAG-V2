@@ -1,0 +1,47 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "24AAGFR2210M1Z4",
+        "ret_period": "012026",
+        "hsn": {
+          "hsn_b2b": [
+            {
+              "hsn_sc": "72081100",
+              "desc": "Product line 1",
+              "uqc": "KGS",
+              "qty": 100,
+              "txval": 292780.7,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081237",
+              "desc": "Product line 2",
+              "uqc": "KGS",
+              "qty": 125,
+              "txval": 292780.7,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081374",
+              "desc": "Product line 3",
+              "uqc": "KGS",
+              "qty": 150,
+              "txval": 292780.7,
+              "rt": 18.0
+            },
+            {
+              "hsn_sc": "72081511",
+              "desc": "Product line 4",
+              "uqc": "KGS",
+              "qty": 175,
+              "txval": 292780.7,
+              "rt": 18.0
+            }
+          ],
+          "hsn_b2c": []
+        }
+      }
+    }
+  }
+}

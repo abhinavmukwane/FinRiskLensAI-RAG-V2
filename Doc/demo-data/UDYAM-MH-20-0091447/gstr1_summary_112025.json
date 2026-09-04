@@ -1,0 +1,24 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "27AABCS4417K1Z8",
+        "ret_period": "112025",
+        "sec_sum": [
+          {
+            "sec_nm": "B2B",
+            "ttl_tax": 688749.96,
+            "ttl_val": 3826388.69,
+            "ttl_rec": 9
+          },
+          {
+            "sec_nm": "B2CS",
+            "ttl_tax": 112122.09,
+            "ttl_val": 622900.48,
+            "ttl_rec": 40
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "09AFQPN8123L1Z2",
+        "ret_period": "052026",
+        "cdnr": [
+          {
+            "ctin": "09AFQPN8123L1Z2",
+            "nt": [
+              {
+                "nt_num": "CN-052026",
+                "nt_dt": "15-05-2026",
+                "ntty": "C",
+                "val": 77092.43,
+                "itms": [
+                  {
+                    "num": 1,
+                    "itm_det": {
+                      "txval": 65332.57,
+                      "rt": 18.0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

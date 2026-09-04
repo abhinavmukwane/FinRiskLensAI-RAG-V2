@@ -1,0 +1,386 @@
+{
+  "OverallScore": 376.0,
+  "ScoreBand": 3,
+  "Dimensions": [
+    {
+      "Dimension": "Revenue Vitality",
+      "Score": 123.5,
+      "MaxPoints": 250.0,
+      "EffectiveWeight": 0.25,
+      "DataAvailable": true,
+      "UsedNeutralDefault": false
+    },
+    {
+      "Dimension": "Cash Flow Health",
+      "Score": 0.0,
+      "MaxPoints": 200.0,
+      "EffectiveWeight": 0.2,
+      "DataAvailable": true,
+      "UsedNeutralDefault": false
+    },
+    {
+      "Dimension": "Transaction Trustworthiness",
+      "Score": 80.9,
+      "MaxPoints": 150.0,
+      "EffectiveWeight": 0.15,
+      "DataAvailable": true,
+      "UsedNeutralDefault": false
+    },
+    {
+      "Dimension": "Compliance Quotient",
+      "Score": 56.2,
+      "MaxPoints": 150.0,
+      "EffectiveWeight": 0.15,
+      "DataAvailable": true,
+      "UsedNeutralDefault": false
+    },
+    {
+      "Dimension": "Business Stability",
+      "Score": 42.6,
+      "MaxPoints": 150.0,
+      "EffectiveWeight": 0.15,
+      "DataAvailable": true,
+      "UsedNeutralDefault": false
+    },
+    {
+      "Dimension": "Debt Serviceability",
+      "Score": 34.7,
+      "MaxPoints": 100.0,
+      "EffectiveWeight": 0.1,
+      "DataAvailable": true,
+      "UsedNeutralDefault": true
+    }
+  ],
+  "Explanations": [
+    {
+      "Dimension": "Compliance Quotient",
+      "ExplanationText": "One or more ITR filings were made after the due date",
+      "Impact": 1,
+      "RelativeWeight": 1.0
+    },
+    {
+      "Dimension": "Revenue Vitality",
+      "ExplanationText": "Minimal credit-note reversals — invoiced revenue holds up",
+      "Impact": 0,
+      "RelativeWeight": 0.683
+    },
+    {
+      "Dimension": "Cash Flow Health",
+      "ExplanationText": "Payment bounces detected in bank statements",
+      "Impact": 1,
+      "RelativeWeight": 0.594
+    },
+    {
+      "Dimension": "Business Stability",
+      "ExplanationText": "Young business with limited operating history",
+      "Impact": 1,
+      "RelativeWeight": 0.457
+    },
+    {
+      "Dimension": "Cash Flow Health",
+      "ExplanationText": "Thin cash cushion relative to monthly outflows",
+      "Impact": 1,
+      "RelativeWeight": 0.438
+    },
+    {
+      "Dimension": "Transaction Trustworthiness",
+      "ExplanationText": "Low digital payment adoption",
+      "Impact": 1,
+      "RelativeWeight": 0.397
+    },
+    {
+      "Dimension": "Debt Serviceability",
+      "ExplanationText": "Existing EMI obligations consume a large share of inflows",
+      "Impact": 1,
+      "RelativeWeight": 0.377
+    },
+    {
+      "Dimension": "Transaction Trustworthiness",
+      "ExplanationText": "Recurring customers keep paying — sticky counterparty base",
+      "Impact": 0,
+      "RelativeWeight": 0.301
+    },
+    {
+      "Dimension": "Debt Serviceability",
+      "ExplanationText": "No credit bureau record found (New-to-Credit) — this dimension used a neutral default rather than penalizing missing history",
+      "Impact": 0,
+      "RelativeWeight": 0.1
+    }
+  ],
+  "Recommendations": [
+    {
+      "ProductName": "MUDRA Loan (Shishu/Kishor)",
+      "SchemeCode": "MUDRA",
+      "IndicativeAmountMin": 90000.0,
+      "IndicativeAmountMax": 470000.0,
+      "RecommendationReason": "Entry-tier MUDRA product recommended while financial health improves"
+    }
+  ],
+  "Anomaly": {
+    "IsAnomalous": true,
+    "AnomalyScore": 0.5917039513587952,
+    "Note": "Large unexplained gap between GST turnover, ITR income and bank credits — data-integrity signal for officer review, not a creditworthiness deduction.",
+    "GstMonthlyTurnover": 390437.96599999996,
+    "ItrMonthlyIncome": 2080.0,
+    "BankMonthlyCredits": 341969.56375
+  },
+  "Lending": {
+    "AnnualTurnover": 4685255.591999999,
+    "MonthlySales": 390437.96599999996,
+    "MonthlyPurchases": 527091.254,
+    "MonthlyBankInflow": 341969.56375,
+    "MonthlyBankOutflow": 836363.2374999999,
+    "MonthlySurplus": -494393.67374999996,
+    "ExistingMonthlyEmi": 258000.0,
+    "WorkingCapitalLimit": 330000.0,
+    "MarginMoneyRequired": 230000.0,
+    "AffordableMonthlyEmi": 0.0,
+    "TermLoanCapacity": 0.0,
+    "TotalIndicativeEligibility": 330000.0,
+    "BandAdjustmentFactor": 0.35,
+    "Ratios": [
+      {
+        "Name": "DSCR (Debt Service Coverage)",
+        "Value": -0.916,
+        "Display": "-0.92x",
+        "Benchmark": "≥ 1.50x",
+        "Status": 2,
+        "Description": "Cash available for debt service vs existing obligations — the primary repayment-capacity test"
+      },
+      {
+        "Name": "FOIR (Obligations / Inflows)",
+        "Value": 0.754,
+        "Display": "75%",
+        "Benchmark": "≤ 40%",
+        "Status": 2,
+        "Description": "Share of monthly inflows already committed to EMIs — headroom for a new loan"
+      },
+      {
+        "Name": "Banking Penetration",
+        "Value": 0.876,
+        "Display": "88%",
+        "Benchmark": "≥ 60%",
+        "Status": 0,
+        "Description": "GST-declared sales actually routed through the bank account — cash-sales businesses score low"
+      },
+      {
+        "Name": "Gross Margin (GST sales vs purchases)",
+        "Value": -0.35,
+        "Display": "-35%",
+        "Benchmark": "≥ 15%",
+        "Status": 2,
+        "Description": "Trading margin implied by GSTR-1 outward vs GSTR-2A inward values"
+      },
+      {
+        "Name": "Days Cash on Hand",
+        "Value": 0.149,
+        "Display": "0 days",
+        "Benchmark": "≥ 60 days",
+        "Status": 2,
+        "Description": "How long current balances cover average outflows if inflows stopped"
+      },
+      {
+        "Name": "Inflow Volatility (CV)",
+        "Value": 0.429,
+        "Display": "0.43",
+        "Benchmark": "≤ 0.30",
+        "Status": 1,
+        "Description": "Month-to-month steadiness of bank inflows — volatile inflows need conservative limits"
+      },
+      {
+        "Name": "Credit Note Ratio",
+        "Value": 0.14,
+        "Display": "14.0%",
+        "Benchmark": "≤ 5%",
+        "Status": 1,
+        "Description": "Share of invoiced revenue reversed via credit notes — high values inflate headline turnover"
+      },
+      {
+        "Name": "GSTR-1 vs GSTR-3B Consistency",
+        "Value": 0.18,
+        "Display": "18%",
+        "Benchmark": "≥ 90%",
+        "Status": 2,
+        "Description": "Agreement between invoice-level (GSTR-1) and summary (GSTR-3B) declared sales — persistent gaps signal misdeclaration"
+      },
+      {
+        "Name": "ITC Claimed vs 2B Available",
+        "Value": 0.0,
+        "Display": "N/A",
+        "Benchmark": "≤ 100%",
+        "Status": 3,
+        "Description": "ITC claimed in GSTR-3B vs auto-drafted availability in GSTR-2B — claiming beyond 2B is an over-claim red flag"
+      },
+      {
+        "Name": "Supplier Filing Discipline (2B)",
+        "Value": 0.333,
+        "Display": "33%",
+        "Benchmark": "≥ 90%",
+        "Status": 2,
+        "Description": "Share of B2B suppliers whose returns are filed per GSTR-2B — non-filing vendors put the MSME's ITC at risk"
+      },
+      {
+        "Name": "Profit Before Tax Margin (ITR)",
+        "Value": 0.0,
+        "Display": "N/A",
+        "Benchmark": "≥ 8%",
+        "Status": 3,
+        "Description": "Operating profitability from the ITR P&L (AY 2026-27) — profit before tax over turnover"
+      },
+      {
+        "Name": "Debt to Equity (ITR)",
+        "Value": 0.0,
+        "Display": "N/A",
+        "Benchmark": "≤ 2.00x",
+        "Status": 3,
+        "Description": "Outside liabilities over partners'/members' capital from the ITR balance sheet — how much of the business is funded by borrowing"
+      },
+      {
+        "Name": "Net Profit Margin (ITR)",
+        "Value": 0.0,
+        "Display": "N/A",
+        "Benchmark": "≥ 5%",
+        "Status": 3,
+        "Description": "Bottom-line profitability after all costs and tax, from the ITR P&L"
+      },
+      {
+        "Name": "Debtor Days (ITR)",
+        "Value": 40.2,
+        "Display": "40 days",
+        "Benchmark": "≤ 60 days",
+        "Status": 0,
+        "Description": "How long customers take to pay — sundry debtors over turnover × 365 (needs ITR balance sheet)"
+      },
+      {
+        "Name": "Asset Turnover (ITR)",
+        "Value": 0.0,
+        "Display": "N/A",
+        "Benchmark": "≥ 1.5x",
+        "Status": 3,
+        "Description": "Revenue generated per rupee of assets — turnover over total assets (needs ITR balance sheet)"
+      }
+    ],
+    "Notes": [
+      "Working capital via turnover method: requirement 25% of annual turnover, bank finance 20%, borrower margin 5% (Nayak norms for MSME limits up to ₹5 Cr).",
+      "Term capacity assumes 5 year tenure @ 11% p.a., EMI capped at 50% FOIR and 80% of observed monthly surplus.",
+      "All amounts scaled by score-band factor 0.35 (AtRisk); indicative only — not a sanction.",
+      "Industry: Wholesale and retail trade and repair of motor vehicles (NIC 45) — sector risk weight 0.65 feeds Business Stability; use as a pricing hint, not a sanction condition."
+    ]
+  },
+  "BankAnalysis": {
+    "AverageMonthlyBalance": -102965.0,
+    "PeakBalance": 665998.62,
+    "AverageMonthlyCredit": 341970.0,
+    "CashDepositsMonthly": 144577.0,
+    "SalaryCreditsMonthly": 0.0,
+    "CustomerReceiptsMonthly": 197392.0,
+    "SupplierPaymentsMonthly": 87238.0,
+    "BounceCount": 13,
+    "ChequeReturnCount": 0,
+    "EcsNachReturnCount": 13,
+    "OdLimitTotal": 0.0,
+    "OverdrawnTxnCount": 99,
+    "MinBalanceBreachCount": 2,
+    "MonthlyAvgBalance": {
+      "202601": 276650.0,
+      "202602": 62208.0,
+      "202603": -23216.0,
+      "202604": -44839.0,
+      "202605": -178881.0,
+      "202606": -241821.0,
+      "202607": -259489.0,
+      "202608": -414335.0
+    },
+    "ModeSplitAmount": {
+      "NEFT": 1417558.0,
+      "UPI": 859483.0,
+      "OTHERS": 5609668.0,
+      "CASH": 1156617.0,
+      "FT": 383336.0
+    },
+    "MonthlyCredits": {
+      "202601": 663128.6199999999,
+      "202602": 374212.8,
+      "202603": 279555.07,
+      "202604": 363254.00999999995,
+      "202605": 163795.7,
+      "202606": 277294.99000000005,
+      "202607": 418872.69,
+      "202608": 195642.63000000003
+    },
+    "MonthlyDebits": {
+      "202601": 752848.7899999999,
+      "202602": 614727.6200000001,
+      "202603": 885544.5,
+      "202604": 933549.94,
+      "202605": 808932.0,
+      "202606": 853994.5,
+      "202607": 1025689.1000000001,
+      "202608": 815619.4500000001
+    }
+  },
+  "GstAnalysis": {
+    "R1Vs3bConsistency": 0.18,
+    "HasTaxPaymentData": false,
+    "CashTaxShare": 0.0,
+    "ItcMonthlyAvg": 43573.0,
+    "TopCustomerShare": 0.793,
+    "TopVendorShare": 0.7652,
+    "TopCustomers": {
+      "09CU•••••01Z5": 0.793,
+      "09CU•••••11Z5": 0.1502,
+      "09CU•••••21Z5": 0.0568
+    },
+    "TopVendors": {
+      "09VE•••••01Z5": 0.7652,
+      "09VE•••••11Z5": 0.1665,
+      "09VE•••••21Z5": 0.0683
+    },
+    "MonthlySales": {
+      "202511": 363439.16,
+      "202602": 447440.5,
+      "202605": 466661.22,
+      "202606": 331211.45,
+      "202608": 343437.5
+    },
+    "Has2bData": true,
+    "ItcAvailableMonthly": 0.0,
+    "ItcClaimVsAvailable": 0.0,
+    "ItcUnavailableShare": 0.0,
+    "SupplierFilingRate": 0.3333
+  },
+  "Financials": {
+    "HasFinancials": true,
+    "SourceYear": "2026-27",
+    "BusinessTurnover": 6240000.0,
+    "EbitdaMargin": null,
+    "PbtMargin": null,
+    "NetProfitMargin": null,
+    "DebtorDays": 40.2,
+    "AssetTurnover": null,
+    "TotalAssets": 0.0,
+    "NetWorth": 0.0,
+    "DebtToEquity": null,
+    "FormType": "ITR-4 (SUGAM)",
+    "FilingSection": "139(4)",
+    "IsPresumptive": true,
+    "EVerified": false,
+    "ReturnProcessed": false,
+    "AuditApplicable": false,
+    "AuditCompleted": false,
+    "HasTaxDemand": true,
+    "GstTurnoverVariancePct": 23.5
+  },
+  "Industry": {
+    "SectorName": "Wholesale and retail trade and repair of motor vehicles",
+    "Nic2Digit": "45",
+    "RiskWeight": 0.65,
+    "Outlook": "Moderate"
+  },
+  "ExcludedDimensions": [],
+  "ModelVersion": "frl-scoring-v1.0",
+  "ComputedAt": "2026-09-04T09:57:16.4576585Z",
+  "CashflowTrendSlope": -0.382,
+  "HeuristicScore": 337.9,
+  "MlCalibratedScore": 432.1
+}

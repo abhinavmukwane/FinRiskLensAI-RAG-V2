@@ -1,0 +1,32 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "27AABCS4417K1Z8",
+        "ret_period": "122025",
+        "cdnr": [
+          {
+            "ctin": "27AABCS4417K1Z8",
+            "nt": [
+              {
+                "nt_num": "CN-122025",
+                "nt_dt": "15-12-2025",
+                "ntty": "C",
+                "val": 34485.06,
+                "itms": [
+                  {
+                    "num": 1,
+                    "itm_det": {
+                      "txval": 29224.63,
+                      "rt": 18.0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

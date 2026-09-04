@@ -1,0 +1,16 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "09AFQPN8123L1Z2",
+        "lgnm": "NAVDEEP AUTO SPARES",
+        "tradeNam": "NAVDEEP AUTO SPARES",
+        "sts": "Active",
+        "ctb": "Proprietorship",
+        "rgdt": "01-10-2025",
+        "stj": "Uttar Pradesh",
+        "ctj": "Kanpur"
+      }
+    }
+  }
+}

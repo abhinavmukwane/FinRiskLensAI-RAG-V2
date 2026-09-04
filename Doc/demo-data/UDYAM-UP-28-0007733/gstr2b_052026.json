@@ -1,0 +1,41 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "09AFQPN8123L1Z2",
+        "rtnprd": "052026",
+        "itcsumm": {
+          "itcavl": {
+            "iamt": 14670.25,
+            "camt": 11002.69,
+            "samt": 11002.69,
+            "csamt": 0.0
+          },
+          "itcunavl": {
+            "iamt": 3227.46,
+            "camt": 2420.59,
+            "samt": 2420.59,
+            "csamt": 0.0
+          }
+        },
+        "docdata": {
+          "b2b": [
+            {
+              "ctin": "09VEND00PAN0Z1",
+              "trdnm": "Vendor 1",
+              "supfildt": "15-05-2026"
+            },
+            {
+              "ctin": "09VEND01PAN1Z1",
+              "trdnm": "Vendor 2"
+            },
+            {
+              "ctin": "09VEND02PAN2Z1",
+              "trdnm": "Vendor 3"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
