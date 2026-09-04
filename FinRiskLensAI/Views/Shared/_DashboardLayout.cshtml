@@ -26,7 +26,14 @@
 </head>
 <body>
 
-    <div class="app-shell" id="appShell">
+    @{
+        // Sidebar collapse preference — read back from the cookie the toggle
+        // script below writes, so the very first server-rendered markup
+        // already has the right class. No client-side "fix it after load"
+        // script needed, so there's no flash of the wrong state.
+        var sidebarCollapsed = Context.Request.Cookies["frl_sidebar_collapsed"] == "1";
+    }
+    <div class="app-shell @(sidebarCollapsed ? "sidebar-collapsed" : "")" id="appShell">
 
         <!-- ============ Sidebar ============ -->
         <aside class="sidebar" id="sidebar">
@@ -134,14 +141,28 @@
     </div>
 
     <script>
-        // Sidebar collapse / expand — hamburger <-> cross toggle
+        // Sidebar collapse / expand — hamburger <-> cross toggle.
+        // Persisted in a cookie (read back server-side above, so the page
+        // renders already-collapsed on the very first paint — no flash of
+        // the wrong state) so a refresh keeps whatever the user last chose,
+        // instead of always resetting to expanded.
         (function(){
           const appShell = document.getElementById('appShell');
           const toggle = document.getElementById('sidebarToggle');
           const backdrop = document.getElementById('sidebarBackdrop');
 
-          toggle.addEventListener('click', () => appShell.classList.toggle('sidebar-collapsed'));
-          backdrop.addEventListener('click', () => appShell.classList.remove('sidebar-collapsed'));
+          function setCollapsed(collapsed){
+            appShell.classList.toggle('sidebar-collapsed', collapsed);
+            document.cookie = 'frl_sidebar_collapsed=' + (collapsed ? '1' : '0') +
+              ';path=/;max-age=31536000;SameSite=Lax';
+          }
+
+          // One button, two icons shown/hidden by CSS based on this class —
+          // so a single toggle is enough: clicking the hamburger collapses
+          // (and swaps the visible icon to the cross), clicking the cross
+          // (the same button, now showing the cross) expands it back.
+          toggle.addEventListener('click', () => setCollapsed(!appShell.classList.contains('sidebar-collapsed')));
+          backdrop.addEventListener('click', () => setCollapsed(false));
         })();
 
         document.addEventListener('DOMContentLoaded', function () {
