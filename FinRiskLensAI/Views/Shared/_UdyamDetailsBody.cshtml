@@ -29,7 +29,7 @@
     <!-- ===== PAGE HEADER — MCA's layout (score, then text, buttons last),
          GST/AA's light card+gauge colors ===== -->
     <div class="info-header-card info-header-dark d-flex flex-column flex-lg-row align-items-lg-center gap-4">
-        <div class="info-score-ring">
+        <div class="hero-score-ring">
             <svg viewBox="0 0 120 120">
                 <circle class="gauge-track" cx="60" cy="60" r="54"></circle>
                 <circle class="gauge-progress" cx="60" cy="60" r="54"
@@ -52,14 +52,14 @@
             <h3 class="fhc-title mb-1">AI-Powered Udyam Registration Analysis</h3>
             <p class="fhc-sub mb-0">@Model.EnterpriseName &middot; Registration No: <span id="udyamRegNumber">@Model.Uan</span></p>
         </div>
-        <div class="d-flex flex-column gap-2 flex-shrink-0">
+        @* <div class="d-flex flex-column gap-2 flex-shrink-0">
             <button id="btnDownloadReport" type="button" class="btn" style="background:#fff; color:var(--theme-maroon); border:1px solid #fff; border-radius:10px; padding:9px 18px; font-weight:600;">
                 <i class="bi bi-download me-1"></i> Download Report
             </button>
             <button id="btnRefreshData" type="button" class="btn" style="background:var(--brand-primary-deep); color:#fff; border:1px solid rgba(255,255,255,.35); border-radius:10px; padding:9px 18px; font-weight:600;">
                 <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data
             </button>
-        </div>
+        </div> *@
     </div>
 
     <div class="row g-4">

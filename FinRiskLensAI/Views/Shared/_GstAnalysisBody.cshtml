@@ -86,17 +86,17 @@
     <section class="glass-card business-header-card mb-4">
         <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-4">
             <div class="d-flex flex-column align-items-center gap-2 flex-shrink-0">
-                <div class="gauge-wrapper my-1" style="width: 110px; height: 110px;">
-                    <svg viewBox="0 0 140 140" style="width: 110px; height: 110px;">
+                <div class="gauge-wrapper my-1" style="width: 120px; height: 120px;">
+                    <svg viewBox="0 0 140 140" style="width: 120px; height: 120px;">
                         <circle class="gauge-circle-bg" cx="70" cy="70" r="58"></circle>
                         <circle id="gstHealthGauge" class="gauge-circle-progress success" cx="70" cy="70" r="58" style="stroke-dasharray: 364; stroke-dashoffset: 364;"></circle>
                     </svg>
                     <div class="gauge-center-content">
-                        <span class="gauge-center-val" style="font-size: 22px;">94</span>
-                        <span class="gauge-center-label" style="font-size: 8px;">/ 100</span>
+                        <span class="gauge-center-val" style="font-size: 32px;">94</span>
+                        <span class="gauge-center-label" style="font-size: 11px;">/ 100</span>
                     </div>
                 </div>
-                <span class="badge-risk low px-3 py-1" style="font-size: 11.5px;">Excellent GST Compliance</span>
+                @* <span class="badge-risk low px-3 py-1" style="font-size: 11.5px;">Excellent GST Compliance</span> *@
             </div>
 
             <div class="flex-grow-1 text-center text-lg-start">
@@ -106,22 +106,17 @@
                     </span>
                 </div>
                 <h3 class="fhc-title mb-1">AI-Powered GST Intelligence Analysis</h3>
-                <p class="fhc-sub mb-3">
+               @*  <p class="fhc-sub mb-3">
                     Advanced GSTR-2B &amp; GSTR-3B Business Intelligence Dashboard &bull; @enterpriseName
+                </p> *@
+                <p class="fhc-sub mb-3">
+                    MSME GST Score • GSTR-1, GSTR-3B & GSTR-2B &bull; @enterpriseName
                 </p>
 
                 <div class="header-info-grid">
                     <div class="header-info-item">
                         <span>GSTIN</span>
                         <strong>@gstin</strong>
-                    </div>
-                    <div class="header-info-item">
-                        <span>PAN</span>
-                        <strong>@pan</strong>
-                    </div>
-                    <div class="header-info-item">
-                        <span>Udyam Registration</span>
-                        <strong>@uan</strong>
                     </div>
                     <div class="header-info-item">
                         <span>Business Age</span>

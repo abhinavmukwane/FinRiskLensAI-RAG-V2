@@ -42,7 +42,7 @@
         </div>
 
         <div class="aa-score mb-4">
-            <div class="aa-ring">
+            @* <div class="aa-ring">
                 <svg viewBox="0 0 120 120">
                     <circle class="track" cx="60" cy="60" r="52"></circle>
                     <circle id="aaScoreRing" class="prog" cx="60" cy="60" r="52"
@@ -53,8 +53,8 @@
                     <span class="num">@Model.HealthScore</span>
                     <span class="den">/ 100</span>
                 </div>
-            </div>
-            <div class="flex-grow-1">
+            </div> *@
+            @* <div class="flex-grow-1">
                 <div class="mb-2">
                     <span class="aa-grade grade-@Model.RiskGrade.ToLowerInvariant()">Risk Grade: @Model.RiskGrade</span>
                 </div>
@@ -66,7 +66,7 @@
                     against gross credits of <strong>@Inr(Model.TotalCredits)</strong>.
                     Gross credits are not treated as turnover.
                 </p>
-            </div>
+            </div> *@
         </div>
 
         <div class="aa-kpi-grid">

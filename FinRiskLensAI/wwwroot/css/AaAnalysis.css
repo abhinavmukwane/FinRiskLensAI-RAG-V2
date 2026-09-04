@@ -561,7 +561,41 @@
         color: var(--brand-btn-fg);
     }
 
-/* ── Page header (shared by AADetails and DeepAnalysis) ─────────────── */
+/* ── Page header (shared by AADetails, Transactions, DeepAnalysis) ──────
+   Same theme-gradient + white-text + score-ring-in-front recipe as the
+   MCA/GST/Udyam page banners, so every "detail" page reads as one family. */
+.aa-page-head {
+    background: linear-gradient(135deg, var(--brand-primary-dark) 0%, var(--brand-primary-deep) 100%);
+    border-radius: 20px;
+    padding: 28px 32px;
+    color: #fff;
+}
+@media (max-width: 767px) {
+    .aa-page-head { padding: 22px 20px; }
+}
+
+.aa-page-head .fhc-title,
+.aa-page-head .fhc-sub { color: #fff; }
+.aa-page-head .fhc-sub { opacity: .85; }
+
+/* Solid-fill header action button (AADetails' "Transactions") — theme-based
+   background instead of the plain white .btn-outline-theme, per request. */
+.aa-page-head .btn-header-fill {
+    background: var(--brand-primary-deep);
+    color: #fff;
+    border: 1px solid var(--brand-primary-deep);
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+.aa-page-head .btn-header-fill:hover {
+    background: var(--brand-primary-dark);
+    border-color: var(--brand-primary-dark);
+    color: #fff;
+}
+
 .aa-page-head .aa-eyebrow {
     display: flex;
     align-items: center;
@@ -573,6 +607,27 @@
     color: var(--brand-primary);
     margin-bottom: 4px;
 }
+
+/* Score ring + risk grade, leading the header (MCA layout). Re-declared
+   here (not just relying on .aa-analysis .aa-ring) because .aa-page-head
+   sits outside the .aa-analysis wrapper on DeepAnalysis/Transactions. */
+.aa-page-head .aa-ring { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+.aa-page-head .aa-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.aa-page-head .aa-ring .track { fill: none; stroke: rgba(255, 255, 255, .22); stroke-width: 10; }
+.aa-page-head .aa-ring .prog { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+.aa-page-head .aa-ring .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+    .aa-page-head .aa-ring .center .num {
+        font-family: var(--font-headline, "Sora", sans-serif);
+        font-size: 32px;
+        font-weight: 700;
+        color: #fff;
+    }
+.aa-page-head .aa-ring .center .den { font-size: 11px; color: rgba(255, 255, 255, .7); margin-top: 2px; }
+.aa-page-head .aa-grade { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+.aa-page-head .grade-low { background: var(--aa-good-soft); color: var(--aa-good); }
+.aa-page-head .grade-moderate,
+.aa-page-head .grade-elevated { background: var(--aa-warn-soft); color: var(--aa-warn); }
+.aa-page-head .grade-high { background: var(--aa-bad-soft); color: var(--aa-bad); }
 
 /* Deep-analysis call-to-action card title (AADetails). */
 .aa-analysis .aa-cta-title {
