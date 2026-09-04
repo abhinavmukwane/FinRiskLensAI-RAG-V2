@@ -20,6 +20,15 @@
     }
 }
 
+@{
+    // Bank Admin's Customer 360 (Views/BankAdmin/Customer.cshtml) sets this
+    // before rendering this partial, since it has no header of its own for
+    // the AA pane. The customer-facing page (/AccountAggregator/AADetails)
+    // already renders its own header above this partial, so this block must
+    // stay out of that path or the header would show twice.
+    var isBankPortal = ViewData["IsBankPortal"] as bool? ?? false;
+}
+
 @if (!Model.HasData)
 {
     <div class="aa-analysis">
@@ -31,6 +40,35 @@
     return;
 }
 
+@if (isBankPortal)
+{
+    <div class="aa-page-head d-flex flex-column flex-lg-row align-items-lg-center mb-4 gap-3">
+        <div class="d-flex flex-column align-items-center gap-2 flex-shrink-0">
+            <div class="aa-ring">
+                <svg viewBox="0 0 120 120">
+                    <circle class="track" cx="60" cy="60" r="52"></circle>
+                    <circle class="prog" cx="60" cy="60" r="52"
+                            stroke="#4caf50"
+                            style="stroke-dasharray:327; stroke-dashoffset:@(327 - 327 * Math.Max(0, Math.Min(100, Model.HealthScore)) / 100);"></circle>
+                </svg>
+                <div class="center">
+                    <span class="num">@Model.HealthScore</span>
+                    <span class="den">/ 100</span>
+                </div>
+            </div>
+            <span class="aa-grade grade-@Model.RiskGrade.ToLowerInvariant()">Risk Grade: @Model.RiskGrade</span>
+        </div>
+        <div class="flex-grow-1">
+            <div class="aa-eyebrow" style="color:#fff;">
+                <span style="font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; opacity:0.7;">
+                    <i class="bi bi-bank2 me-1"></i>Account Aggregator · Statement Linked
+                </span>
+            </div>
+            <h3 class="fhc-title mb-1">Account Aggregator Details</h3>
+            <p class="fhc-sub mb-0">Bank account information received through the AA consent journey.</p>
+        </div>
+    </div>
+}
 <div class="aa-analysis">
     <!-- Statement overview -->
     <div class="aa-card">

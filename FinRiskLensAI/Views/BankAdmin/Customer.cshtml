@@ -191,7 +191,7 @@ else if (c != null)
             @if (Model.Aa != null)
             {
                 <div class="container-fluid py-4">
-                    @{ ViewData["ShowAiPanel"] = false; }
+                    @{ ViewData["ShowAiPanel"] = false; ViewData["IsBankPortal"] = true; }
                     @await Html.PartialAsync("_AaAccountsBody", Model.Aa)
                     @await Html.PartialAsync("_AaAnalysisBody", Model.Aa)
                 </div>
