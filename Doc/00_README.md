@@ -31,6 +31,9 @@ handing this to Claude Code rather than writing it all by hand.
    (`FinRiskLensAI.ML`): use cases, API contract (direct endpoint + the
    Azure Blob Storage collection flow for large payloads), pipeline
    internals with code, and extension points (EPFO, sandbox swap, bureau)
+9. `09_FINALS_ENHANCEMENT_PLAN.md` — the top-5 finals build plan: verified
+   prototype state, the AA scoring gap, tiered priorities with effort
+   estimates, and what deliberately not to build
 
 ## Ground rules for implementation
 
