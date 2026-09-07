@@ -2,11 +2,11 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "27AABCS4417K1Z8",
+        "gstin": "27AABFS4417K1Z3",
         "ret_period": "082026",
         "b2b": [
           {
-            "ctin": "27CUST00PAN01Z5",
+            "ctin": "27IAQCU3089J1ZC",
             "inv": [
               {
                 "inum": "INV-082026-000",
@@ -26,7 +26,7 @@
             ]
           },
           {
-            "ctin": "27CUST01PAN11Z5",
+            "ctin": "27CLNCR0190C1ZS",
             "inv": [
               {
                 "inum": "INV-082026-001",
@@ -46,7 +46,7 @@
             ]
           },
           {
-            "ctin": "27CUST02PAN21Z5",
+            "ctin": "27JWNCF9098F1ZG",
             "inv": [
               {
                 "inum": "INV-082026-002",
@@ -66,7 +66,7 @@
             ]
           },
           {
-            "ctin": "27CUST03PAN31Z5",
+            "ctin": "27SQACK1363R1ZQ",
             "inv": [
               {
                 "inum": "INV-082026-003",
@@ -86,7 +86,7 @@
             ]
           },
           {
-            "ctin": "27CUST04PAN41Z5",
+            "ctin": "27UGLCR7943S1ZB",
             "inv": [
               {
                 "inum": "INV-082026-004",
@@ -106,7 +106,7 @@
             ]
           },
           {
-            "ctin": "27CUST05PAN51Z5",
+            "ctin": "27EPVCM5136W1Z6",
             "inv": [
               {
                 "inum": "INV-082026-005",
@@ -126,7 +126,7 @@
             ]
           },
           {
-            "ctin": "27CUST06PAN61Z5",
+            "ctin": "27WJHCW1291B1ZB",
             "inv": [
               {
                 "inum": "INV-082026-006",
@@ -146,7 +146,7 @@
             ]
           },
           {
-            "ctin": "27CUST07PAN71Z5",
+            "ctin": "27YUPCF5925N1Z2",
             "inv": [
               {
                 "inum": "INV-082026-007",
@@ -166,7 +166,7 @@
             ]
           },
           {
-            "ctin": "27CUST08PAN81Z5",
+            "ctin": "27TCWCI6838V1ZC",
             "inv": [
               {
                 "inum": "INV-082026-008",

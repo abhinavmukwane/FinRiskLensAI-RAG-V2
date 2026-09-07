@@ -2,11 +2,11 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "24AAGFR2210M1Z4",
+        "gstin": "24AAGFR2210M1ZE",
         "ret_period": "022026",
         "b2b": [
           {
-            "ctin": "24VEND00PAN01Z5",
+            "ctin": "24AMGFQ2796Q1ZR",
             "inv": [
               {
                 "inum": "PINV-022026-000",
@@ -25,7 +25,7 @@
             ]
           },
           {
-            "ctin": "24VEND01PAN11Z5",
+            "ctin": "24OVUFF1236E1Z0",
             "inv": [
               {
                 "inum": "PINV-022026-001",
@@ -44,7 +44,7 @@
             ]
           },
           {
-            "ctin": "24VEND02PAN21Z5",
+            "ctin": "24FRTFW4707R1Z4",
             "inv": [
               {
                 "inum": "PINV-022026-002",
@@ -63,7 +63,7 @@
             ]
           },
           {
-            "ctin": "24VEND03PAN31Z5",
+            "ctin": "24TQNFB9776S1ZU",
             "inv": [
               {
                 "inum": "PINV-022026-003",
@@ -82,7 +82,7 @@
             ]
           },
           {
-            "ctin": "24VEND04PAN41Z5",
+            "ctin": "24HQGFQ8424V1Z9",
             "inv": [
               {
                 "inum": "PINV-022026-004",

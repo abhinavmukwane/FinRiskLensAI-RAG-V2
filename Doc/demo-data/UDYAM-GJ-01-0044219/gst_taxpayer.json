@@ -1,16 +1,16 @@
 {
-  "response": {
-    "message": {
-      "data": {
-        "gstin": "24AAGFR2210M1Z4",
-        "lgnm": "RATNADEEP TEXTILE TRADERS",
-        "tradeNam": "RATNADEEP TEXTILE TRADERS",
-        "sts": "Active",
-        "ctb": "Partnership",
-        "rgdt": "01-03-2021",
-        "stj": "Gujarat",
-        "ctj": "Surat"
-      }
-    }
+ "response": {
+  "message": {
+   "data": {
+    "gstin": "24AAGFR2210M1ZE",
+    "lgnm": "RATNADEEP TEXTILE TRADERS",
+    "tradeNam": "RATNADEEP TEXTILE TRADERS",
+    "sts": "Active",
+    "ctb": "Partnership",
+    "rgdt": "01-03-2021",
+    "stj": "Gujarat",
+    "ctj": "Surat"
+   }
   }
+ }
 }

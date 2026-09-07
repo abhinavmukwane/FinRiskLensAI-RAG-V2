@@ -1,82 +1,82 @@
 {
-  "uan": "UDYAM-MH-20-0091447",
-  "main_details": {
-    "name_of_enterprise": "SHREEJI PRECISION COMPONENTS",
-    "organization_type": "Partnership",
-    "date_of_incorporation": "2015-09-01",
-    "date_of_commencement": "2015-09-01",
-    "registration_date": "2015-11-01",
-    "major_activity": "Manufacturing",
-    "social_category": "General",
-    "gender": "Male",
-    "flat": "Plot 14",
-    "name_of_building": "MIDC Industrial Estate",
-    "road": "Phase II",
-    "city": "Pune",
-    "state": "Maharashtra",
-    "pin": "411018",
-    "gstin": "27AABCS4417K1Z8",
-    "Pan": "AABCS4417K",
-    "enterprise_type_list": [
-      {
-        "classification_year": "2024",
-        "enterprise_type": "Small",
-        "classification_date": "2024-04-01"
-      },
-      {
-        "classification_year": "2026",
-        "enterprise_type": "Small",
-        "classification_date": "2026-04-01"
-      }
-    ]
-  },
-  "location_of_plant_details": [
-    {
-      "unit_name": "SHREEJI PRECISION COMPONENTS Unit 1",
-      "city": "Pune",
-      "district": "Pune",
-      "state": "Maharashtra",
-      "pin": "411018"
-    },
-    {
-      "unit_name": "SHREEJI PRECISION COMPONENTS Unit 2",
-      "city": "Pune",
-      "district": "Pune",
-      "state": "Maharashtra",
-      "pin": "411018"
-    },
-    {
-      "unit_name": "SHREEJI PRECISION COMPONENTS Unit 3",
-      "city": "Pune",
-      "district": "Pune",
-      "state": "Maharashtra",
-      "pin": "411018"
-    }
-  ],
-  "nic_code": [
-    {
-      "nic_2_digit": "25-Manufacture of fabricated metal products",
-      "nic_4_digit": "2510",
-      "nic_5_digit": "25100",
-      "activity_type": "Manufacturing"
-    },
-    {
-      "nic_2_digit": "25-Manufacture of fabricated metal products",
-      "nic_4_digit": "2511",
-      "nic_5_digit": "25110",
-      "activity_type": "Manufacturing"
-    },
-    {
-      "nic_2_digit": "25-Manufacture of fabricated metal products",
-      "nic_4_digit": "2512",
-      "nic_5_digit": "25120",
-      "activity_type": "Manufacturing"
-    },
-    {
-      "nic_2_digit": "25-Manufacture of fabricated metal products",
-      "nic_4_digit": "2513",
-      "nic_5_digit": "25130",
-      "activity_type": "Manufacturing"
-    }
+ "uan": "UDYAM-MH-20-0091447",
+ "main_details": {
+  "name_of_enterprise": "SHREEJI PRECISION COMPONENTS",
+  "organization_type": "Partnership",
+  "date_of_incorporation": "2015-09-01",
+  "date_of_commencement": "2015-09-01",
+  "registration_date": "2015-11-01",
+  "major_activity": "Manufacturing",
+  "social_category": "General",
+  "gender": "Male",
+  "flat": "Plot 14",
+  "name_of_building": "Chinchwad MIDC Industrial Area",
+  "road": "Telco Road",
+  "city": "Pune",
+  "state": "Maharashtra",
+  "pin": "411019",
+  "gstin": "27AABFS4417K1Z3",
+  "Pan": "AABFS4417K",
+  "enterprise_type_list": [
+   {
+    "classification_year": "2024",
+    "enterprise_type": "Small",
+    "classification_date": "2024-04-01"
+   },
+   {
+    "classification_year": "2026",
+    "enterprise_type": "Small",
+    "classification_date": "2026-04-01"
+   }
   ]
+ },
+ "location_of_plant_details": [
+  {
+   "unit_name": "SHREEJI PRECISION COMPONENTS Unit 1",
+   "city": "Pune",
+   "district": "Pune",
+   "state": "Maharashtra",
+   "pin": "411019"
+  },
+  {
+   "unit_name": "SHREEJI PRECISION COMPONENTS Unit 2",
+   "city": "Pune",
+   "district": "Pune",
+   "state": "Maharashtra",
+   "pin": "411019"
+  },
+  {
+   "unit_name": "SHREEJI PRECISION COMPONENTS Unit 3",
+   "city": "Pune",
+   "district": "Pune",
+   "state": "Maharashtra",
+   "pin": "411019"
+  }
+ ],
+ "nic_code": [
+  {
+   "nic_2_digit": "25-Manufacture of fabricated metal products",
+   "nic_4_digit": "2510",
+   "nic_5_digit": "25100",
+   "activity_type": "Manufacturing"
+  },
+  {
+   "nic_2_digit": "25-Manufacture of fabricated metal products",
+   "nic_4_digit": "2511",
+   "nic_5_digit": "25110",
+   "activity_type": "Manufacturing"
+  },
+  {
+   "nic_2_digit": "25-Manufacture of fabricated metal products",
+   "nic_4_digit": "2512",
+   "nic_5_digit": "25120",
+   "activity_type": "Manufacturing"
+  },
+  {
+   "nic_2_digit": "25-Manufacture of fabricated metal products",
+   "nic_4_digit": "2513",
+   "nic_5_digit": "25130",
+   "activity_type": "Manufacturing"
+  }
+ ]
 }

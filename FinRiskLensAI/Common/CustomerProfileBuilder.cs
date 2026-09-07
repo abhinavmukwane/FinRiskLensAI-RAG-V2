@@ -198,6 +198,13 @@ namespace FinRiskLensAI.Common
         // ─────────────────────────────────────────────────────────────
         //  MCA — Corporate Intelligence Report
         // ─────────────────────────────────────────────────────────────
+        /// <summary>Udyam organisation types that actually appear on the MCA register.</summary>
+        private static bool IsMcaRegistered(string? organizationType)
+            => organizationType != null
+               && (organizationType.Contains("Company", StringComparison.OrdinalIgnoreCase)
+                   || organizationType.Contains("LLP", StringComparison.OrdinalIgnoreCase)
+                   || organizationType.Contains("Limited Liability", StringComparison.OrdinalIgnoreCase));
+
         public async Task<McaDetailsViewModel> GetMcaAsync(string? uan, CancellationToken ct = default)
         {
             var model = new McaDetailsViewModel { Uan = uan };
@@ -217,7 +224,15 @@ namespace FinRiskLensAI.Common
 
                 if (mca?.message?.details == null)
                 {
-                    model.LoadError = $"No stored MCA response was found for {uan}.";
+                    // Only companies and LLPs are on the MCA register — a partnership
+                    // firm or proprietorship has no CIN and no DIN, so "not found" here
+                    // is the correct answer, not a failure.
+                    var org = (await GetUdyamAsync(uan))?.OrganizationType;
+                    model.LoadError = IsMcaRegistered(org)
+                        ? $"No stored MCA response was found for {uan}."
+                        : $"MCA records apply only to companies and LLPs. This enterprise is registered as "
+                          + $"{(string.IsNullOrWhiteSpace(org) || org == "-" ? "a non-corporate entity" : org)}, "
+                          + "so it holds no CIN or DIN.";
                     return model;
                 }
 

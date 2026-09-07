@@ -1,16 +1,16 @@
 {
-  "response": {
-    "message": {
-      "data": {
-        "gstin": "27AABCS4417K1Z8",
-        "lgnm": "SHREEJI PRECISION COMPONENTS",
-        "tradeNam": "SHREEJI PRECISION COMPONENTS",
-        "sts": "Active",
-        "ctb": "Partnership",
-        "rgdt": "01-11-2015",
-        "stj": "Maharashtra",
-        "ctj": "Pune"
-      }
-    }
+ "response": {
+  "message": {
+   "data": {
+    "gstin": "27AABFS4417K1Z3",
+    "lgnm": "SHREEJI PRECISION COMPONENTS",
+    "tradeNam": "SHREEJI PRECISION COMPONENTS",
+    "sts": "Active",
+    "ctb": "Partnership",
+    "rgdt": "01-11-2015",
+    "stj": "Maharashtra",
+    "ctj": "Pune"
+   }
   }
+ }
 }

@@ -1,0 +1,27 @@
+{
+ "rrn": "64259204_1788515835605",
+ "din": "64259204",
+ "status_code": "200",
+ "message": {
+  "client_id": "corporate_din_64259204",
+  "din_number": "64259204",
+  "father_name": "Anil Waman Deshmukh",
+  "full_name": "Kavita Anil Deshmukh",
+  "dob": "1987-03-21",
+  "nationality": "IN",
+  "present_address": "211, Sunrise Residency, Dharampeth, Nagpur, Maharashtra 440010",
+  "permanent_address": "211, Sunrise Residency, Dharampeth, Nagpur, Maharashtra 440010",
+  "email": "kavita.deshmukh@ucnfibrenet.co.in",
+  "pan_number": "AKPPD4471C",
+  "companies_associated": [
+   {
+    "cin": "U61909MH2016PTC089342",
+    "company_name": "M/S UCN FIBRENET PRIVATE LIMITED",
+    "designation": "Director",
+    "appointment_date": "2016-12-15"
+   }
+  ],
+  "status": "success"
+ },
+ "tran_ref_no": "64259204"
+}

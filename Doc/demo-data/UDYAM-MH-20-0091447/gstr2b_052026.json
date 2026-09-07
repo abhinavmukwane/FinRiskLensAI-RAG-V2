@@ -2,7 +2,7 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "27AABCS4417K1Z8",
+        "gstin": "27AABFS4417K1Z3",
         "rtnprd": "052026",
         "itcsumm": {
           "itcavl": {
@@ -21,42 +21,42 @@
         "docdata": {
           "b2b": [
             {
-              "ctin": "27VEND00PAN0Z1",
+              "ctin": "27PMZFD7969A1ZO",
               "trdnm": "Vendor 1",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "27VEND01PAN1Z1",
+              "ctin": "27DHWFO6427E1ZC",
               "trdnm": "Vendor 2",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "27VEND02PAN2Z1",
+              "ctin": "27LHDFC9108C1Z3",
               "trdnm": "Vendor 3",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "27VEND03PAN3Z1",
+              "ctin": "27TQQFQ0187M1Z3",
               "trdnm": "Vendor 4",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "27VEND04PAN4Z1",
+              "ctin": "27ZCEFQ7583A1ZD",
               "trdnm": "Vendor 5",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "27VEND05PAN5Z1",
+              "ctin": "27TUGFR0917I1ZI",
               "trdnm": "Vendor 6",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "27VEND06PAN6Z1",
+              "ctin": "27LWEFO0573M1ZF",
               "trdnm": "Vendor 7",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "27VEND07PAN7Z1",
+              "ctin": "27DUGFF0676F1Z9",
               "trdnm": "Vendor 8",
               "supfildt": "15-05-2026"
             }

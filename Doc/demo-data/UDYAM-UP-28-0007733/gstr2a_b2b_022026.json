@@ -2,11 +2,11 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "09AFQPN8123L1Z2",
+        "gstin": "09AFQPN8123L1ZR",
         "ret_period": "022026",
         "b2b": [
           {
-            "ctin": "09VEND00PAN01Z5",
+            "ctin": "09SDEFK4976P1ZS",
             "inv": [
               {
                 "inum": "PINV-022026-000",
@@ -25,7 +25,7 @@
             ]
           },
           {
-            "ctin": "09VEND01PAN11Z5",
+            "ctin": "09DXDFR7625K1ZE",
             "inv": [
               {
                 "inum": "PINV-022026-001",
@@ -44,7 +44,7 @@
             ]
           },
           {
-            "ctin": "09VEND02PAN21Z5",
+            "ctin": "09ITOFM0517O1ZI",
             "inv": [
               {
                 "inum": "PINV-022026-002",

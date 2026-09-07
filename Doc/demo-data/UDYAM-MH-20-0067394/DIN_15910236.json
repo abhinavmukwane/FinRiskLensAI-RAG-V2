@@ -1,0 +1,27 @@
+{
+ "rrn": "15910236_1788515835605",
+ "din": "15910236",
+ "status_code": "200",
+ "message": {
+  "client_id": "corporate_din_15910236",
+  "din_number": "15910236",
+  "father_name": "Madhukar Ganesh Joshi",
+  "full_name": "Rajesh Madhukar Joshi",
+  "dob": "1968-01-30",
+  "nationality": "IN",
+  "present_address": "192, Sunrise Residency, Dharampeth, Nagpur, Maharashtra 440010",
+  "permanent_address": "192, Sunrise Residency, Dharampeth, Nagpur, Maharashtra 440010",
+  "email": "rajesh.joshi@ucnfibrenet.co.in",
+  "pan_number": "AFRPJ8820L",
+  "companies_associated": [
+   {
+    "cin": "U61909MH2016PTC089342",
+    "company_name": "M/S UCN FIBRENET PRIVATE LIMITED",
+    "designation": "Director",
+    "appointment_date": "2016-12-15"
+   }
+  ],
+  "status": "success"
+ },
+ "tran_ref_no": "15910236"
+}

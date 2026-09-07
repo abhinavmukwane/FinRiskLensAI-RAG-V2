@@ -32,6 +32,7 @@ Bank portal: `/Auth/BankLogin`, user `bankadmin` (password unchanged).
 | A | SHREEJI PRECISION COMPONENTS | `UDYAM-MH-20-0091447` | **813** | Excellent | `shreeji.precision@finrisklens.demo` |
 | B | RATNADEEP TEXTILE TRADERS | `UDYAM-GJ-01-0044219` | **627** | Fair | `ratnadeep.textiles@finrisklens.demo` |
 | C | NAVDEEP AUTO SPARES | `UDYAM-UP-28-0007733` | **376** | AtRisk | `navdeep.autospares@finrisklens.demo` |
+| D | M/S UCN FIBRENET PRIVATE LIMITED | `UDYAM-MH-20-0067394` | **715** | Good | `mkhangar01@gmail.com` |
 
 ---
 
@@ -51,7 +52,7 @@ Partnership firm, Pune. Precision metal components, 11 years old, 3 plants.
 
 - Annual turnover **₹7.21 Cr**, monthly surplus **₹11.3 L**
 - Eligibility: **₹1.44 Cr** working capital + **₹4.17 Cr** term
-- 12/12 GST returns filed, turnover trend **+0.79**, credit notes 0.6%
+- 12/12 GST returns filed, cashflow trend **+0.21**, credit notes 0.6%
 - 84 days cash on hand, **zero bounces**, EMI only 3% of inflow
 - ITR-5 filed on time, e-verified, processed, tax fully paid, 44AB audit complete
 - GST↔ITR turnover variance **0.6%** — the two filings agree
@@ -78,7 +79,7 @@ Partnership firm, Surat. Textile wholesale, 5.5 years old.
 
 - Annual turnover **₹1.44 Cr**, monthly surplus **₹1.05 L**
 - Eligibility: **₹17.3 L** working capital + **₹23.2 L** term
-- **2 GST periods missed** (filing regularity 0.83), flat turnover
+- **2 GST periods missed** (Oct + Nov 2025; regularity 0.83), flat turnover (trend +0.03)
 - 39 days cash, **2 bounces**, credit notes 4.5%
 - ITR filed **late** under 139(4); GST↔ITR variance **6.4%** — outside tolerance
 - Only product offered: **CGTMSE-backed Working Capital** (guarantee-backed,
@@ -105,7 +106,7 @@ Proprietorship, Kanpur. Auto spares retail, 13 months old.
 
 - Annual turnover **₹46.9 L**, monthly surplus **−₹4.94 L** (burning cash)
 - Eligibility: ₹3.3 L working capital, **₹0 term** — no repayment capacity
-- **Half the GST returns missing** (regularity 0.50), turnover trend **−0.16**
+- **7 of 12 GST periods missing** (regularity 0.42), cashflow trend **−0.38**
 - **Zero days cash on hand**, **13 bounce/return events**, EMI **75% of inflow**
 - Cash-heavy: 42% of receipts arrive as cash deposits
 - ITR-4 presumptive, filed late, **not e-verified**, **not processed**,
@@ -119,6 +120,93 @@ Proprietorship, Kanpur. Auto spares retail, 13 months old.
 a data-integrity signal for officer review. Worth calling out to the IDBI team.
 
 ---
+
+## D — M/S UCN FIBRENET PRIVATE LIMITED · 715 · Good
+
+**The corporate case — this is the one to open for MCA / DIN.**
+
+Private Limited Company, Nagpur. Broadband/telecom (NIC 61), incorporated
+2016-12-15. Scored on **real 6-month GST data**, not generated returns.
+
+| | |
+|---|---|
+| UAN | `UDYAM-MH-20-0067394` |
+| CIN | `U61909MH2016PTC089342` |
+| GSTIN / PAN | `27AACCU0242R1Z1` / `AACCU0242R` |
+| Login | `mkhangar01@gmail.com` |
+
+- **Corporate (MCA) tab has full data** — company profile, 2 directors with DIN
+  drill-down, and **5 registered charges: 4 OPEN (₹11.52 Cr) + 1 SATISFIED**
+- Authorised capital ₹6 Cr > paid-up ₹4.6 Cr; last AGM 2025-09-29; MCA
+  incorporation date matches Udyam
+- Directors Kavita Anil Deshmukh (DIN 64259204) and Rajesh Madhukar Joshi
+  (DIN 15910236), each with an individual PAN and this CIN in
+  `companies_associated`
+
+**Talking point:** the charges panel is the lender's collateral view — ₹11.52 Cr
+already charged to other lenders, one facility closed. That is exactly the
+"is this asset already pledged?" question a credit officer asks, answered from
+the public register without asking the borrower.
+
+Cleaned 2026-09-07 alongside A–C: the seeded MCA record had directors named
+"M/S Kavita" / "Rajesh M/S", both carrying the *company's* PAN, an invalid
+`m/s.…@example.com` email, authorised capital below paid-up, and a last AGM of
+2019 on an Active company. Score is untouched (715) — MCA has no feature
+extractor, so it never fed the score.
+
+> The other five company accounts in the portal (TRUST FINTECH, PREMIENT ENGITECH,
+> Nair Textiles, Reddy Industries, Iyer Enterprises) still carry the same
+> generator defects. Demo MCA on this one.
+
+---
+
+## Registry identity
+
+Corrected 2026-09-07 after an audit of the seeded files. Every GSTIN now carries a
+**valid check digit** (verified with the same algorithm as
+`DummyDataService.BuildGstin`), and each PAN's 4th character matches the
+constitution — `F` = firm, `P` = individual/proprietor.
+
+| | Constitution | PAN | GSTIN | ITR form |
+|---|---|---|---|---|
+| A · Shreeji | Partnership | `AABFS4417K` | `27AABFS4417K1Z3` | ITR-5 |
+| B · Ratnadeep | Partnership | `AAGFR2210M` | `24AAGFR2210M1ZE` | ITR-5 |
+| C · Navdeep | Proprietorship | `AFQPN8123L` | `09AFQPN8123L1ZR` | ITR-4 (SUGAM) |
+
+The 36 counterparty GSTINs in the GSTR-1/2A/2B files were placeholders
+(`27CUST00PAN01Z5`, some only 14 characters). They are now structurally valid and
+map 1:1 to the old ones, so customer/vendor concentration is unchanged.
+
+**No `mca.json` or `DIN_*.json`.** None of these three is a company, so none can
+hold a CIN or a DIN — the seeded files previously gave all three a *public limited
+company* record with incorporation dates up to 17 years off the Udyam date. The
+MCA tab correctly shows "not applicable" for all three.
+
+> **Demo note:** that is a talking point, not a gap — the platform picks the
+> registries that apply to the constitution. Use **account D** below to show the
+> MCA/DIN screens live.
+
+Addresses are now state-appropriate (MIDC → Pune only; GIDC Pandesara for Surat,
+UPSIDA Panki for Kanpur), `major_activity` matches the NIC division (Trading for
+B and C, whose NIC codes are 46 and 45), and ITR filing dates sit in the past
+while preserving each return's on-time / late status.
+
+**Scores are unaffected** — `result.json` is byte-identical for all three
+(813 / 627 / 376), because only identity fields changed. `nic_code` was left
+untouched, since it drives `SectorRiskWeight`.
+
+### Still open (code, not data)
+
+Three items an alert judge could still probe — they need engine changes, not
+new files:
+
+1. `GSTR-1 vs GSTR-3B Consistency` returns **0.18 for all three** — a constant,
+   so it renders red even on the 813 file.
+2. `ITC Claimed vs 2B Available` is **0.0** despite `Has2bData: true`.
+3. `GstTurnoverVariancePct` compares two fields that both live *inside*
+   `itr.json`, so it never checks ITR against the actual GST returns.
+
+
 
 ## What was written to UAT
 
@@ -134,9 +222,10 @@ a data-integrity signal for officer review. Worth calling out to the IDBI team.
 registration. Seeding a customer without that row makes login impossible, so any
 future hand-seeded account needs all four tables, not three.
 
-Blob container `msme-data`: **92 / 78 / 43 files** in the three UAN folders —
-`udyam.json`, `gst_taxpayer.json`, 12 months × 7 GST files, `aa.json`, `itr.json`,
-`mca.json`, 2 × `DIN_*.json`, and a precomputed `result.json`.
+Blob container `msme-data`: **89 / 76 / 41 files** in the three UAN folders —
+`udyam.json`, `gst_taxpayer.json`, 12 / 10 / 5 months × 7 GST files, `aa.json`,
+`itr.json`, and a precomputed `result.json` (plus `_manifest.json` for B and C).
+No `mca.json` / `DIN_*.json` — see “Registry identity” below.
 
 `result.json` is precomputed so the Financial Health Card and the bank portal
 render immediately. Pressing **Re-analyze Score** recomputes from the same blobs
@@ -161,5 +250,9 @@ three `UDYAM-…` folders).
    the anomaly banner, ₹0 term capacity.
 4. **Open Ratnadeep (627).** The judgement case — point at the two missing GST
    periods and the 6.4% GST↔ITR variance, then at CGTMSE being the only product.
-5. **Close on explainability.** Every number traces to a source file; the score
+5. **Open UCN Fibrenet (715) → Corporate (MCA).** The collateral view — 4 open
+   charges worth ₹11.52 Cr, one satisfied, two directors with DIN drill-down.
+   Then flip back to Shreeji's MCA tab: *"partnership firm — no CIN, no DIN."*
+   The platform pulls the registries that apply to the constitution.
+6. **Close on explainability.** Every number traces to a source file; the score
    breakdown names the reason, not just the value.

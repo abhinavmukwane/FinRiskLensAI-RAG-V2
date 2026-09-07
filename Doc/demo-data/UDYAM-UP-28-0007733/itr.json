@@ -1,130 +1,130 @@
 {
-  "request_id": "REQ-ITR-20260902-627563",
-  "status": "SUCCESS",
-  "message": "ITR details fetched successfully",
-  "timestamp": "2026-09-02T10:58:19+05:30",
-  "data": {
-    "source_identifiers": {
-      "udyam_registration_number": "UDYAM-UP-28-0007733",
-      "gstin": "09AFQPN8123L1Z2",
-      "pan": "AFQPN8123L"
-    },
-    "entity_details": {
-      "constitution_type": "PROPRIETORSHIP",
-      "firm_name": null,
-      "proprietor_name": "NAVDEEP AUTO SPARES",
-      "trade_name": "NAVDEEP AUTO SPARES",
-      "llpin": null,
-      "date_of_formation": "2025-08-01",
-      "date_of_commencement": "2025-08-01",
-      "registered_address": {
-        "line1": "Plot 14, MIDC Industrial Estate, Phase II",
-        "city": "Kanpur",
-        "state": "UTTAR PRADESH",
-        "pincode": "208012",
-        "country": "India"
-      },
-      "email": "navdeep.autospares@finrisklens.demo",
-      "mobile": "9219007733"
-    },
-    "filing_details": {
-      "itr_form_type": "ITR-4 (SUGAM)",
-      "assessment_year": "2026-27",
-      "financial_year": "2025-26",
-      "filing_type": "ORIGINAL",
-      "filing_section": "139(4)",
-      "acknowledgement_number": "874427563874427",
-      "filing_date": "2026-09-16",
-      "filing_mode": "EVC",
-      "e_verification_status": "PENDING",
-      "e_verification_date": null,
-      "return_status": "UNDER_PROCESSING"
-    },
-    "income_details": {
-      "profits_and_gains_of_business_or_profession": 0,
-      "income_from_house_property": 0,
-      "capital_gains": 0,
-      "income_from_other_sources": 24960,
-      "gross_total_income": 24960
-    },
-    "deductions_chapter_via": {
-      "section_80g": 100,
-      "total_deductions": 100
-    },
-    "total_income": 24860,
-    "tax_computation": {
-      "tax_rate_applied_percent": null,
-      "tax_on_total_income": 2983,
-      "surcharge": 0,
-      "health_and_education_cess": 119,
-      "total_tax_liability": 3102,
-      "alternate_minimum_tax_us_115jc": {
-        "applicable": false,
-        "amt_amount": 0
-      },
-      "interest_us_234a": 65,
-      "interest_us_234b": 112,
-      "interest_us_234c": 9,
-      "total_tax_and_interest": 3288,
-      "taxes_paid": {
-        "advance_tax": 1120,
-        "tds": 325,
-        "tcs": 0,
-        "self_assessment_tax": 363,
-        "total_taxes_paid": 1808
-      },
-      "refund_or_demand": {
-        "type": "DEMAND",
-        "amount": 1480
-      }
-    },
-    "gst_turnover_reconciliation": {
-      "gst_annual_turnover_reported": 7706400,
-      "itr_declared_turnover": 6240000,
-      "variance_amount": 1466400,
-      "variance_percent": 23.5,
-      "reconciliation_status": "REVIEW_REQUIRED"
-    },
-    "audit_details": {
-      "is_tax_audit_applicable": false,
-      "audit_section": null,
-      "auditor_name": null,
-      "auditor_membership_number": null,
-      "udin": null,
-      "form_3ca_3cb_filing_date": null
-    },
-    "bank_details": [
-      {
-        "bank_name": "IDBI Bank",
-        "account_number_masked": "XXXXXXXX208012",
-        "ifsc_code": "IBKL0000472",
-        "account_type": "Current",
-        "is_refund_account": true
-      }
-    ],
-    "verification": {
-      "verified_by_name": "NAVDEEP AUTO SPARES",
-      "designation": "Proprietor",
-      "verified_by_pan": "AFQPN8123L",
-      "verification_date": "2026-09-16",
-      "place": "Kanpur"
-    },
-    "presumptive_income_details": {
-      "scheme_section": "44AD",
-      "nature_of_business_code": "09028 - Retail sale of automotive parts",
-      "gross_turnover_or_gross_receipts": 6240000,
-      "turnover_through_banking_channels": 3619200,
-      "turnover_in_cash": 2620800,
-      "presumptive_income_declared": 0,
-      "effective_rate_declared_percent": 0.0
-    },
-    "no_account_case_financials": {
-      "note": "Presumptive filers under 44AD are not required to maintain regular books",
-      "total_sundry_debtors": 686400,
-      "total_sundry_creditors": 873600,
-      "total_stock_in_trade": 561600,
-      "cash_in_hand_and_bank": 4100
-    }
+ "request_id": "REQ-ITR-20260902-627563",
+ "status": "SUCCESS",
+ "message": "ITR details fetched successfully",
+ "timestamp": "2026-09-02T10:58:19+05:30",
+ "data": {
+  "source_identifiers": {
+   "udyam_registration_number": "UDYAM-UP-28-0007733",
+   "gstin": "09AFQPN8123L1ZR",
+   "pan": "AFQPN8123L"
   },
-  "errors": []
+  "entity_details": {
+   "constitution_type": "PROPRIETORSHIP",
+   "firm_name": null,
+   "proprietor_name": "NAVDEEP AUTO SPARES",
+   "trade_name": "NAVDEEP AUTO SPARES",
+   "llpin": null,
+   "date_of_formation": "2025-08-01",
+   "date_of_commencement": "2025-08-01",
+   "registered_address": {
+    "line1": "Shop 8, UPSIDA Industrial Area, Panki Site V",
+    "city": "Kanpur",
+    "state": "UTTAR PRADESH",
+    "pincode": "208020",
+    "country": "India"
+   },
+   "email": "navdeep.autospares@finrisklens.demo",
+   "mobile": "9219007733"
+  },
+  "filing_details": {
+   "itr_form_type": "ITR-4 (SUGAM)",
+   "assessment_year": "2026-27",
+   "financial_year": "2025-26",
+   "filing_type": "ORIGINAL",
+   "filing_section": "139(4)",
+   "acknowledgement_number": "874427563874427",
+   "filing_date": "2026-08-19",
+   "filing_mode": "EVC",
+   "e_verification_status": "PENDING",
+   "e_verification_date": null,
+   "return_status": "UNDER_PROCESSING"
+  },
+  "income_details": {
+   "profits_and_gains_of_business_or_profession": 0,
+   "income_from_house_property": 0,
+   "capital_gains": 0,
+   "income_from_other_sources": 24960,
+   "gross_total_income": 24960
+  },
+  "deductions_chapter_via": {
+   "section_80g": 100,
+   "total_deductions": 100
+  },
+  "total_income": 24860,
+  "tax_computation": {
+   "tax_rate_applied_percent": null,
+   "tax_on_total_income": 2983,
+   "surcharge": 0,
+   "health_and_education_cess": 119,
+   "total_tax_liability": 3102,
+   "alternate_minimum_tax_us_115jc": {
+    "applicable": false,
+    "amt_amount": 0
+   },
+   "interest_us_234a": 65,
+   "interest_us_234b": 112,
+   "interest_us_234c": 9,
+   "total_tax_and_interest": 3288,
+   "taxes_paid": {
+    "advance_tax": 1120,
+    "tds": 325,
+    "tcs": 0,
+    "self_assessment_tax": 363,
+    "total_taxes_paid": 1808
+   },
+   "refund_or_demand": {
+    "type": "DEMAND",
+    "amount": 1480
+   }
+  },
+  "gst_turnover_reconciliation": {
+   "gst_annual_turnover_reported": 7706400,
+   "itr_declared_turnover": 6240000,
+   "variance_amount": 1466400,
+   "variance_percent": 23.5,
+   "reconciliation_status": "REVIEW_REQUIRED"
+  },
+  "audit_details": {
+   "is_tax_audit_applicable": false,
+   "audit_section": null,
+   "auditor_name": null,
+   "auditor_membership_number": null,
+   "udin": null,
+   "form_3ca_3cb_filing_date": null
+  },
+  "bank_details": [
+   {
+    "bank_name": "IDBI Bank",
+    "account_number_masked": "XXXXXXXX208012",
+    "ifsc_code": "IBKL0000472",
+    "account_type": "Current",
+    "is_refund_account": true
+   }
+  ],
+  "verification": {
+   "verified_by_name": "NAVDEEP AUTO SPARES",
+   "designation": "Proprietor",
+   "verified_by_pan": "AFQPN8123L",
+   "verification_date": "2026-08-19",
+   "place": "Kanpur"
+  },
+  "presumptive_income_details": {
+   "scheme_section": "44AD",
+   "nature_of_business_code": "09028 - Retail sale of automotive parts",
+   "gross_turnover_or_gross_receipts": 6240000,
+   "turnover_through_banking_channels": 3619200,
+   "turnover_in_cash": 2620800,
+   "presumptive_income_declared": 0,
+   "effective_rate_declared_percent": 0.0
+  },
+  "no_account_case_financials": {
+   "note": "Presumptive filers under 44AD are not required to maintain regular books",
+   "total_sundry_debtors": 686400,
+   "total_sundry_creditors": 873600,
+   "total_stock_in_trade": 561600,
+   "cash_in_hand_and_bank": 4100
+  }
+ },
+ "errors": []
 }

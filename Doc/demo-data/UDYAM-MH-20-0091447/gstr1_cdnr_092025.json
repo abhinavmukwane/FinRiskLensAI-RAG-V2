@@ -2,11 +2,11 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "27AABCS4417K1Z8",
+        "gstin": "27AABFS4417K1Z3",
         "ret_period": "092025",
         "cdnr": [
           {
-            "ctin": "27AABCS4417K1Z8",
+            "ctin": "27FSBCL5840A1ZQ",
             "nt": [
               {
                 "nt_num": "CN-092025",

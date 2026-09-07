@@ -2,7 +2,7 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "09AFQPN8123L1Z2",
+        "gstin": "09AFQPN8123L1ZR",
         "rtnprd": "052026",
         "itcsumm": {
           "itcavl": {
@@ -21,16 +21,16 @@
         "docdata": {
           "b2b": [
             {
-              "ctin": "09VEND00PAN0Z1",
+              "ctin": "09SDEFK4976P1ZS",
               "trdnm": "Vendor 1",
               "supfildt": "15-05-2026"
             },
             {
-              "ctin": "09VEND01PAN1Z1",
+              "ctin": "09DXDFR7625K1ZE",
               "trdnm": "Vendor 2"
             },
             {
-              "ctin": "09VEND02PAN2Z1",
+              "ctin": "09ITOFM0517O1ZI",
               "trdnm": "Vendor 3"
             }
           ]

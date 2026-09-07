@@ -2,11 +2,11 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "24AAGFR2210M1Z4",
+        "gstin": "24AAGFR2210M1ZE",
         "ret_period": "052026",
         "cdnr": [
           {
-            "ctin": "24AAGFR2210M1Z4",
+            "ctin": "24LTPCA8651L1ZR",
             "nt": [
               {
                 "nt_num": "CN-052026",

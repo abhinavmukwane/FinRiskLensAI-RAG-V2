@@ -1,150 +1,150 @@
 {
-  "request_id": "REQ-ITR-20260902-582256",
-  "status": "SUCCESS",
-  "message": "ITR details fetched successfully",
-  "timestamp": "2026-09-02T10:58:19+05:30",
-  "data": {
-    "source_identifiers": {
-      "udyam_registration_number": "UDYAM-MH-20-0091447",
-      "gstin": "27AABCS4417K1Z8",
-      "pan": "AABCS4417K"
-    },
-    "entity_details": {
-      "constitution_type": "PARTNERSHIP_FIRM",
-      "firm_name": "SHREEJI PRECISION COMPONENTS",
-      "proprietor_name": null,
-      "trade_name": "SHREEJI PRECISION COMPONENTS",
-      "llpin": null,
-      "date_of_formation": "2015-09-01",
-      "date_of_commencement": "2015-09-01",
-      "registered_address": {
-        "line1": "Plot 14, MIDC Industrial Estate, Phase II",
-        "city": "Pune",
-        "state": "MAHARASHTRA",
-        "pincode": "411018",
-        "country": "India"
-      },
-      "email": "shreeji.precision@finrisklens.demo",
-      "mobile": "9822014471"
-    },
-    "filing_details": {
-      "itr_form_type": "ITR-5",
-      "assessment_year": "2026-27",
-      "financial_year": "2025-26",
-      "filing_type": "ORIGINAL",
-      "filing_section": "139(1)",
-      "acknowledgement_number": "151682256151682",
-      "filing_date": "2026-10-05",
-      "filing_mode": "Digital Signature Certificate (DSC)",
-      "e_verification_status": "VERIFIED",
-      "e_verification_date": "2026-10-05",
-      "return_status": "PROCESSED"
-    },
-    "income_details": {
-      "profits_and_gains_of_business_or_profession": 6050304,
-      "income_from_house_property": 0,
-      "capital_gains": 0,
-      "income_from_other_sources": 187200,
-      "gross_total_income": 6237504
-    },
-    "deductions_chapter_via": {
-      "section_80g": 24950,
-      "total_deductions": 24950
-    },
-    "total_income": 6212554,
-    "tax_computation": {
-      "tax_rate_applied_percent": 30,
-      "tax_on_total_income": 1863766,
-      "surcharge": 0,
-      "health_and_education_cess": 74551,
-      "total_tax_liability": 1938317,
-      "alternate_minimum_tax_us_115jc": {
-        "applicable": false,
-        "amt_amount": 0
-      },
-      "interest_us_234a": 0,
-      "interest_us_234b": 15507,
-      "interest_us_234c": 5815,
-      "total_tax_and_interest": 1959639,
-      "taxes_paid": {
-        "advance_tax": 1214976,
-        "tds": 352735,
-        "tcs": 0,
-        "self_assessment_tax": 391928,
-        "total_taxes_paid": 1959639
-      },
-      "refund_or_demand": {
-        "type": "NIL",
-        "amount": 0
-      }
-    },
-    "gst_turnover_reconciliation": {
-      "gst_annual_turnover_reported": 47080800,
-      "itr_declared_turnover": 46800000,
-      "variance_amount": 280800,
-      "variance_percent": 0.6,
-      "reconciliation_status": "WITHIN_TOLERANCE"
-    },
-    "audit_details": {
-      "is_tax_audit_applicable": true,
-      "audit_section": "44AB",
-      "auditor_name": "S. R. Kulkarni & Associates",
-      "auditor_membership_number": "114682",
-      "udin": "26114682AAAAB7421",
-      "form_3ca_3cb_filing_date": "2026-09-05"
-    },
-    "bank_details": [
-      {
-        "bank_name": "IDBI Bank",
-        "account_number_masked": "XXXXXXXX411018",
-        "ifsc_code": "IBKL0000472",
-        "account_type": "Current",
-        "is_refund_account": true
-      }
-    ],
-    "verification": {
-      "verified_by_name": "Managing Partner",
-      "designation": "Managing Partner",
-      "verified_by_pan": "AABCS4417K",
-      "verification_date": "2026-10-05",
-      "place": "Pune"
-    },
-    "partners_details": [
-      {
-        "name": "Meera Deshpande",
-        "pan": "DCLPD1601A",
-        "profit_sharing_ratio_percent": 55,
-        "capital_balance_as_on_year_end": 2831400,
-        "is_working_partner": true
-      },
-      {
-        "name": "Sanjay Rao",
-        "pan": "RSXPR4394E",
-        "profit_sharing_ratio_percent": 45,
-        "capital_balance_as_on_year_end": 2316600,
-        "is_working_partner": true
-      }
-    ],
-    "partner_remuneration_and_interest": {
-      "total_remuneration_paid_to_partners": 1331066,
-      "total_interest_on_capital_paid": 617760,
-      "allowable_under_section_40b": 1948826,
-      "amount_disallowed": 0
-    },
-    "profit_and_loss_summary": {
-      "period": "2025-04-01 to 2026-03-31",
-      "revenue_from_operations": 46800000,
-      "other_income": 187200,
-      "total_expenses": 40936896,
-      "net_profit_before_tax": 6050304,
-      "net_profit_after_tax": 4726800
-    },
-    "balance_sheet_summary": {
-      "as_on_date": "2026-03-31",
-      "total_partners_capital": 5148000,
-      "total_liabilities": 14040000,
-      "total_assets": 20592000
-    }
+ "request_id": "REQ-ITR-20260902-582256",
+ "status": "SUCCESS",
+ "message": "ITR details fetched successfully",
+ "timestamp": "2026-09-02T10:58:19+05:30",
+ "data": {
+  "source_identifiers": {
+   "udyam_registration_number": "UDYAM-MH-20-0091447",
+   "gstin": "27AABFS4417K1Z3",
+   "pan": "AABFS4417K"
   },
-  "errors": []
+  "entity_details": {
+   "constitution_type": "PARTNERSHIP_FIRM",
+   "firm_name": "SHREEJI PRECISION COMPONENTS",
+   "proprietor_name": null,
+   "trade_name": "SHREEJI PRECISION COMPONENTS",
+   "llpin": null,
+   "date_of_formation": "2015-09-01",
+   "date_of_commencement": "2015-09-01",
+   "registered_address": {
+    "line1": "Plot 14, Chinchwad MIDC Industrial Area, Telco Road",
+    "city": "Pune",
+    "state": "MAHARASHTRA",
+    "pincode": "411019",
+    "country": "India"
+   },
+   "email": "shreeji.precision@finrisklens.demo",
+   "mobile": "9822014471"
+  },
+  "filing_details": {
+   "itr_form_type": "ITR-5",
+   "assessment_year": "2026-27",
+   "financial_year": "2025-26",
+   "filing_type": "ORIGINAL",
+   "filing_section": "139(1)",
+   "acknowledgement_number": "151682256151682",
+   "filing_date": "2026-08-28",
+   "filing_mode": "Digital Signature Certificate (DSC)",
+   "e_verification_status": "VERIFIED",
+   "e_verification_date": "2026-08-28",
+   "return_status": "PROCESSED"
+  },
+  "income_details": {
+   "profits_and_gains_of_business_or_profession": 6050304,
+   "income_from_house_property": 0,
+   "capital_gains": 0,
+   "income_from_other_sources": 187200,
+   "gross_total_income": 6237504
+  },
+  "deductions_chapter_via": {
+   "section_80g": 24950,
+   "total_deductions": 24950
+  },
+  "total_income": 6212554,
+  "tax_computation": {
+   "tax_rate_applied_percent": 30,
+   "tax_on_total_income": 1863766,
+   "surcharge": 0,
+   "health_and_education_cess": 74551,
+   "total_tax_liability": 1938317,
+   "alternate_minimum_tax_us_115jc": {
+    "applicable": false,
+    "amt_amount": 0
+   },
+   "interest_us_234a": 0,
+   "interest_us_234b": 15507,
+   "interest_us_234c": 5815,
+   "total_tax_and_interest": 1959639,
+   "taxes_paid": {
+    "advance_tax": 1214976,
+    "tds": 352735,
+    "tcs": 0,
+    "self_assessment_tax": 391928,
+    "total_taxes_paid": 1959639
+   },
+   "refund_or_demand": {
+    "type": "NIL",
+    "amount": 0
+   }
+  },
+  "gst_turnover_reconciliation": {
+   "gst_annual_turnover_reported": 47080800,
+   "itr_declared_turnover": 46800000,
+   "variance_amount": 280800,
+   "variance_percent": 0.6,
+   "reconciliation_status": "WITHIN_TOLERANCE"
+  },
+  "audit_details": {
+   "is_tax_audit_applicable": true,
+   "audit_section": "44AB",
+   "auditor_name": "S. R. Kulkarni & Associates",
+   "auditor_membership_number": "114682",
+   "udin": "26114682AAAAB7421",
+   "form_3ca_3cb_filing_date": "2026-09-05"
+  },
+  "bank_details": [
+   {
+    "bank_name": "IDBI Bank",
+    "account_number_masked": "XXXXXXXX411018",
+    "ifsc_code": "IBKL0000472",
+    "account_type": "Current",
+    "is_refund_account": true
+   }
+  ],
+  "verification": {
+   "verified_by_name": "Managing Partner",
+   "designation": "Managing Partner",
+   "verified_by_pan": "AABFS4417K",
+   "verification_date": "2026-08-28",
+   "place": "Pune"
+  },
+  "partners_details": [
+   {
+    "name": "Meera Deshpande",
+    "pan": "DCLPD1601A",
+    "profit_sharing_ratio_percent": 55,
+    "capital_balance_as_on_year_end": 2831400,
+    "is_working_partner": true
+   },
+   {
+    "name": "Sanjay Rao",
+    "pan": "RSXPR4394E",
+    "profit_sharing_ratio_percent": 45,
+    "capital_balance_as_on_year_end": 2316600,
+    "is_working_partner": true
+   }
+  ],
+  "partner_remuneration_and_interest": {
+   "total_remuneration_paid_to_partners": 1331066,
+   "total_interest_on_capital_paid": 617760,
+   "allowable_under_section_40b": 1948826,
+   "amount_disallowed": 0
+  },
+  "profit_and_loss_summary": {
+   "period": "2025-04-01 to 2026-03-31",
+   "revenue_from_operations": 46800000,
+   "other_income": 187200,
+   "total_expenses": 40936896,
+   "net_profit_before_tax": 6050304,
+   "net_profit_after_tax": 4726800
+  },
+  "balance_sheet_summary": {
+   "as_on_date": "2026-03-31",
+   "total_partners_capital": 5148000,
+   "total_liabilities": 14040000,
+   "total_assets": 20592000
+  }
+ },
+ "errors": []
 }

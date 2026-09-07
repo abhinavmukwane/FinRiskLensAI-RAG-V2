@@ -2,11 +2,11 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "27AABCS4417K1Z8",
+        "gstin": "27AABFS4417K1Z3",
         "ret_period": "042026",
         "b2b": [
           {
-            "ctin": "27VEND00PAN01Z5",
+            "ctin": "27PMZFD7969A1ZO",
             "inv": [
               {
                 "inum": "PINV-042026-000",
@@ -25,7 +25,7 @@
             ]
           },
           {
-            "ctin": "27VEND01PAN11Z5",
+            "ctin": "27DHWFO6427E1ZC",
             "inv": [
               {
                 "inum": "PINV-042026-001",
@@ -44,7 +44,7 @@
             ]
           },
           {
-            "ctin": "27VEND02PAN21Z5",
+            "ctin": "27LHDFC9108C1Z3",
             "inv": [
               {
                 "inum": "PINV-042026-002",
@@ -63,7 +63,7 @@
             ]
           },
           {
-            "ctin": "27VEND03PAN31Z5",
+            "ctin": "27TQQFQ0187M1Z3",
             "inv": [
               {
                 "inum": "PINV-042026-003",
@@ -82,7 +82,7 @@
             ]
           },
           {
-            "ctin": "27VEND04PAN41Z5",
+            "ctin": "27ZCEFQ7583A1ZD",
             "inv": [
               {
                 "inum": "PINV-042026-004",
@@ -101,7 +101,7 @@
             ]
           },
           {
-            "ctin": "27VEND05PAN51Z5",
+            "ctin": "27TUGFR0917I1ZI",
             "inv": [
               {
                 "inum": "PINV-042026-005",
@@ -120,7 +120,7 @@
             ]
           },
           {
-            "ctin": "27VEND06PAN61Z5",
+            "ctin": "27LWEFO0573M1ZF",
             "inv": [
               {
                 "inum": "PINV-042026-006",
@@ -139,7 +139,7 @@
             ]
           },
           {
-            "ctin": "27VEND07PAN71Z5",
+            "ctin": "27DUGFF0676F1Z9",
             "inv": [
               {
                 "inum": "PINV-042026-007",

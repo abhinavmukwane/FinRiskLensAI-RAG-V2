@@ -2,11 +2,11 @@
   "response": {
     "message": {
       "data": {
-        "gstin": "09AFQPN8123L1Z2",
+        "gstin": "09AFQPN8123L1ZR",
         "ret_period": "022026",
         "cdnr": [
           {
-            "ctin": "09AFQPN8123L1Z2",
+            "ctin": "09CDSCM8172V1ZQ",
             "nt": [
               {
                 "nt_num": "CN-022026",

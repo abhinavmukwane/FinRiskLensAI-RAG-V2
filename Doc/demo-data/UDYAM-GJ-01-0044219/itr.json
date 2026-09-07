@@ -1,150 +1,150 @@
 {
-  "request_id": "REQ-ITR-20260902-709934",
-  "status": "SUCCESS",
-  "message": "ITR details fetched successfully",
-  "timestamp": "2026-09-02T10:58:19+05:30",
-  "data": {
-    "source_identifiers": {
-      "udyam_registration_number": "UDYAM-GJ-01-0044219",
-      "gstin": "24AAGFR2210M1Z4",
-      "pan": "AAGFR2210M"
-    },
-    "entity_details": {
-      "constitution_type": "PARTNERSHIP_FIRM",
-      "firm_name": "RATNADEEP TEXTILE TRADERS",
-      "proprietor_name": null,
-      "trade_name": "RATNADEEP TEXTILE TRADERS",
-      "llpin": null,
-      "date_of_formation": "2021-01-01",
-      "date_of_commencement": "2021-01-01",
-      "registered_address": {
-        "line1": "Plot 14, MIDC Industrial Estate, Phase II",
-        "city": "Surat",
-        "state": "GUJARAT",
-        "pincode": "395006",
-        "country": "India"
-      },
-      "email": "ratnadeep.textiles@finrisklens.demo",
-      "mobile": "9825044219"
-    },
-    "filing_details": {
-      "itr_form_type": "ITR-5",
-      "assessment_year": "2026-27",
-      "financial_year": "2025-26",
-      "filing_type": "ORIGINAL",
-      "filing_section": "139(4)",
-      "acknowledgement_number": "387609934387609",
-      "filing_date": "2026-09-16",
-      "filing_mode": "Digital Signature Certificate (DSC)",
-      "e_verification_status": "VERIFIED",
-      "e_verification_date": "2026-09-16",
-      "return_status": "PROCESSED"
-    },
-    "income_details": {
-      "profits_and_gains_of_business_or_profession": 537600,
-      "income_from_house_property": 0,
-      "capital_gains": 0,
-      "income_from_other_sources": 60000,
-      "gross_total_income": 597600
-    },
-    "deductions_chapter_via": {
-      "section_80g": 2390,
-      "total_deductions": 2390
-    },
-    "total_income": 595210,
-    "tax_computation": {
-      "tax_rate_applied_percent": 30,
-      "tax_on_total_income": 178563,
-      "surcharge": 0,
-      "health_and_education_cess": 7143,
-      "total_tax_liability": 185706,
-      "alternate_minimum_tax_us_115jc": {
-        "applicable": false,
-        "amt_amount": 0
-      },
-      "interest_us_234a": 3900,
-      "interest_us_234b": 1486,
-      "interest_us_234c": 557,
-      "total_tax_and_interest": 191649,
-      "taxes_paid": {
-        "advance_tax": 118822,
-        "tds": 34496,
-        "tcs": 0,
-        "self_assessment_tax": 38331,
-        "total_taxes_paid": 191649
-      },
-      "refund_or_demand": {
-        "type": "NIL",
-        "amount": 0
-      }
-    },
-    "gst_turnover_reconciliation": {
-      "gst_annual_turnover_reported": 15960000,
-      "itr_declared_turnover": 15000000,
-      "variance_amount": 960000,
-      "variance_percent": 6.4,
-      "reconciliation_status": "REVIEW_REQUIRED"
-    },
-    "audit_details": {
-      "is_tax_audit_applicable": false,
-      "audit_section": null,
-      "auditor_name": null,
-      "auditor_membership_number": null,
-      "udin": null,
-      "form_3ca_3cb_filing_date": null
-    },
-    "bank_details": [
-      {
-        "bank_name": "IDBI Bank",
-        "account_number_masked": "XXXXXXXX395006",
-        "ifsc_code": "IBKL0000472",
-        "account_type": "Current",
-        "is_refund_account": true
-      }
-    ],
-    "verification": {
-      "verified_by_name": "Managing Partner",
-      "designation": "Managing Partner",
-      "verified_by_pan": "AAGFR2210M",
-      "verification_date": "2026-09-16",
-      "place": "Surat"
-    },
-    "partners_details": [
-      {
-        "name": "Meera Deshpande",
-        "pan": "DCLPD1601A",
-        "profit_sharing_ratio_percent": 55,
-        "capital_balance_as_on_year_end": 907500,
-        "is_working_partner": true
-      },
-      {
-        "name": "Sanjay Rao",
-        "pan": "RSXPR4394E",
-        "profit_sharing_ratio_percent": 45,
-        "capital_balance_as_on_year_end": 742500,
-        "is_working_partner": true
-      }
-    ],
-    "partner_remuneration_and_interest": {
-      "total_remuneration_paid_to_partners": 118272,
-      "total_interest_on_capital_paid": 198000,
-      "allowable_under_section_40b": 316272,
-      "amount_disallowed": 0
-    },
-    "profit_and_loss_summary": {
-      "period": "2025-04-01 to 2026-03-31",
-      "revenue_from_operations": 15000000,
-      "other_income": 60000,
-      "total_expenses": 14522400,
-      "net_profit_before_tax": 537600,
-      "net_profit_after_tax": 420000
-    },
-    "balance_sheet_summary": {
-      "as_on_date": "2026-03-31",
-      "total_partners_capital": 1650000,
-      "total_liabilities": 6750000,
-      "total_assets": 8250000
-    }
+ "request_id": "REQ-ITR-20260902-709934",
+ "status": "SUCCESS",
+ "message": "ITR details fetched successfully",
+ "timestamp": "2026-09-02T10:58:19+05:30",
+ "data": {
+  "source_identifiers": {
+   "udyam_registration_number": "UDYAM-GJ-01-0044219",
+   "gstin": "24AAGFR2210M1ZE",
+   "pan": "AAGFR2210M"
   },
-  "errors": []
+  "entity_details": {
+   "constitution_type": "PARTNERSHIP_FIRM",
+   "firm_name": "RATNADEEP TEXTILE TRADERS",
+   "proprietor_name": null,
+   "trade_name": "RATNADEEP TEXTILE TRADERS",
+   "llpin": null,
+   "date_of_formation": "2021-01-01",
+   "date_of_commencement": "2021-01-01",
+   "registered_address": {
+    "line1": "Plot 27, GIDC Industrial Estate, Pandesara Road",
+    "city": "Surat",
+    "state": "GUJARAT",
+    "pincode": "394221",
+    "country": "India"
+   },
+   "email": "ratnadeep.textiles@finrisklens.demo",
+   "mobile": "9825044219"
+  },
+  "filing_details": {
+   "itr_form_type": "ITR-5",
+   "assessment_year": "2026-27",
+   "financial_year": "2025-26",
+   "filing_type": "ORIGINAL",
+   "filing_section": "139(4)",
+   "acknowledgement_number": "387609934387609",
+   "filing_date": "2026-08-22",
+   "filing_mode": "Digital Signature Certificate (DSC)",
+   "e_verification_status": "VERIFIED",
+   "e_verification_date": "2026-08-22",
+   "return_status": "PROCESSED"
+  },
+  "income_details": {
+   "profits_and_gains_of_business_or_profession": 537600,
+   "income_from_house_property": 0,
+   "capital_gains": 0,
+   "income_from_other_sources": 60000,
+   "gross_total_income": 597600
+  },
+  "deductions_chapter_via": {
+   "section_80g": 2390,
+   "total_deductions": 2390
+  },
+  "total_income": 595210,
+  "tax_computation": {
+   "tax_rate_applied_percent": 30,
+   "tax_on_total_income": 178563,
+   "surcharge": 0,
+   "health_and_education_cess": 7143,
+   "total_tax_liability": 185706,
+   "alternate_minimum_tax_us_115jc": {
+    "applicable": false,
+    "amt_amount": 0
+   },
+   "interest_us_234a": 3900,
+   "interest_us_234b": 1486,
+   "interest_us_234c": 557,
+   "total_tax_and_interest": 191649,
+   "taxes_paid": {
+    "advance_tax": 118822,
+    "tds": 34496,
+    "tcs": 0,
+    "self_assessment_tax": 38331,
+    "total_taxes_paid": 191649
+   },
+   "refund_or_demand": {
+    "type": "NIL",
+    "amount": 0
+   }
+  },
+  "gst_turnover_reconciliation": {
+   "gst_annual_turnover_reported": 15960000,
+   "itr_declared_turnover": 15000000,
+   "variance_amount": 960000,
+   "variance_percent": 6.4,
+   "reconciliation_status": "REVIEW_REQUIRED"
+  },
+  "audit_details": {
+   "is_tax_audit_applicable": false,
+   "audit_section": null,
+   "auditor_name": null,
+   "auditor_membership_number": null,
+   "udin": null,
+   "form_3ca_3cb_filing_date": null
+  },
+  "bank_details": [
+   {
+    "bank_name": "IDBI Bank",
+    "account_number_masked": "XXXXXXXX395006",
+    "ifsc_code": "IBKL0000472",
+    "account_type": "Current",
+    "is_refund_account": true
+   }
+  ],
+  "verification": {
+   "verified_by_name": "Managing Partner",
+   "designation": "Managing Partner",
+   "verified_by_pan": "AAGFR2210M",
+   "verification_date": "2026-08-22",
+   "place": "Surat"
+  },
+  "partners_details": [
+   {
+    "name": "Meera Deshpande",
+    "pan": "DCLPD1601A",
+    "profit_sharing_ratio_percent": 55,
+    "capital_balance_as_on_year_end": 907500,
+    "is_working_partner": true
+   },
+   {
+    "name": "Sanjay Rao",
+    "pan": "RSXPR4394E",
+    "profit_sharing_ratio_percent": 45,
+    "capital_balance_as_on_year_end": 742500,
+    "is_working_partner": true
+   }
+  ],
+  "partner_remuneration_and_interest": {
+   "total_remuneration_paid_to_partners": 118272,
+   "total_interest_on_capital_paid": 198000,
+   "allowable_under_section_40b": 316272,
+   "amount_disallowed": 0
+  },
+  "profit_and_loss_summary": {
+   "period": "2025-04-01 to 2026-03-31",
+   "revenue_from_operations": 15000000,
+   "other_income": 60000,
+   "total_expenses": 14522400,
+   "net_profit_before_tax": 537600,
+   "net_profit_after_tax": 420000
+  },
+  "balance_sheet_summary": {
+   "as_on_date": "2026-03-31",
+   "total_partners_capital": 1650000,
+   "total_liabilities": 6750000,
+   "total_assets": 8250000
+  }
+ },
+ "errors": []
 }
