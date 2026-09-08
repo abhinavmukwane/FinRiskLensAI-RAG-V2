@@ -133,6 +133,12 @@ namespace FinRiskLensAI.Controllers
                 model.Itr = await _profile.GetItrAsync(model.Uan, ct);
                 model.Aa = await _profile.GetAaAnalysisAsync(model.Uan, ct);
                 model.Mca = await _profile.GetMcaAsync(model.Uan, ct);
+
+                // Customer 360 is one page of tabs, so the alternatives are tab links.
+                if (!model.Mca.IsApplicable)
+                    model.Mca.AvailableSources = CustomerProfileBuilder.SourceOptions(
+                        key => Url.Action("Customer", "BankAdmin", new { uan = model.Uan, tab = key }) ?? "#");
+
                 model.IpAudit = await _profile.GetIpAuditAsync(model.Uan, model.Customer.IPAddress, ct);
             }
             catch (OperationCanceledException)

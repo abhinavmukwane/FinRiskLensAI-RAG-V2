@@ -41,7 +41,19 @@ namespace FinRiskLensAI.Controllers
         public async Task<IActionResult> MCADetails(CancellationToken ct)
         {
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
-            return View(await _profile.GetMcaAsync(uan, ct));
+            var model = await _profile.GetMcaAsync(uan, ct);
+
+            // Where to send the customer when MCA does not apply to their constitution.
+            if (!model.IsApplicable)
+                model.AvailableSources = CustomerProfileBuilder.SourceOptions(key => key switch
+                {
+                    "udyam" => Url.Action("UdyamDetails", "Udyam") ?? "#",
+                    "gst" => Url.Action("GSTAnalysis", "Dashboard") ?? "#",
+                    "itr" => Url.Action("ItrDetails", "Itr") ?? "#",
+                    _ => Url.Action("AADetails", "AccountAggregator") ?? "#",
+                });
+
+            return View(model);
         }
 
         /// <summary>

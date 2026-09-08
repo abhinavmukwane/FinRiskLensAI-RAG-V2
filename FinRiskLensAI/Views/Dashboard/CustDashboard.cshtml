@@ -112,8 +112,24 @@
                         <div>
                             <h6 class="mb-1">MCA</h6>
                             <small class="text-muted">Corporate Affairs &amp; Director Verification</small>
+                            @if (ViewBag.McaApplicable == false)
+                            {
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Applies to companies and LLPs only —
+                                    @(ViewBag.McaOrganizationType ?? "this constitution") has no CIN or DIN.
+                                </div>
+                            }
                         </div>
-                        @if (ViewBag.McaFetched == true)
+                        @if (ViewBag.McaApplicable == false)
+                        {
+                            @* Companies and LLPs only — there is no CIN or DIN to fetch. *@
+                            <button class="btn btn-submit" disabled
+                                    title="@($"Registered as {ViewBag.McaOrganizationType ?? "a non-corporate entity"} — no CIN or DIN on the MCA register")">
+                                <i class="bi bi-slash-circle me-1"></i>Not Applicable
+                            </button>
+                        }
+                        else if (ViewBag.McaFetched == true)
                         {
                             <button class="btn btn-submit" disabled title="MCA details already fetched">
                                 <i class="bi bi-check-circle me-1"></i>Already Fetched
@@ -666,6 +682,11 @@
                 if (res.status) {
                     status.innerHTML = '<span class="text-success">' + res.message + ' Redirecting…</span>';
                     setTimeout(() => window.location.href = '/Mca/MCADetails', 1200);
+                } else if (res.notApplicable) {
+                    // Not a failure — this constitution is not on the MCA register.
+                    // Leave the button disabled; retrying cannot change the answer.
+                    status.innerHTML = '<span class="text-muted">'
+                        + '<i class="bi bi-info-circle me-1"></i>' + res.message + '</span>';
                 } else {
                     status.innerHTML = '<span class="text-danger">' + res.message + '</span>';
                     this.disabled = false;

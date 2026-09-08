@@ -13,6 +13,24 @@ namespace FinRiskLensAI.Core.Models.Mca
         public string? LoadError { get; set; }
         public string? Uan { get; set; }
 
+        /// <summary>
+        /// False when the enterprise's constitution is not on the MCA register at
+        /// all — a proprietorship or a partnership firm has no CIN and no DIN, so
+        /// "no data" is the correct answer rather than a lookup failure. Drives the
+        /// empty state in _McaDetailsBody and the N/A marker on the bank portal tab.
+        /// </summary>
+        public bool IsApplicable { get; set; } = true;
+
+        /// <summary>Udyam organisation type, shown in the not-applicable message.</summary>
+        public string? OrganizationType { get; set; }
+
+        /// <summary>
+        /// Registries that DO apply to this constitution, offered as links when MCA
+        /// does not. Filled by the caller because the URLs differ per surface
+        /// (customer pages vs the bank portal's tabbed Customer 360).
+        /// </summary>
+        public List<McaSourceOption> AvailableSources { get; set; } = new();
+
         // ── Corporate profile ─────────────────────────────────────────────
         public string CompanyName { get; set; } = "-";
         public string Cin { get; set; } = "-";
@@ -119,6 +137,15 @@ namespace FinRiskLensAI.Core.Models.Mca
             public string DotCss { get; set; } = "";
             public string Icon { get; set; } = "bi-check2";
         }
+    }
+
+    /// <summary>A data source the customer does have, offered when MCA does not apply.</summary>
+    public class McaSourceOption
+    {
+        public string Name { get; set; } = "";
+        public string Url { get; set; } = "#";
+        public string Icon { get; set; } = "bi-file-earmark";
+        public string Description { get; set; } = "";
     }
 
     /// <summary>Director profile for the DIN popup, served by /Mca/GetDinDetail.</summary>

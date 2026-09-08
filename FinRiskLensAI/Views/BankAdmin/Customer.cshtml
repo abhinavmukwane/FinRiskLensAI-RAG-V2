@@ -144,8 +144,15 @@ else if (c != null)
         <button type="button" class="@Tab("itr")" data-pane="itr" role="tab">
             <i class="bi bi-file-earmark-text"></i><span>ITR Details</span>
         </button>
-        <button type="button" class="@Tab("mca")" data-pane="mca" role="tab">
+        @* MCA only exists for companies and LLPs — flag it up front so the officer
+           does not read an empty tab as missing data. *@
+        <button type="button" class="@Tab("mca")" data-pane="mca" role="tab"
+                title="@(Model.Mca?.IsApplicable == false ? $"Not applicable — {Model.Mca.OrganizationType ?? "non-corporate entity"} has no CIN or DIN" : "Corporate Affairs (MCA)")">
             <i class="bi bi-building-check"></i><span>Corporate (MCA)</span>
+            @if (Model.Mca?.IsApplicable == false)
+            {
+                <span class="bp-tab-na">N/A</span>
+            }
         </button>
         <button type="button" class="@Tab("security")" data-pane="security" role="tab">
             <i class="bi bi-shield-lock"></i><span>Security Audit</span>

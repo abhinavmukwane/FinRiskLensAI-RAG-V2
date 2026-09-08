@@ -204,7 +204,11 @@ namespace FinRiskLensAI.ML.Features
                 features.ItrAssetTurnover = Math.Round(turnover.Value / totalAssets.Value, 2);
             }
 
-            var capital = Number(bs, "total_partners_capital");
+            // ITR-5 (firms/LLPs) reports partners' capital; ITR-6 (companies) reports
+            // shareholders' funds. Both are the same thing for net worth.
+            var capital = Number(bs, "total_partners_capital")
+                       ?? Number(bs, "total_shareholders_funds")
+                       ?? Number(bs, "total_share_capital_and_reserves");
             if (capital is > 0)
             {
                 features.ItrNetWorth = capital.Value;

@@ -198,12 +198,35 @@ namespace FinRiskLensAI.Common
         // ─────────────────────────────────────────────────────────────
         //  MCA — Corporate Intelligence Report
         // ─────────────────────────────────────────────────────────────
-        /// <summary>Udyam organisation types that actually appear on the MCA register.</summary>
-        private static bool IsMcaRegistered(string? organizationType)
+        /// <summary>
+        /// Udyam organisation types that actually appear on the MCA register.
+        /// Companies and LLPs are incorporated with the Registrar of Companies and
+        /// get a CIN/LLPIN plus DIN-holding directors; proprietorships, partnership
+        /// firms, HUFs, trusts and co-operative societies are not registered there.
+        /// </summary>
+        public static bool IsMcaRegistered(string? organizationType)
             => organizationType != null
                && (organizationType.Contains("Company", StringComparison.OrdinalIgnoreCase)
                    || organizationType.Contains("LLP", StringComparison.OrdinalIgnoreCase)
                    || organizationType.Contains("Limited Liability", StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>
+        /// The registries that always apply, whatever the constitution — offered on
+        /// the MCA screen when MCA itself does not. <paramref name="url"/> maps a
+        /// source key to a link, because the customer pages and the bank portal's
+        /// tabbed Customer 360 address the same sections differently.
+        /// </summary>
+        public static List<McaSourceOption> SourceOptions(Func<string, string> url) => new()
+        {
+            new() { Name = "Udyam Identity", Url = url("udyam"), Icon = "bi-grid-3x3-gap",
+                    Description = "Registration, activity, plants and NIC classification" },
+            new() { Name = "GST Analysis", Url = url("gst"), Icon = "bi-receipt",
+                    Description = "Filing discipline, turnover trend and ITC behaviour" },
+            new() { Name = "ITR Details", Url = url("itr"), Icon = "bi-file-earmark-text",
+                    Description = "Declared income, margins and tax compliance" },
+            new() { Name = "AA Details", Url = url("aa"), Icon = "bi-diagram-3",
+                    Description = "Bank statement cashflow, balances and returns" },
+        };
 
         public async Task<McaDetailsViewModel> GetMcaAsync(string? uan, CancellationToken ct = default)
         {
@@ -228,15 +251,17 @@ namespace FinRiskLensAI.Common
                     // firm or proprietorship has no CIN and no DIN, so "not found" here
                     // is the correct answer, not a failure.
                     var org = (await GetUdyamAsync(uan))?.OrganizationType;
-                    model.LoadError = IsMcaRegistered(org)
+                    model.OrganizationType = string.IsNullOrWhiteSpace(org) || org == "-" ? null : org;
+                    model.IsApplicable = IsMcaRegistered(org);
+                    model.LoadError = model.IsApplicable
                         ? $"No stored MCA response was found for {uan}."
-                        : $"MCA records apply only to companies and LLPs. This enterprise is registered as "
-                          + $"{(string.IsNullOrWhiteSpace(org) || org == "-" ? "a non-corporate entity" : org)}, "
-                          + "so it holds no CIN or DIN.";
+                        : null;   // the view renders a proper not-applicable state instead
                     return model;
                 }
 
-                return McaController.BuildAnalysis(mca, uan);
+                var analysis = McaController.BuildAnalysis(mca, uan);
+                analysis.OrganizationType = (await GetUdyamAsync(uan))?.OrganizationType;
+                return analysis;
             }
             catch (Exception ex)
             {

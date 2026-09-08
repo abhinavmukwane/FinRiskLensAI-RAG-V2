@@ -15,6 +15,75 @@
     /Mca/GetDinDetail. Page behavior lives in ~/FRLScripts/Mca/McaDetails.js.
 *@
 
+@if (!Model.HasData && !Model.IsApplicable)
+{
+    @* Not a lookup failure — this constitution is not on the MCA register at all. *@
+    var org = string.IsNullOrWhiteSpace(Model.OrganizationType) ? "a non-corporate entity" : Model.OrganizationType;
+
+    @* Scoped to this state and inlined so it travels with the partial — the customer
+       page and the bank portal load different stylesheets. *@
+    <style>
+        .mca-na { background: var(--card-bg, #fff); border: 1px solid var(--card-border, #e6e9ef) !important; }
+        .mca-na-icon {
+            flex: 0 0 auto; width: 46px; height: 46px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
+            background: var(--brand-tint-bg-1, rgba(0, 91, 76, .08));
+            color: var(--color-primary, var(--theme-maroon, #005b4c));
+        }
+        .mca-na-option {
+            border: 1px solid var(--card-border, #e6e9ef); border-radius: 14px; padding: 16px;
+            color: inherit; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+        .mca-na-option:hover {
+            border-color: var(--color-primary, #005b4c);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .06); transform: translateY(-2px);
+        }
+        .mca-na-option i { font-size: 1.15rem; color: var(--color-primary, #005b4c); }
+        .mca-na-option-name { font-weight: 600; margin-top: 8px; }
+        .mca-na-option-desc { font-size: .82rem; color: var(--color-on-surface-variant, #6b7280); margin-top: 2px; }
+    </style>
+
+    <div class="container-fluid py-4 udyam-dashboard">
+        <div class="mca-na card border-0 rounded-4 shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="mca-na-icon"><i class="bi bi-building-slash"></i></div>
+                    <div>
+                        <h5 class="mb-1 fw-bold">MCA registry does not apply to this enterprise</h5>
+                        <p class="text-muted mb-0">
+                            Registered as <strong>@org</strong>. Only companies and LLPs are
+                            incorporated with the Registrar of Companies, so this enterprise holds
+                            <strong>no CIN and no DIN</strong> — there is nothing to look up, and
+                            nothing missing.
+                        </p>
+                    </div>
+                </div>
+
+                @if (Model.AvailableSources.Any())
+                {
+                    <hr class="my-4" />
+                    <div class="text-uppercase small fw-semibold text-muted mb-3">
+                        Verified through these registries instead
+                    </div>
+                    <div class="row g-3">
+                        @foreach (var src in Model.AvailableSources)
+                        {
+                            <div class="col-12 col-md-6 col-xl-3">
+                                <a class="mca-na-option d-block h-100 text-decoration-none" href="@src.Url">
+                                    <i class="bi @src.Icon"></i>
+                                    <div class="mca-na-option-name">@src.Name</div>
+                                    <div class="mca-na-option-desc">@src.Description</div>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    return;
+}
+
 @if (!Model.HasData)
 {
     <div class="container-fluid py-4 udyam-dashboard">

@@ -98,6 +98,14 @@ namespace FinRiskLensAI.Controllers
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
             ViewBag.ItrFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Itr, ct);
             ViewBag.McaFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Mca, ct);
+
+            // MCA only exists for companies and LLPs. Show the card either way — the
+            // customer should see the platform covers it — but offer the fetch only
+            // when there is something to fetch.
+            var org = (await _profile.GetUdyamAsync(uan))?.OrganizationType;
+            ViewBag.McaOrganizationType = org == "-" ? null : org;
+            ViewBag.McaApplicable = CustomerProfileBuilder.IsMcaRegistered(org);
+
             return View();
         }
 
@@ -216,6 +224,25 @@ namespace FinRiskLensAI.Controllers
             var uan = user?.UdyamNumber;
             if (string.IsNullOrWhiteSpace(uan))
                 return Json(new { status = false, message = "No Udyam number in session." });
+
+            // Guard, not just a disabled button: seeding an MCA record for a firm or
+            // proprietorship would invent a CIN and DINs that cannot exist, and that
+            // fabricated data then flows into the bank portal and the credit report.
+            var organizationType = (await _profile.GetUdyamAsync(uan))?.OrganizationType;
+            if (!CustomerProfileBuilder.IsMcaRegistered(organizationType))
+            {
+                var label = string.IsNullOrWhiteSpace(organizationType) || organizationType == "-"
+                    ? "a non-corporate entity" : organizationType;
+                _logger.LogInformation("Seed MCA {Uan}: refused — organisation type {Org} is not on the MCA register.",
+                    uan, organizationType ?? "(unknown)");
+                return Json(new
+                {
+                    status = false,
+                    notApplicable = true,
+                    message = $"MCA records apply only to companies and LLPs. This enterprise is registered as "
+                              + $"{label}, so it holds no CIN or DIN."
+                });
+            }
 
             try
             {
