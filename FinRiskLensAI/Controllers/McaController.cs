@@ -1,4 +1,4 @@
-﻿using FinRiskLensAI.Common;
+using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
 using FinRiskLensAI.Core.Models.Mca;
@@ -63,20 +63,23 @@ namespace FinRiskLensAI.Controllers
         /// MCA response so the popup always renders.
         /// </summary>
         /// <param name="uan">
-        /// Bank-portal callers only. A customer session always wins and can only ever
-        /// read its own UAN, so this parameter cannot be used to read another MSME.
+        /// Honoured only for a bank-portal session. Without one it is ignored and the
+        /// caller is pinned to its own UAN, so a customer cannot read another MSME.
         /// </param>
         [HttpGet]
         public async Task<IActionResult> GetDinDetail(string din, CancellationToken ct, string? uan = null)
         {
             // The drawer is shared by the customer page and the bank portal's
-            // Customer 360, which authenticate against different session slots.
+            // Customer 360. Both sessions live in the SAME cookie under different
+            // keys, so one browser can hold both at once — preferring the customer
+            // session would make the bank portal silently read whichever MSME the
+            // operator last logged in as. A supplied UAN therefore wins, but only
+            // for a bank session; without one it is ignored and the caller is
+            // pinned to its own UAN.
             var customerUan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
             var isBankUser = HttpContext.Session.GetCurrentBankUser() != null;
 
-            uan = !string.IsNullOrWhiteSpace(customerUan) ? customerUan
-                : isBankUser ? uan?.Trim()
-                : null;
+            uan = isBankUser && !string.IsNullOrWhiteSpace(uan) ? uan.Trim() : customerUan;
 
             var vm = new DinDetailViewModel { Din = din?.Trim() ?? "-" };
 
