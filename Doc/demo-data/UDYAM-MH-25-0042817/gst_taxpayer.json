@@ -1,0 +1,16 @@
+{
+ "response": {
+  "message": {
+   "data": {
+    "gstin": "27AAJCS7412K1Z0",
+    "lgnm": "SANKALP AUTOTECH PRIVATE LIMITED",
+    "tradeNam": "SANKALP AUTOTECH PRIVATE LIMITED",
+    "sts": "Active",
+    "ctb": "Private Limited Company",
+    "rgdt": "04-08-2014",
+    "stj": "Maharashtra",
+    "ctj": "Nashik"
+   }
+  }
+ }
+}

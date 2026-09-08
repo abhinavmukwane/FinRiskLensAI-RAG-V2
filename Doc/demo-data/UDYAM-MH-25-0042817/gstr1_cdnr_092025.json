@@ -1,0 +1,32 @@
+{
+ "response": {
+  "message": {
+   "data": {
+    "gstin": "27AAJCS7412K1Z0",
+    "ret_period": "092025",
+    "cdnr": [
+     {
+      "ctin": "27FSBCL5840A1ZQ",
+      "nt": [
+       {
+        "nt_num": "CN-092025",
+        "nt_dt": "15-09-2025",
+        "ntty": "C",
+        "val": 32535.67,
+        "itms": [
+         {
+          "num": 1,
+          "itm_det": {
+           "txval": 27572.6,
+           "rt": 18.0
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

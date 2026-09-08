@@ -1,0 +1,27 @@
+{
+ "rrn": "03127845_1788515836601",
+ "din": "03127845",
+ "status_code": "200",
+ "message": {
+  "client_id": "corporate_din_03127845",
+  "din_number": "03127845",
+  "father_name": "Prabhakar Vishnu Kulkarni",
+  "full_name": "Anil Prabhakar Kulkarni",
+  "dob": "1971-05-14",
+  "nationality": "IN",
+  "present_address": "14, Gangapur Heights, College Road, Nashik, Maharashtra 422007",
+  "permanent_address": "14, Gangapur Heights, College Road, Nashik, Maharashtra 422007",
+  "email": "anil.kulkarni@sankalpautotech.co.in",
+  "pan_number": "AGKPK2284D",
+  "companies_associated": [
+   {
+    "cin": "U29304MH2014PTC257318",
+    "company_name": "SANKALP AUTOTECH PRIVATE LIMITED",
+    "designation": "Director",
+    "appointment_date": "2014-06-18"
+   }
+  ],
+  "status": "success"
+ },
+ "tran_ref_no": "03127845"
+}

@@ -32,7 +32,8 @@ Bank portal: `/Auth/BankLogin`, user `bankadmin` (password unchanged).
 | A | SHREEJI PRECISION COMPONENTS | `UDYAM-MH-20-0091447` | **813** | Excellent | `shreeji.precision@finrisklens.demo` |
 | B | RATNADEEP TEXTILE TRADERS | `UDYAM-GJ-01-0044219` | **627** | Fair | `ratnadeep.textiles@finrisklens.demo` |
 | C | NAVDEEP AUTO SPARES | `UDYAM-UP-28-0007733` | **376** | AtRisk | `navdeep.autospares@finrisklens.demo` |
-| D | M/S UCN FIBRENET PRIVATE LIMITED | `UDYAM-MH-20-0067394` | **715** | Good | `mkhangar01@gmail.com` |
+| D | SANKALP AUTOTECH PRIVATE LIMITED | `UDYAM-MH-25-0042817` | **806** | Excellent | `sankalp.autotech@finrisklens.demo` |
+| E | M/S UCN FIBRENET PRIVATE LIMITED | `UDYAM-MH-20-0067394` | **715** | Good | `mkhangar01@gmail.com` |
 
 ---
 
@@ -121,9 +122,57 @@ a data-integrity signal for officer review. Worth calling out to the IDBI team.
 
 ---
 
-## D — M/S UCN FIBRENET PRIVATE LIMITED · 715 · Good
+## D — SANKALP AUTOTECH PRIVATE LIMITED · 806 · Excellent
 
-**The corporate case — this is the one to open for MCA / DIN.**
+**The complete file — every source populated, including MCA and DIN.
+This is the one to open when you want to show everything at once.**
+
+Private Limited Company, Nashik. Auto components (NIC 29), incorporated
+**2014-06-18** — 12 years old, 2 plants at MIDC Satpur.
+
+| | |
+|---|---|
+| UAN | `UDYAM-MH-25-0042817` |
+| CIN | `U29304MH2014PTC257318` |
+| GSTIN / PAN | `27AAJCS7412K1Z0` / `AAJCS7412K` |
+| Login | `sankalp.autotech@finrisklens.demo` |
+| Blob | **93 files** — 12 months x 7 GST, udyam, gst_taxpayer, aa, itr, mca, 2 x DIN, result |
+
+| Dimension | Score |
+|---|---|
+| Revenue Vitality | 186.2 / 250 |
+| Cash Flow Health | 159.1 / 200 |
+| Transaction Trustworthiness | 142.9 / 150 |
+| Compliance Quotient | 147.4 / 150 |
+| Business Stability | 135.4 / 150 |
+| Debt Serviceability | 78.4 / 100 |
+
+- Annual turnover **Rs 8.51 Cr**, monthly surplus **Rs 13.4 L**
+- Eligibility **Rs 6.62 Cr** — Rs 1.70 Cr working capital + Rs 4.92 Cr term
+- Products: Standard Working Capital Loan, Business Term Loan
+- **ITR-6** (company return), 139(1) on time, e-verified, processed, 44AB audit
+  complete, tax fully paid, GST-ITR variance 0.6%
+- **Corporate (MCA): score 90/100, LOW risk** — Active, RoC-Mumbai, authorised
+  Rs 2.5 Cr > paid-up Rs 1.8 Cr, last AGM 2025-09-26, **3 charges (2 OPEN
+  Rs 1.55 Cr + 1 SATISFIED)**, 2 DIN-verified directors with individual PANs
+  and full drill-down profiles
+- No anomaly flag; cashflow trend +0.21
+
+**Talking point:** this is the "all six dimensions, all seven sources" file.
+Open the MCA tab for the collateral view, then switch to Shreeji (a partnership)
+where the same tab correctly reads *"no CIN, no DIN"*. Same platform, different
+constitution, different registries.
+
+**Provenance:** built 2026-09-07 by cloning Shreeji's financial data, scaling
+every monetary value by 1.18, and giving it a full corporate identity + ITR-6 +
+clean MCA/DIN. The score was **not** hand-set — the files were uploaded and
+`POST /api/msme-data/{uan}/analyze?force=true` produced 806 from the real engine.
+
+---
+
+## E — M/S UCN FIBRENET PRIVATE LIMITED · 715 · Good
+
+**A second corporate file — real GST data, a mid-band score.**
 
 Private Limited Company, Nagpur. Broadband/telecom (NIC 61), incorporated
 2016-12-15. Scored on **real 6-month GST data**, not generated returns.
@@ -156,7 +205,7 @@ extractor, so it never fed the score.
 
 > The other five company accounts in the portal (TRUST FINTECH, PREMIENT ENGITECH,
 > Nair Textiles, Reddy Industries, Iyer Enterprises) still carry the same
-> generator defects. Demo MCA on this one.
+> generator defects. Demo MCA on **D** or **E** only.
 
 ---
 
@@ -250,9 +299,10 @@ three `UDYAM-…` folders).
    the anomaly banner, ₹0 term capacity.
 4. **Open Ratnadeep (627).** The judgement case — point at the two missing GST
    periods and the 6.4% GST↔ITR variance, then at CGTMSE being the only product.
-5. **Open UCN Fibrenet (715) → Corporate (MCA).** The collateral view — 4 open
-   charges worth ₹11.52 Cr, one satisfied, two directors with DIN drill-down.
-   Then flip back to Shreeji's MCA tab: *"partnership firm — no CIN, no DIN."*
-   The platform pulls the registries that apply to the constitution.
+5. **Open Sankalp Autotech (806) → Corporate (MCA).** The complete file — MCA
+   score 90/100, 2 open charges worth ₹1.55 Cr plus one satisfied, two
+   DIN-verified directors with full drill-down. Then flip back to Shreeji's MCA
+   tab: *"partnership firm — no CIN, no DIN."* Same platform, different
+   constitution, different registries.
 6. **Close on explainability.** Every number traces to a source file; the score
    breakdown names the reason, not just the value.

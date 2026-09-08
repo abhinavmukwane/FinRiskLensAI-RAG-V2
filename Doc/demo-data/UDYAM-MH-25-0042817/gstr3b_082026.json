@@ -1,0 +1,49 @@
+{
+ "response": {
+  "message": {
+   "data": {
+    "gstin": "27AAJCS7412K1Z0",
+    "ret_period": "082026",
+    "sup_details": {
+     "osup_det": {
+      "txval": 10262946.2,
+      "iamt": 738932.13,
+      "camt": 554199.09,
+      "samt": 554199.09
+     },
+     "osup_zero": {
+      "txval": 0.0,
+      "iamt": 0.0
+     },
+     "osup_nil_exmp": {
+      "txval": 0.0
+     }
+    },
+    "itc_elg": {
+     "itc_net": {
+      "iamt": 458137.91,
+      "camt": 343603.43,
+      "samt": 343603.43,
+      "csamt": 0.0
+     }
+    },
+    "tx_pmt": {
+     "pdcash": [
+      {
+       "iamt": 280794.2,
+       "camt": 210595.65,
+       "samt": 210595.65,
+       "csamt": 0.0
+      }
+     ],
+     "pditc": {
+      "iamt": 458137.91,
+      "camt": 343603.43,
+      "samt": 343603.43,
+      "csamt": 0.0
+     }
+    }
+   }
+  }
+ }
+}

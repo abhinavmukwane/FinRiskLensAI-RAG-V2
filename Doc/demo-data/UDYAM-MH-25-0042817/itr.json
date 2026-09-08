@@ -1,0 +1,152 @@
+{
+ "request_id": "REQ-ITR-20260902-582256",
+ "status": "SUCCESS",
+ "message": "ITR details fetched successfully",
+ "timestamp": "2026-09-02T10:58:19+05:30",
+ "data": {
+  "source_identifiers": {
+   "udyam_registration_number": "UDYAM-MH-25-0042817",
+   "gstin": "27AAJCS7412K1Z0",
+   "pan": "AAJCS7412K",
+   "cin": "U29304MH2014PTC257318"
+  },
+  "entity_details": {
+   "constitution_type": "PRIVATE_LIMITED_COMPANY",
+   "firm_name": null,
+   "proprietor_name": null,
+   "trade_name": "SANKALP AUTOTECH PRIVATE LIMITED",
+   "llpin": null,
+   "date_of_formation": "2014-06-18",
+   "date_of_commencement": "2014-06-18",
+   "registered_address": {
+    "line1": "Plot 42, MIDC Satpur Industrial Area, Trimbak Road",
+    "city": "Nashik",
+    "state": "MAHARASHTRA",
+    "pincode": "422007",
+    "country": "India"
+   },
+   "email": "sankalp.autotech@finrisklens.demo",
+   "mobile": "9823714402",
+   "company_name": "SANKALP AUTOTECH PRIVATE LIMITED",
+   "cin": "U29304MH2014PTC257318"
+  },
+  "filing_details": {
+   "itr_form_type": "ITR-6",
+   "assessment_year": "2026-27",
+   "financial_year": "2025-26",
+   "filing_type": "ORIGINAL",
+   "filing_section": "139(1)",
+   "acknowledgement_number": "429174825042817",
+   "filing_date": "2026-08-26",
+   "filing_mode": "Digital Signature Certificate (DSC)",
+   "e_verification_status": "VERIFIED",
+   "e_verification_date": "2026-08-26",
+   "return_status": "PROCESSED"
+  },
+  "income_details": {
+   "profits_and_gains_of_business_or_profession": 7139359,
+   "income_from_house_property": 0,
+   "capital_gains": 0,
+   "income_from_other_sources": 220896,
+   "gross_total_income": 7360255
+  },
+  "deductions_chapter_via": {
+   "section_80g": 29441,
+   "total_deductions": 29441
+  },
+  "total_income": 7330814,
+  "tax_computation": {
+   "tax_rate_applied_percent": 25,
+   "tax_on_total_income": 1832704,
+   "surcharge": 0,
+   "health_and_education_cess": 73308,
+   "total_tax_liability": 1906012,
+   "alternate_minimum_tax_us_115jc": {
+    "applicable": false,
+    "amt_amount": 0
+   },
+   "interest_us_234a": 0,
+   "interest_us_234b": 18298,
+   "interest_us_234c": 6862,
+   "total_tax_and_interest": 1931172,
+   "taxes_paid": {
+    "advance_tax": 1197327,
+    "tds": 416227,
+    "tcs": 0,
+    "self_assessment_tax": 317618,
+    "total_taxes_paid": 1931172
+   },
+   "refund_or_demand": {
+    "type": "NIL",
+    "amount": 0
+   }
+  },
+  "gst_turnover_reconciliation": {
+   "gst_annual_turnover_reported": 55555344,
+   "itr_declared_turnover": 55224000,
+   "variance_amount": 331344,
+   "variance_percent": 0.6,
+   "reconciliation_status": "WITHIN_TOLERANCE"
+  },
+  "audit_details": {
+   "is_tax_audit_applicable": true,
+   "audit_section": "44AB",
+   "auditor_name": "Deshpande & Joshi, Chartered Accountants",
+   "auditor_membership_number": "118427",
+   "udin": "26118427AAAAF3184",
+   "form_3ca_3cb_filing_date": "2026-08-14"
+  },
+  "bank_details": [
+   {
+    "bank_name": "IDBI Bank",
+    "account_number_masked": "XXXXXXXX422007",
+    "ifsc_code": "IBKL0000308",
+    "account_type": "Current",
+    "is_refund_account": true
+   }
+  ],
+  "verification": {
+   "verified_by_name": "Anil Prabhakar Kulkarni",
+   "designation": "Managing Director",
+   "verified_by_pan": "AGKPK2284D",
+   "verification_date": "2026-08-26",
+   "place": "Nashik"
+  },
+  "profit_and_loss_summary": {
+   "period": "2025-04-01 to 2026-03-31",
+   "revenue_from_operations": 55224000,
+   "other_income": 220896,
+   "total_expenses": 48305537,
+   "net_profit_before_tax": 7139359,
+   "net_profit_after_tax": 5577624
+  },
+  "balance_sheet_summary": {
+   "as_on_date": "2026-03-31",
+   "total_liabilities": 16567200,
+   "total_assets": 24298560,
+   "total_shareholders_funds": 6074640
+  },
+  "directors_details": [
+   {
+    "name": "Anil Prabhakar Kulkarni",
+    "din": "03127845",
+    "pan": "AGKPK2284D",
+    "designation": "Managing Director",
+    "shareholding_percent": 60
+   },
+   {
+    "name": "Shubhangi Anil Kulkarni",
+    "din": "06582319",
+    "pan": "AMTPK6613R",
+    "designation": "Whole-time Director",
+    "shareholding_percent": 40
+   }
+  ],
+  "auditor_details": {
+   "firm_name": "Deshpande & Joshi, Chartered Accountants",
+   "frn": "104621W",
+   "membership_number": "118427"
+  }
+ },
+ "errors": []
+}

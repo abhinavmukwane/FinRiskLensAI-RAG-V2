@@ -1,0 +1,27 @@
+{
+ "rrn": "06582319_1788515836601",
+ "din": "06582319",
+ "status_code": "200",
+ "message": {
+  "client_id": "corporate_din_06582319",
+  "din_number": "06582319",
+  "father_name": "Ramesh Dattatray Pawar",
+  "full_name": "Shubhangi Anil Kulkarni",
+  "dob": "1976-09-02",
+  "nationality": "IN",
+  "present_address": "14, Gangapur Heights, College Road, Nashik, Maharashtra 422007",
+  "permanent_address": "14, Gangapur Heights, College Road, Nashik, Maharashtra 422007",
+  "email": "shubhangi.kulkarni@sankalpautotech.co.in",
+  "pan_number": "AMTPK6613R",
+  "companies_associated": [
+   {
+    "cin": "U29304MH2014PTC257318",
+    "company_name": "SANKALP AUTOTECH PRIVATE LIMITED",
+    "designation": "Director",
+    "appointment_date": "2015-04-01"
+   }
+  ],
+  "status": "success"
+ },
+ "tran_ref_no": "06582319"
+}
