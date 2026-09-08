@@ -1,4 +1,4 @@
-﻿@model FinRiskLensAI.Core.Models.Scoring.FinancialHealthCardViewModel
+@model FinRiskLensAI.Core.Models.Scoring.FinancialHealthCardViewModel
 @*
     Shared Financial Health Card body — the score gauge, six dimensions,
     bank lending assessment, recommended credit products and the charts.
@@ -90,9 +90,16 @@
                     <div class="fhc-sub mt-3">
                         @(Model.EnterpriseName ?? Model.Uan) &middot; computed @r.ComputedAt.ToString("dd MMM yyyy HH:mm") UTC
                     </div>
-                    <button id="reAnalyzeBtn" class="btn text-white mt-3" style="background:var(--brand-btn-bg);border-radius:10px;padding:8px 22px;font-weight:600;">
-                        <i class="bi bi-arrow-repeat me-1"></i> Re-analyze Score
-                    </button>
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+                        <button id="reAnalyzeBtn" class="btn text-white" style="background:var(--brand-btn-bg);border-radius:10px;padding:8px 22px;font-weight:600;">
+                            <i class="bi bi-arrow-repeat me-1"></i> Re-analyze Score
+                        </button>
+                        @* Opens the append-only series from t_MsmeScoreHistory. *@
+                        <button id="scoreHistoryBtn" class="btn" data-uan="@Model.Uan"
+                                style="border:1.5px solid var(--brand-btn-bg);color:var(--brand-btn-bg);border-radius:10px;padding:8px 22px;font-weight:600;">
+                            <i class="bi bi-graph-up-arrow me-1"></i> Score History
+                        </button>
+                    </div>
                     <div id="reAnalyzeStatus" class="fhc-sub mt-2"></div>
                 </div>
             </div>
@@ -724,6 +731,76 @@
                 if (charts.vendor) { charts.vendor.data.datasets[0].backgroundColor = accent; charts.vendor.update(); }
             });
         </script>
+
+        @* ============ SCORE HISTORY MODAL — series from t_MsmeScoreHistory ============
+           Uses the .detail-modal pattern from Dashboard.css, not a Bootstrap modal:
+           this partial also renders under _BankAdminLayout, which loads Bootstrap
+           CSS but no Bootstrap JS, so `new bootstrap.Modal(...)` throws there. Same
+           reason _McaDetailsBody rolls its own drawer. *@
+        <div class="detail-modal-overlay" id="shOverlay"></div>
+        <div class="detail-modal" id="scoreHistoryModal" role="dialog" aria-modal="true"
+             aria-labelledby="scoreHistoryLabel" style="width:780px;">
+            <div>
+                <div>
+                    <div class="detail-modal-header">
+                        <h5 id="scoreHistoryLabel">
+                            <i class="bi bi-graph-up-arrow me-2"></i>Score History
+                        </h5>
+                        <button type="button" class="detail-modal-close" id="shClose" aria-label="Close">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <div class="detail-modal-body">
+                        <div id="shLoading" class="text-center py-5 text-muted">
+                            <div class="spinner-border spinner-border-sm me-2"></div> Loading score series&hellip;
+                        </div>
+
+                        <div id="shEmpty" class="text-center py-5" style="display:none;">
+                            <i class="bi bi-clock-history fs-1 text-muted"></i>
+                            <p class="mt-3 mb-1 fw-semibold">Only one score on record</p>
+                            <p class="text-muted small mb-0">
+                                The trend line appears once this account has been scored more than once.
+                                Every re-analysis is recorded, so the series builds itself over time.
+                            </p>
+                        </div>
+
+                        <div id="shContent" style="display:none;">
+                            <div class="row g-3 mb-3">
+                                <div class="col-4">
+                                    <div class="fhc-sub">Latest</div>
+                                    <div class="fw-bold fs-4" id="shLatest">&mdash;</div>
+                                    <div id="shBand" class="small"></div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fhc-sub">Change since first</div>
+                                    <div class="fw-bold fs-4" id="shDelta">&mdash;</div>
+                                    <div class="small text-muted" id="shSpan"></div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fhc-sub">Runs recorded</div>
+                                    <div class="fw-bold fs-4" id="shCount">&mdash;</div>
+                                    <div class="small text-muted">append-only</div>
+                                </div>
+                            </div>
+
+                            @* Fixed-height, position:relative wrapper — Chart.js with
+                               maintainAspectRatio:false grows to fill its parent, and an
+                               unbounded parent makes the canvas run off the modal. *@
+                            <div style="position:relative;height:280px;">
+                                <canvas id="shChart"></canvas>
+                            </div>
+
+                            <div class="fhc-sub mt-3" id="shFootnote"></div>
+                        </div>
+
+                        <div id="shError" class="alert alert-warning mb-0" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="~/FRLScripts/Common/score-history.js" asp-append-version="true"></script>
+
     }
 
 @functions {

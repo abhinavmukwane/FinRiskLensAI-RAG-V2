@@ -209,6 +209,36 @@ extractor, so it never fed the score.
 
 ---
 
+## Score history
+
+`t_MsmeScoreHistory` is append-only: one row per analysis run, never updated.
+`t_MsmeScoreSummary` still holds the current value for the portfolio list; this
+table holds the series behind the **Score History** button on the Financial
+Health Card.
+
+Eight monthly observations were seeded per account on 2026-09-07 so the trend
+chart has something to draw — the table was created empty. Every seeded row
+carries `Source = 'seed'`; a real run appends `Source = 'analysis'`, so
+fabricated points stay distinguishable forever. The **last** seeded point is the
+score the engine actually computed, so the chart's end agrees with the card.
+
+| Account | Series | Story |
+|---|---|---|
+| A · Shreeji | 762 → **813** | Good → Excellent, steady climb |
+| D · Sankalp | 741 → **806** | Good → Excellent, steady climb |
+| B · Ratnadeep | 692 → **627** | **Good → Fair** — the band drop an EWS rule fires on |
+| C · Navdeep | 549 → **376** | **Fair → AtRisk** — the account you wish you had watched |
+
+Re-seed or reset with `Doc/sql/demo_score_history_seed.sql`; it deletes only
+`Source = 'seed'` rows, so real analysis history survives.
+
+**Talking point:** open Ratnadeep's Score History. The card says 627 today; the
+chart says it was 692 in February and has fallen every month since. Origination
+scoring would have approved it in February. That gap is the argument for
+continuous monitoring.
+
+---
+
 ## Registry identity
 
 Corrected 2026-09-07 after an audit of the seeded files. Every GSTIN now carries a

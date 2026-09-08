@@ -121,7 +121,47 @@ namespace FinRiskLensAI.Services.Implementation.Admin
                 ComputedAt = result.ComputedAt,
                 UpdatedBy = "analysis"
             }, ct);
+
+            // The summary row was just overwritten; append the same run to the
+            // immutable series so the previous value is not lost.
+            await _repo.AddScoreHistoryAsync(new MsmeScoreHistory
+            {
+                Uan = uan.Trim(),
+                OverallScore = result.OverallScore,
+                ScoreBand = result.ScoreBand.ToString(),
+                HeuristicScore = result.HeuristicScore,
+                MlCalibratedScore = result.MlCalibratedScore,
+                CashflowTrendSlope = result.CashflowTrendSlope,
+                RevenueVitality = Dim(result, "Revenue Vitality"),
+                CashFlowHealth = Dim(result, "Cash Flow Health"),
+                TransactionTrust = Dim(result, "Transaction Trustworthiness"),
+                ComplianceQuotient = Dim(result, "Compliance Quotient"),
+                BusinessStability = Dim(result, "Business Stability"),
+                DebtServiceability = Dim(result, "Debt Serviceability"),
+                AnnualTurnover = Money(lending?.AnnualTurnover),
+                MonthlySurplus = Money(lending?.MonthlySurplus),
+                TotalIndicativeEligibility = Money(lending?.TotalIndicativeEligibility),
+                IsAnomalous = result.Anomaly?.IsAnomalous ?? false,
+                DimensionsExcludedCount = result.ExcludedDimensions?.Count ?? 0,
+                ModelVersion = result.ModelVersion,
+                ComputedAt = result.ComputedAt,
+                Source = "analysis",
+                CreatedBy = "analysis"
+            }, ct);
         }
+
+        public Task<IReadOnlyList<ScoreHistoryPoint>> GetScoreHistoryAsync(
+            string uan, int take = 50, CancellationToken ct = default)
+            => _repo.GetScoreHistoryAsync(uan, take, ct);
+
+        /// <summary>
+        /// One dimension's points by name. Matched on the engine's own label so a
+        /// renamed or missing dimension records 0 rather than shifting the columns.
+        /// </summary>
+        private static double Dim(RiskAnalysisResult result, string name)
+            => result.Dimensions?
+                   .FirstOrDefault(d => string.Equals(d.Dimension, name, StringComparison.OrdinalIgnoreCase))?
+                   .Score ?? 0d;
 
         // ── Portfolio reads pass straight through to the repository; there is no
         //    extra business rule to apply, so no logic is duplicated here.

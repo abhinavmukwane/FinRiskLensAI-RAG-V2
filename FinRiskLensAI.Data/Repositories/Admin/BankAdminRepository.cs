@@ -82,6 +82,57 @@ namespace FinRiskLensAI.Data.Repositories.Admin
         }
 
         // ─────────────────────────────────────────────────────────────
+        //  Score history (append-only series)
+        // ─────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Appends one row. There is deliberately no upsert and no de-duplication:
+        /// two runs on the same data are two real observations, and an audit trail
+        /// that quietly drops one is not an audit trail.
+        /// </summary>
+        public async Task AddScoreHistoryAsync(MsmeScoreHistory history, CancellationToken ct = default)
+        {
+            if (history == null || string.IsNullOrWhiteSpace(history.Uan)) return;
+
+            history.Uan = history.Uan.Trim();
+            _context.MsmeScoreHistories.Add(history);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task<IReadOnlyList<ScoreHistoryPoint>> GetScoreHistoryAsync(
+            string uan, int take = 50, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(uan)) return Array.Empty<ScoreHistoryPoint>();
+
+            var key = uan.Trim();
+            // Newest N by the index, then flipped to oldest-first for the chart's x-axis.
+            var rows = await _context.MsmeScoreHistories
+                .AsNoTracking()
+                .Where(x => x.Uan == key)
+                .OrderByDescending(x => x.ComputedAt)
+                .ThenByDescending(x => x.MsmeScoreHistoryID)
+                .Take(Math.Clamp(take, 1, 500))
+                .Select(x => new ScoreHistoryPoint
+                {
+                    ComputedAt = x.ComputedAt,
+                    OverallScore = x.OverallScore,
+                    ScoreBand = x.ScoreBand,
+                    RevenueVitality = x.RevenueVitality,
+                    CashFlowHealth = x.CashFlowHealth,
+                    TransactionTrust = x.TransactionTrust,
+                    ComplianceQuotient = x.ComplianceQuotient,
+                    BusinessStability = x.BusinessStability,
+                    DebtServiceability = x.DebtServiceability,
+                    TotalIndicativeEligibility = x.TotalIndicativeEligibility,
+                    IsAnomalous = x.IsAnomalous
+                })
+                .ToListAsync(ct);
+
+            rows.Reverse();
+            return rows;
+        }
+
+        // ─────────────────────────────────────────────────────────────
         //  Portfolio queries
         // ─────────────────────────────────────────────────────────────
 

@@ -18,6 +18,9 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Admin
         /// <summary>Projects a computed analysis result into the SQL score-summary index.</summary>
         Task SaveScoreSummaryAsync(string uan, RiskAnalysisResult result, CancellationToken ct = default);
 
+        /// <summary>The score trend series for a UAN, oldest first.</summary>
+        Task<IReadOnlyList<ScoreHistoryPoint>> GetScoreHistoryAsync(string uan, int take = 50, CancellationToken ct = default);
+
         /// <summary>Filtered, sorted, paged list of onboarded MSMEs with their scores.</summary>
         Task<BankCustomerPage> GetCustomersAsync(BankCustomerQuery query, CancellationToken ct = default);
 

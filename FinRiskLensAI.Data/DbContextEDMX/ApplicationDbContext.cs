@@ -23,6 +23,7 @@ namespace FinRiskLensAI.Data.DbContextEDMX
         public DbSet<AdmLogin> AdmLogins => Set<AdmLogin>();
         public DbSet<AdmBankLogin> AdmBankLogins => Set<AdmBankLogin>();
         public DbSet<MsmeScoreSummary> MsmeScoreSummaries => Set<MsmeScoreSummary>();
+        public DbSet<MsmeScoreHistory> MsmeScoreHistories => Set<MsmeScoreHistory>();
         public DbSet<MsmeEnquiry> MsmeEnquiries => Set<MsmeEnquiry>();
         public DbSet<MsmeLocation> MsmeLocations => Set<MsmeLocation>();
         public DbSet<MsmeNicCode> MsmeNicCodes => Set<MsmeNicCode>();

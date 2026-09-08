@@ -721,6 +721,109 @@ namespace FinRiskLensAI.Data.Migrations.SqlServer
                     b.ToTable("t_UserRegistration", (string)null);
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Scoring.MsmeScoreHistory", b =>
+                {
+                    b.Property<int>("MsmeScoreHistoryID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MsmeScoreHistoryID"));
+
+                    b.Property<decimal>("AnnualTurnover")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<double>("BusinessStability")
+                        .HasColumnType("float");
+
+                    b.Property<double>("CashFlowHealth")
+                        .HasColumnType("float");
+
+                    b.Property<double>("CashflowTrendSlope")
+                        .HasColumnType("float");
+
+                    b.Property<double>("ComplianceQuotient")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("DataFilesUsed")
+                        .HasColumnType("int");
+
+                    b.Property<double>("DebtServiceability")
+                        .HasColumnType("float");
+
+                    b.Property<int>("DimensionsExcludedCount")
+                        .HasColumnType("int");
+
+                    b.Property<double>("HeuristicScore")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("IsAnomalous")
+                        .HasColumnType("bit");
+
+                    b.Property<double>("MlCalibratedScore")
+                        .HasColumnType("float");
+
+                    b.Property<string>("ModelVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("MonthlySurplus")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<double>("OverallScore")
+                        .HasColumnType("float");
+
+                    b.Property<double>("RevenueVitality")
+                        .HasColumnType("float");
+
+                    b.Property<string>("ScoreBand")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<decimal>("TotalIndicativeEligibility")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<double>("TransactionTrust")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Uan")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("MsmeScoreHistoryID");
+
+                    b.HasIndex("Uan", "ComputedAt")
+                        .HasDatabaseName("IX_MsmeScoreHistory_Uan_ComputedAt");
+
+                    b.ToTable("t_MsmeScoreHistory", (string)null);
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Scoring.MsmeScoreSummary", b =>
                 {
                     b.Property<int>("MsmeScoreSummaryID")
