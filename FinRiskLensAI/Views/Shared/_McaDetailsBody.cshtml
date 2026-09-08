@@ -522,9 +522,12 @@
 
 </div>
 
-<!-- ===== DIRECTOR DIN DETAIL MODAL (populated via /Mca/GetDinDetail) ===== -->
+@* ===== DIRECTOR DIN DETAIL MODAL (populated via /Mca/GetDinDetail) =====
+   data-uan is read by McaDetails.js. The customer page ignores it (the endpoint
+   takes the UAN from the customer session); the bank portal needs it, because
+   there is no customer session there to derive it from. *@
 <div class="detail-modal-overlay" id="dinModalOverlay"></div>
-<div class="detail-modal udyam-dashboard" id="dinModal">
+<div class="detail-modal udyam-dashboard" id="dinModal" data-uan="@Model.Uan">
     <div class="detail-modal-header">
         <h5><i class="bi bi-person-fill me-2"></i>Director Profile</h5>
         <button type="button" class="detail-modal-close" id="dinModalClose"><i class="bi bi-x-lg"></i></button>

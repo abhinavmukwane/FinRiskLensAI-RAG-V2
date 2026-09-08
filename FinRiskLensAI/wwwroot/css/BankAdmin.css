@@ -996,9 +996,13 @@
 .bp-pane.active { display: block; }
 
 /* The shared customer partials assume the MSME dashboard shell; inside the
-   bank portal they sit directly on the page background. */
+   bank portal they sit directly on the page background.
+   :not(.detail-modal) matters — the DIN drawer in _McaDetailsBody carries
+   .udyam-dashboard too (for its scoped drawer typography), and without the
+   exclusion this rule out-specifies .detail-modal's own white background and
+   renders the modal see-through. */
 .bp-pane .fhc-wrap,
-.bp-pane .udyam-dashboard,
+.bp-pane .udyam-dashboard:not(.detail-modal),
 .bp-pane .gst-analysis { background: transparent; }
 
 /* =====================================================================

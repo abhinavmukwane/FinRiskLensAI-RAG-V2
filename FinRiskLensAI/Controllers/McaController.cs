@@ -18,7 +18,6 @@ namespace FinRiskLensAI.Controllers
     /// IStaticResponseService, same pattern as the Udyam page. The UAN always
     /// comes from the authenticated session, never from the request.
     /// </summary>
-    [CustDashboardAuthorize]
     public class McaController : Controller
     {
         private readonly IStaticResponseService _staticResponses;
@@ -38,6 +37,7 @@ namespace FinRiskLensAI.Controllers
 
         /// <summary>Corporate Intelligence Report page.</summary>
         [HttpGet]
+        [CustDashboardAuthorize]
         public async Task<IActionResult> MCADetails(CancellationToken ct)
         {
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
@@ -62,10 +62,22 @@ namespace FinRiskLensAI.Controllers
         /// column has no data yet, falls back to the director's basics from the
         /// MCA response so the popup always renders.
         /// </summary>
+        /// <param name="uan">
+        /// Bank-portal callers only. A customer session always wins and can only ever
+        /// read its own UAN, so this parameter cannot be used to read another MSME.
+        /// </param>
         [HttpGet]
-        public async Task<IActionResult> GetDinDetail(string din, CancellationToken ct)
+        public async Task<IActionResult> GetDinDetail(string din, CancellationToken ct, string? uan = null)
         {
-            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
+            // The drawer is shared by the customer page and the bank portal's
+            // Customer 360, which authenticate against different session slots.
+            var customerUan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
+            var isBankUser = HttpContext.Session.GetCurrentBankUser() != null;
+
+            uan = !string.IsNullOrWhiteSpace(customerUan) ? customerUan
+                : isBankUser ? uan?.Trim()
+                : null;
+
             var vm = new DinDetailViewModel { Din = din?.Trim() ?? "-" };
 
             if (string.IsNullOrWhiteSpace(uan) || string.IsNullOrWhiteSpace(din))

@@ -252,7 +252,12 @@
 
         try {
             // DIN data is fetched only when the user clicks the director.
-            var res = await fetch('/Mca/GetDinDetail?din=' + encodeURIComponent(din));
+            // The UAN is only used by the bank portal — a customer session always
+            // resolves its own UAN server-side and ignores what we send.
+            var modalEl = document.getElementById('dinModal');
+            var uan = (modalEl && modalEl.dataset.uan) || '';
+            var res = await fetch('/Mca/GetDinDetail?din=' + encodeURIComponent(din)
+                + (uan ? '&uan=' + encodeURIComponent(uan) : ''));
             var json = await res.json();
             cache[din] = (json && json.data) || null;
             renderProfile(cache[din], name);
