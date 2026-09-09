@@ -1,7 +1,8 @@
-﻿using FinRiskLensAI.Common;
+using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.ICommon;
+using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
 using FinRiskLensAI.Core.Interfaces.IServices.OnBoarding;
 using FinRiskLensAI.Core.Models;
@@ -20,14 +21,36 @@ namespace FinRiskLensAI.Controllers
         private readonly IEncryption _encryption;
         private readonly IMsmeDataStore _store;
         private readonly IDummyDataService _dummyData;
+        private readonly ISimBankAccountService _simBank;
 
-        public OnboardingController(IOnboardingService onboardingService, IEmailService emailService, IEncryption encryption, IMsmeDataStore store, IDummyDataService dummyData)
+        public OnboardingController(IOnboardingService onboardingService, IEmailService emailService,
+            IEncryption encryption, IMsmeDataStore store, IDummyDataService dummyData,
+            ISimBankAccountService simBank)
         {
             _onboardingService = onboardingService;
             _emailService = emailService;
             _encryption = encryption;
             _store = store;
             _dummyData = dummyData;
+            _simBank = simBank;
+        }
+
+        /// <summary>
+        /// Pulls the generated mobile / email out of a Udyam response so the
+        /// SimBanks account can be keyed to the same identity the MSME will use.
+        /// </summary>
+        private static (string? Mobile, string? Email) ReadContact(string? udyamJson)
+        {
+            if (string.IsNullOrWhiteSpace(udyamJson)) return (null, null);
+            try
+            {
+                var main = Newtonsoft.Json.Linq.JObject.Parse(udyamJson)["main_details"];
+                return (main?.Value<string>("mobile_number"), main?.Value<string>("email"));
+            }
+            catch
+            {
+                return (null, null);
+            }
         }
         public IActionResult CustOnboarding()
         {
@@ -59,6 +82,12 @@ namespace FinRiskLensAI.Controllers
                     if (!saveResult.AlreadyRegistered)
                     {
                         await _store.UploadAsync(uan, MsmeDataFiles.Udyam, dummyUdyamResp, HttpContext.RequestAborted);
+
+                        // Register the freshly generated mobile with the SimBanks
+                        // sandbox so the AA consent flow has an account to discover
+                        // for this MSME. Best-effort — never blocks onboarding.
+                        var (mobile, email) = ReadContact(dummyUdyamResp);
+                        await _simBank.RegisterAccountAsync(mobile, email, HttpContext.RequestAborted);
                     }
                 }
 
