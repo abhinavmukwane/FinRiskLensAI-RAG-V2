@@ -583,7 +583,7 @@
 .aa-page-head .btn-header-fill {
     background: var(--brand-primary-deep);
     color: #fff;
-    border: 1px solid var(--brand-primary-deep);
+    border: 1px solid #bb9ca8;
     border-radius: 10px;
     padding: 9px 18px;
     font-size: 14px;
