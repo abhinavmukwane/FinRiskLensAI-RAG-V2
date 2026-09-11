@@ -150,32 +150,29 @@ namespace FinRiskLensAI.Controllers
         //        return Json(new{status = false, message = ex.Message});
         //    }
         //}
-        /// <summary>
-        /// Dev/test only — sends the login-OTP template email with a random code.
-        /// GET /Onboarding/SendTestEmail?to=someone@example.com&name=Abhinav
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> SendTestEmail(string to, string? name, string? theme, CancellationToken ct)
-        {
-            if (string.IsNullOrWhiteSpace(to))
-                return Json(new { status = false, message = "Pass ?to=recipient@email.com" });
+      
+        //[HttpGet]
+        //public async Task<IActionResult> SendTestEmail(string to, string? name, string? theme, CancellationToken ct)
+        //{
+        //    if (string.IsNullOrWhiteSpace(to))
+        //        return Json(new { status = false, message = "Pass ?to=recipient@email.com" });
 
-            try
-            {
-                var otp = Random.Shared.Next(100000, 999999).ToString();
-                var sent = await _emailService.SendLoginOtpAsync(to, otp, name, expiryMinutes: 10, theme: theme, ct: ct);
+        //    try
+        //    {
+        //        var otp = Random.Shared.Next(100000, 999999).ToString();
+        //        var sent = await _emailService.SendLoginOtpAsync(to, otp, name, expiryMinutes: 10, theme: theme, ct: ct);
 
-                return Json(new
-                {
-                    status = sent,
-                    message = sent ? $"Test OTP email sent to {to} (code {otp})" : "SMTP send failed — check logs/cre-*.log for details"
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { status = false, message = ex.Message });
-            }
-        }
+        //        return Json(new
+        //        {
+        //            status = sent,
+        //            message = sent ? $"Test OTP email sent to {to} (code {otp})" : "SMTP send failed — check logs/cre-*.log for details"
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new { status = false, message = ex.Message });
+        //    }
+        //}
 
         [HttpGet]
         public async Task<IActionResult> GetUdyamDetails(string uan)
@@ -248,10 +245,14 @@ namespace FinRiskLensAI.Controllers
                 var emailSent = await _emailService.SendLoginOtpAsync(model.Email, otp, nameOfEnterprise,
                                 expiryMinutes: 5, theme: theme, ct: HttpContext.RequestAborted);
 
-                if (!emailSent)
-                {
-                    return Json(new { status = false, message = "Failed to send OTP email. Please try again.", clearFields = false });
-                }
+                //-----Uncomment in Live-------------//
+
+                //if (!emailSent)
+                //{
+                //    return Json(new { status = false, message = "Failed to send OTP email. Please try again.", clearFields = false });
+                //}
+
+                //---------------------------------//
 
                 // 4. Only persist the OTP if the email actually went out
                 var otpModel = new UserOtpModel

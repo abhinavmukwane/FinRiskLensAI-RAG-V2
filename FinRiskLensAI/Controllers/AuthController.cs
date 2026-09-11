@@ -134,14 +134,18 @@ namespace FinRiskLensAI.Controllers
                 {
                     bool emailSent = await _emailService.SendLoginOtpAsync(model.Email, otp, check.Message, expiryMinutes: 5, theme: theme, ct: HttpContext.RequestAborted);
 
-                    if (!emailSent)
-                    {
-                        return Json(new
-                        {
-                            status = false,
-                            message = "Failed to send OTP! Please try again"
-                        });
-                    }
+                    //-----Uncomment in Live-------------//
+
+                    //if (!emailSent)
+                    //{
+                    //    return Json(new
+                    //    {
+                    //        status = false,
+                    //        message = "Failed to send OTP! Please try again"
+                    //    });
+                    //}
+
+                    //---------------------------------//
 
                     return Json(new
                     {
