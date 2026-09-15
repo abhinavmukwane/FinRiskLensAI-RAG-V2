@@ -252,6 +252,7 @@ namespace FinRiskLensAI.Data.Repositories.Admin
 
             var rows = await q.Skip((page - 1) * size).Take(size).ToListAsync(ct);
             rows.ForEach(NormalizeRow);
+            await AttachLatestPushAsync(rows, ct);
 
             return new BankCustomerPage { Rows = rows, TotalCount = total, Page = page, PageSize = size };
         }
@@ -261,8 +262,48 @@ namespace FinRiskLensAI.Data.Repositories.Admin
             if (string.IsNullOrWhiteSpace(uan)) return null;
             var key = uan.Trim();
             var row = await CustomerQuery().FirstOrDefaultAsync(x => x.Uan == key, ct);
-            if (row != null) NormalizeRow(row);
+            if (row != null)
+            {
+                NormalizeRow(row);
+                await AttachLatestPushAsync(new[] { row }, ct);
+            }
             return row;
+        }
+
+        /// <summary>
+        /// Stamps each row with its most recent loan-case push (any channel). One
+        /// query for the whole page rather than a join in CustomerQuery, because the
+        /// push table is append-only and "latest per UAN" is awkward to express in
+        /// a translatable left join.
+        /// </summary>
+        private async Task AttachLatestPushAsync(IReadOnlyCollection<BankCustomerRow> rows, CancellationToken ct)
+        {
+            if (rows.Count == 0) return;
+            var keys = rows.Select(r => r.Uan).Distinct().ToList();
+
+            var latest = await _context.LoanCasePushes.AsNoTracking()
+                .Where(x => keys.Contains(x.Uan))
+                .OrderByDescending(x => x.PushedAt).ThenByDescending(x => x.LoanCasePushID)
+                .Select(x => new
+                {
+                    x.Uan,
+                    Summary = new Core.Models.LoanCase.LoanCasePushSummary
+                    {
+                        LoanCasePushID = x.LoanCasePushID,
+                        Channel = x.Channel,
+                        Status = x.Status,
+                        CaseReference = x.CaseReference,
+                        ScoreAtPush = x.ScoreAtPush,
+                        BandAtPush = x.BandAtPush,
+                        PushedAt = x.PushedAt,
+                        PushedByName = x.PushedByName
+                    }
+                })
+                .ToListAsync(ct);
+
+            var byUan = latest.GroupBy(x => x.Uan).ToDictionary(g => g.Key, g => g.First().Summary);
+            foreach (var row in rows)
+                if (byUan.TryGetValue(row.Uan, out var s)) row.LastPush = s;
         }
 
         /// <summary>

@@ -368,6 +368,46 @@ Serilog. Layering: Core → Data → Services → Web, plus a new ML project.
   (e.g. Finvu AA callback) — don't rely on session in redirect landing pages; carry
   what you need in the URL / persisted row instead.
 
+## Loan-case push — LOS / ULI / ONDC (added 2026-09-15)
+
+Bank portal → Customer 360 → **Push to LOS / ULI / ONDC** raises a scored MSME as
+a loan case downstream. Preview-then-push: the modal picks a channel, **Preview
+payload** opens the exact JSON in a new tab (pure read), **Confirm** POSTs and opens
+the receipt in a new tab. Header chips show the latest push per channel; the
+Customers list has a "Loan case" column.
+
+- **Three payload shapes, one contract.** `ILoanCasePayloadBuilder` with
+  `LosPayloadBuilder` (bank-internal appraisal case), `UliPayloadBuilder`
+  (OCEN-4.0 loan application — score travels as a *derived data packet*, no
+  decision block, ULI's lender-decides model), `OndcPayloadBuilder` (beckn
+  `context` + `message.order`, domain `ONDC:FIS12`, score as order tags).
+  Registered in `ServicesModule` by the `*PayloadBuilder` suffix; a new channel is
+  one class.
+- **`t_LoanCasePush` is append-only** (migrations `Add_LoanCasePush`,
+  `Add_LoanCasePush_EnterpriseName`, both applied to UAT). Score, band, eligibility
+  and enterprise name are frozen on the row — an audit must show what they were
+  *when the case was raised*. "Already sent" = latest row per (Uan, Channel).
+  Channel/Status stored as strings, not ints.
+- **Simulated vs Sent.** `LoanCase:Endpoints:{LOS|ULI|ONDC}` in appsettings; blank
+  (the default) → `Status=Simulated`, payload recorded, generated case ref
+  `IBKL-LOS-yyyyMMdd-xxxxxx`. A real URL → actual POST via `IHttpClientHelper`,
+  optional `LoanCase:ApiKeys:{channel}` as Bearer, `Status=Sent|Failed`, downstream
+  id extracted from the response when present. The badge says "(sim)" when
+  simulated — deliberately honest for a banking jury.
+- **Security.** `LoanCaseController` is `[BankAdminAuthorize]` and reads the bank
+  session explicitly (both sessions share one cookie — see the 35afadb precedence
+  bug). `Push` is `[ValidateAntiForgeryToken]`; the view injects `IAntiforgery` and
+  the JS sends `__RequestVerificationToken` in the form body. Anonymous preview /
+  push → 302 to BankLogin, nothing written (verified).
+- **UI is dependency-free** (`FRLScripts/BankAdmin/loan-case.js`): the bank layout
+  loads no Bootstrap JS, so the modal is the `.detail-modal` pattern from
+  Dashboard.css, same as the DIN drawer and Score History. Receipt/preview page
+  (`Views/LoanCase/Payload.cshtml`) is `Layout = null`, syntax-coloured
+  client-side so what you copy is byte-for-byte what was recorded.
+- Re-push is allowed and warned: the modal says "already raised as … at score X"
+  and, if the score has moved since, flags it; chips turn amber ("stale") when the
+  current score differs from `ScoreAtPush`.
+
 ## Likely next steps (not started)
 
 1. **AA data → score (the big open item):** the FI pipeline + `aa.json` write are DONE

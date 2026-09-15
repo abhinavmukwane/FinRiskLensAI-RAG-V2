@@ -1,4 +1,4 @@
-﻿using FinRiskLensAI.Core.Models.AccountAggregator;
+using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Common;
 using FinRiskLensAI.Core.Models.Itr;
 using FinRiskLensAI.Core.Models.GST;
@@ -44,5 +44,10 @@ namespace FinRiskLensAI.Core.Models.Admin
         /// <summary>Backs both AA panels — linked accounts and the deep analysis.</summary>
         public AaAnalysisResult? Aa { get; set; }
         public IpVerificationViewModel? IpAudit { get; set; }
+
+        /// <summary>Latest loan-case push per channel (LOS / ULI / ONDC), for the header chips.</summary>
+        public List<LoanCase.LoanCasePushSummary> Pushes { get; set; } = new();
+        /// <summary>Channels with a real endpoint configured; the rest run Simulated.</summary>
+        public List<string> LiveChannels { get; set; } = new();
     }
 }

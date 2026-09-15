@@ -1,4 +1,4 @@
-﻿using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
@@ -25,14 +25,17 @@ namespace FinRiskLensAI.Controllers
         private readonly IBankAdminService _bankAdmin;
         private readonly IBlobAnalysisService _analysis;
         private readonly CustomerProfileBuilder _profile;
+        private readonly FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService _loanCase;
         private readonly ILogger<BankAdminController> _logger;
 
         public BankAdminController(IBankAdminService bankAdmin, IBlobAnalysisService analysis,
-            CustomerProfileBuilder profile, ILogger<BankAdminController> logger)
+            CustomerProfileBuilder profile, FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService loanCase,
+            ILogger<BankAdminController> logger)
         {
             _bankAdmin = bankAdmin;
             _analysis = analysis;
             _profile = profile;
+            _loanCase = loanCase;
             _logger = logger;
         }
 
@@ -133,6 +136,11 @@ namespace FinRiskLensAI.Controllers
                 model.Itr = await _profile.GetItrAsync(model.Uan, ct);
                 model.Aa = await _profile.GetAaAnalysisAsync(model.Uan, ct);
                 model.Mca = await _profile.GetMcaAsync(model.Uan, ct);
+
+                // Loan-case chips: latest push per channel, and which channels are live.
+                model.Pushes = (await _loanCase.GetStatusAsync(model.Uan, ct)).ToList();
+                model.LiveChannels = Enum.GetValues<FinRiskLensAI.Core.Models.LoanCase.LoanCaseChannel>()
+                    .Where(_loanCase.IsLive).Select(x => x.ToString()).ToList();
 
                 // Customer 360 is one page of tabs, so the alternatives are tab links.
                 if (!model.Mca.IsApplicable)

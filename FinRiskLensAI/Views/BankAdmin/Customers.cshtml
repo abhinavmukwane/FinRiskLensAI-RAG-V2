@@ -1,4 +1,4 @@
-﻿@model FinRiskLensAI.Core.Models.Admin.BankCustomersViewModel
+@model FinRiskLensAI.Core.Models.Admin.BankCustomersViewModel
 @{
     ViewBag.Title = "Onboarded Customers";
     Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
@@ -137,6 +137,7 @@ else
                                     Onboarded <i class="bi @SortIcon("onboarded")"></i>
                                 </a>
                             </th>
+                            <th class="text-center">Loan case</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -182,6 +183,26 @@ else
                                 </td>
                                 <td class="text-end bp-strong">@Inr(c.TotalIndicativeEligibility)</td>
                                 <td>@c.OnboardedOn.ToString("dd MMM yyyy")</td>
+                                <td class="text-center">
+                                    @if (c.LastPush != null)
+                                    {
+                                        var lp = c.LastPush;
+                                        var stale = lp.IsStale(c.OverallScore, c.ComputedAt);
+                                        var st = lp.Status.ToString();
+                                        var cls = st == "Failed" ? "failed" : stale ? "stale" : st == "Sent" ? "sent" : "simulated";
+                                        var icon = st == "Failed" ? "bi-x-octagon" : stale ? "bi-exclamation-diamond" : "bi-check2-circle";
+                                        var suffix = stale ? " · stale" : st == "Simulated" ? " · sim" : "";
+                                        <a class="lc-chip lc-chip-sm @cls" href="@Url.Action("Receipt", "LoanCase", new { id = lp.LoanCasePushID })"
+                                           target="_blank" rel="noopener" onclick="event.stopPropagation()"
+                                           title="@lp.CaseReference · @lp.PushedAt.ToString("dd MMM yyyy HH:mm") · score @lp.ScoreAtPush.ToString("0")">
+                                            <i class="bi @icon"></i> @lp.Channel@suffix
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="bp-muted">—</span>
+                                    }
+                                </td>
                                 <td class="text-end">
                                     <a class="bp-link" href="@Url.Action("Customer", "BankAdmin", new { uan = c.Uan })"
                                        onclick="event.stopPropagation()">

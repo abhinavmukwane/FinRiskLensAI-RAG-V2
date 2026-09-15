@@ -1,4 +1,5 @@
-﻿@model FinRiskLensAI.Core.Models.Admin.BankCustomerDetailViewModel
+@model FinRiskLensAI.Core.Models.Admin.BankCustomerDetailViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 @{
     ViewBag.Title = "Customer 360";
     Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
@@ -26,6 +27,30 @@
 
 <div class="bp-crumb">
     <a href="@Url.Action("Customers", "BankAdmin")"><i class="bi bi-arrow-left"></i> All customers</a>
+
+    @if (c != null)
+    {
+        @* ── Raise as a loan case downstream. Lives in the crumb bar rather than
+           the profile card: with three channels the status chips crowd the score,
+           and this reads as the page's action toolbar. *@
+        <div id="lcRoot" class="lc-root"
+             data-uan="@c.Uan"
+             data-scored="@(c.IsScored ? "true" : "false")"
+             data-score="@(c.OverallScore?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")"
+             data-token="@Xsrf.GetAndStoreTokens(Context).RequestToken"
+             data-live="@System.Text.Json.JsonSerializer.Serialize(Model.LiveChannels)"
+             data-pushes="@System.Text.Json.JsonSerializer.Serialize(Model.Pushes.Select(p => new {
+                 id = p.LoanCasePushID, channel = p.Channel.ToString(), state = p.Status.ToString(),
+                 caseReference = p.CaseReference, scoreAtPush = Math.Round(p.ScoreAtPush), band = p.BandAtPush,
+                 pushedAt = p.PushedAt.ToString("dd MMM yyyy HH:mm"), pushedBy = p.PushedByName }))">
+            <div id="lcChips" class="lc-chips"></div>
+            <button type="button" id="lcOpen" class="bp-btn @(c.IsScored ? "" : "bp-btn-ghost")"
+                    @(c.IsScored ? "" : "disabled")
+                    title="@(c.IsScored ? "Raise this MSME as a loan case in LOS, ULI or ONDC" : "Score the MSME first")">
+                <i class="bi bi-send"></i> Push to LOS / ULI / ONDC
+            </button>
+        </div>
+    }
 </div>
 
 @if (Model.LoadError != null)
@@ -79,6 +104,50 @@ else if (c != null)
                     <span class="bp-band bp-band-Pending">Pending</span>
                 }
             </div>
+        </div>
+    </div>
+
+    @* ===================== Loan-case push modal ===================== *@
+    <div class="detail-modal-overlay" id="lcOverlay"></div>
+    <div class="detail-modal lc-modal" id="lcModal" role="dialog" aria-modal="true" aria-labelledby="lcTitle" style="width:640px;">
+        <div class="detail-modal-header">
+            <h5 id="lcTitle"><i class="bi bi-send me-2"></i>Raise loan case</h5>
+            <button type="button" class="detail-modal-close" id="lcClose" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="detail-modal-body">
+            <div class="lc-summary">
+                <div><b>Enterprise</b>@c.EnterpriseName</div>
+                <div><b>Score</b>@(c.IsScored ? $"{c.OverallScore:0} · {c.ScoreBand}" : "not scored")</div>
+                <div><b>Eligibility</b>@Inr(c.TotalIndicativeEligibility)</div>
+                <div><b>Product</b>@(c.TopProductName ?? "—")</div>
+            </div>
+
+            <div class="lc-label">Send to</div>
+            <div class="lc-channels">
+                <button type="button" class="lc-channel" data-channel="LOS">
+                    <span class="lc-channel-name">LOS</span>
+                    <span class="lc-channel-desc">Loan Origination System — credit appraisal case</span>
+                </button>
+                <button type="button" class="lc-channel" data-channel="ULI">
+                    <span class="lc-channel-name">ULI</span>
+                    <span class="lc-channel-desc">RBI Unified Lending Interface — OCEN loan application</span>
+                </button>
+                <button type="button" class="lc-channel" data-channel="ONDC">
+                    <span class="lc-channel-name">ONDC</span>
+                    <span class="lc-channel-desc">Open network — beckn FIS12 credit order</span>
+                </button>
+            </div>
+
+            <div id="lcLiveNote" class="lc-note"></div>
+            <div id="lcRepushNote" class="lc-note lc-note-warn" style="display:none;"></div>
+
+            <div class="lc-actions">
+                <a id="lcPreview" class="bp-btn bp-btn-ghost" href="#" target="_blank" rel="noopener">
+                    <i class="bi bi-braces"></i> Preview payload
+                </a>
+                <button type="button" id="lcConfirm" class="bp-btn"><i class="bi bi-send"></i> Confirm push</button>
+            </div>
+            <div id="lcStatus" class="lc-status"></div>
         </div>
     </div>
 
@@ -228,6 +297,7 @@ else if (c != null)
     <script src="~/FRLScripts/Common/panel-tabs.js" asp-append-version="true"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="~/FRLScripts/AccountAggregator/aa-analysis.js" asp-append-version="true"></script>
+    <script src="~/FRLScripts/BankAdmin/loan-case.js" asp-append-version="true"></script>
     <script>
         // Tab switching. Every pane is rendered server-side, so switching is purely
         // show/hide — no refetch, and charts inside a pane keep their state.

@@ -854,7 +854,12 @@
 /* =====================================================================
    Customer 360
    ===================================================================== */
-.bp-crumb { margin-bottom: 14px; }
+/* Action bar: back link left, loan-case chips + push button right. */
+.bp-crumb {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px 14px;
+    margin-bottom: 14px; min-height: 38px;
+}
 
 .bp-crumb a {
     display: inline-flex; align-items: center; gap: 6px;
@@ -873,7 +878,7 @@
     margin-bottom: 16px;
 }
 
-.bp-profile-main { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.bp-profile-main { display: flex; align-items: center; gap: 16px; min-width: 0; flex: 1 1 340px; }
 
 .bp-profile-avatar {
     width: 58px; height: 58px; flex-shrink: 0;
@@ -1181,3 +1186,68 @@
 }
 
 .bp-tab.active .bp-tab-na { background: var(--brand-tint-bg); color: var(--brand-primary); }
+
+/* =====================================================================
+   Loan-case push (Customer 360 header + Customers list)
+   ===================================================================== */
+.lc-root { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
+.lc-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.lc-chips:empty { display: none; }
+
+/* Status chips: one per channel already raised. Colours mirror .bp-band. */
+.lc-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .72rem; font-weight: 700; border-radius: 999px;
+    padding: 4px 10px; white-space: nowrap; text-decoration: none;
+    border: 1px solid transparent; transition: filter .15s ease;
+}
+.lc-chip:hover { filter: brightness(.95); text-decoration: none; }
+.lc-chip-sm { font-size: .68rem; padding: 3px 8px; }
+.lc-chip.sent      { background: #e3f4ea; color: #1a6e43; }
+.lc-chip.simulated { background: #eef0f1; color: #4b5a63; }
+.lc-chip.stale     { background: #fdf3d7; color: #8c5c0d; }
+.lc-chip.failed    { background: #fbe0e0; color: #8b1020; }
+
+/* Modal internals (the frame itself is .detail-modal from Dashboard.css) */
+.lc-modal .detail-modal-body { padding: 20px 24px 22px; }
+.lc-summary {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 18px;
+    background: var(--brand-tint-bg); border-radius: 12px; padding: 12px 14px;
+    font-size: .86rem; margin-bottom: 18px;
+}
+.lc-summary b { display: block; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: #8a97a3; font-weight: 700; margin-bottom: 2px; }
+.lc-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #8a97a3; margin-bottom: 8px; }
+.lc-channels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.lc-channel {
+    text-align: left; background: #fff; border: 1.5px solid var(--brand-tint-border);
+    border-radius: 12px; padding: 11px 12px; cursor: pointer; transition: all .15s ease;
+}
+.lc-channel:hover { border-color: var(--brand-primary); }
+.lc-channel.active { border-color: var(--brand-primary); background: var(--brand-tint-bg); box-shadow: 0 0 0 3px rgba(0, 91, 76, .10); }
+.lc-channel-name { display: block; font-weight: 800; font-size: .95rem; color: var(--brand-primary-dark); }
+.lc-channel-desc { display: block; font-size: .72rem; color: #6b7c86; margin-top: 3px; line-height: 1.35; }
+.lc-note { display: flex; gap: 8px; align-items: flex-start; font-size: .82rem; color: #4b5a63; background: #f4f6f8; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; line-height: 1.5; }
+.lc-note i { color: var(--brand-primary); margin-top: 2px; }
+.lc-note-warn { background: #fff8ec; color: #6b4a0f; }
+.lc-note-warn i { color: #b7791f; }
+.lc-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.lc-status { min-height: 1.4em; font-size: .84rem; margin-top: 12px; }
+.lc-status.ok { color: #1a6e43; }
+.lc-status.err { color: #8b1020; }
+.lc-status a { font-weight: 600; margin-left: 6px; }
+@media (max-width: 767.98px) { .lc-channels { grid-template-columns: 1fr; } .lc-summary { grid-template-columns: 1fr; } }
+
+/* Chip suffix ("sim" / "re-score") — a quiet qualifier so three chips stay short. */
+.lc-chip-sub {
+    margin-left: 5px; padding: 1px 5px;
+    font-size: .62rem; font-weight: 700; letter-spacing: .03em;
+    border-radius: 5px; background: rgba(0, 0, 0, .07); text-transform: uppercase;
+}
+
+/* On a phone the toolbar stacks; left-align the controls with the back link
+   rather than leaving them ragged against the right edge. */
+@media (max-width: 575.98px) {
+    .lc-root { margin-left: 0; width: 100%; justify-content: flex-start; }
+    .lc-chips { justify-content: flex-start; }
+    .lc-root .bp-btn { width: 100%; justify-content: center; }
+}

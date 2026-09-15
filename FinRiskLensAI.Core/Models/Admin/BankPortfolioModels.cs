@@ -33,6 +33,9 @@ namespace FinRiskLensAI.Core.Models.Admin
         public DateTime? ComputedAt { get; set; }
 
         public bool IsScored => OverallScore.HasValue;
+
+        /// <summary>Most recent loan-case push in any channel; null when never raised.</summary>
+        public LoanCase.LoanCasePushSummary? LastPush { get; set; }
     }
 
     /// <summary>A page of customer rows plus the total for the pager.</summary>

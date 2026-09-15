@@ -42,6 +42,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterInstance(
         builder.Configuration.GetSection("Signzy").Get<FinRiskLensAI.Core.Models.Common.SignzySettings>()
         ?? new FinRiskLensAI.Core.Models.Common.SignzySettings());
+    container.RegisterInstance(
+        builder.Configuration.GetSection("LoanCase").Get<FinRiskLensAI.Core.Models.LoanCase.LoanCaseSettings>()
+        ?? new FinRiskLensAI.Core.Models.LoanCase.LoanCaseSettings());
 });
 
 // Add services to the container.

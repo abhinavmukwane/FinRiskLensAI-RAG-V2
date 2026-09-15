@@ -1,4 +1,4 @@
-﻿using FinRiskLensAI.Core.Models.AccountAggregator;
+using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.Common;
 using FinRiskLensAI.Core.Models.GST;
@@ -24,6 +24,7 @@ namespace FinRiskLensAI.Data.DbContextEDMX
         public DbSet<AdmBankLogin> AdmBankLogins => Set<AdmBankLogin>();
         public DbSet<MsmeScoreSummary> MsmeScoreSummaries => Set<MsmeScoreSummary>();
         public DbSet<MsmeScoreHistory> MsmeScoreHistories => Set<MsmeScoreHistory>();
+        public DbSet<FinRiskLensAI.Core.Models.LoanCase.LoanCasePush> LoanCasePushes => Set<FinRiskLensAI.Core.Models.LoanCase.LoanCasePush>();
         public DbSet<MsmeEnquiry> MsmeEnquiries => Set<MsmeEnquiry>();
         public DbSet<MsmeLocation> MsmeLocations => Set<MsmeLocation>();
         public DbSet<MsmeNicCode> MsmeNicCodes => Set<MsmeNicCode>();
