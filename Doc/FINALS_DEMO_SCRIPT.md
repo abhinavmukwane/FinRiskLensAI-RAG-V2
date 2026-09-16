@@ -47,6 +47,9 @@ Tick every line. Most demo failures are setup failures.
 - [ ] Phone hotspot ready as backup internet
 - [ ] Slides open in a separate window, already on slide 1
 - [ ] **Know these five numbers cold:** 813 · 806 · 715 · 627 · 376
+- [ ] *Reassurance, not a task:* the OTP is shown on screen even when the mail
+      server is unreachable, so a dead SMTP host cannot block the live onboarding
+      (changed 2026-09-15). You still never need a mailbox on stage
 - [ ] *If you plan to run the optional loan-case beat:* decide whether Sankalp should
       start clean (raise the case live) or already pushed (show the chips). Sankalp
       currently has all three channels pushed — clearing SQL is in
@@ -501,6 +504,7 @@ Say it. Write it down. It costs you nothing and guessing costs you the room.
 | A fetch spins too long | Don't wait. "This normally takes a few seconds — let me move to an account that's already loaded." Switch tabs |
 | Internet drops | Phone hotspot. Keep talking to the slides while the driver reconnects |
 | A page errors | Don't debug on screen. Go back, take another route to the same point. Note it and move on |
+| OTP doesn't arrive | It never has to — it renders on screen, and it still does when the mail server is down. Read it off the modal and carry on |
 | You're running over | Skip §3 Ratnadeep (9:30–10:30) entirely. Go straight to Abhinav's close |
 | A judge interrupts with a question | **Answer it.** Their questions are more valuable than finishing your section. The driver holds the screen still |
 
