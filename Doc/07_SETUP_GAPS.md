@@ -56,7 +56,9 @@ settings are currently inert.
 - This becomes the auth mechanism protecting the external API surface
   described in `04_API_CONTRACTS.md` (ULI DSP API, IDBI LOS webhook) —
   those endpoints should require a valid bearer token once this is
-  wired.
+  wired. (The *outbound* loan-case push in §4a already runs — it is
+  bank-session authenticated, and sends its own optional Bearer key
+  downstream, so it does not depend on this gap.)
 - The dev signing key currently in `appsettings.json` is a placeholder
   per the architecture doc's own warning — fine for local dev, but
   don't let it leak into anything demo-facing as if it were real;

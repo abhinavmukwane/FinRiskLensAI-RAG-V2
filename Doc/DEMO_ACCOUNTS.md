@@ -1,4 +1,4 @@
-﻿# IDBI Live Demo — three seeded MSME accounts
+# IDBI Live Demo — three seeded MSME accounts
 
 Three synthetic customers covering the score range, published to **UAT**
 (`103.21.58.192` / `FinRiskLensAI_UAT`) and the `msme-data` blob container.
@@ -236,6 +236,44 @@ Re-seed or reset with `Doc/sql/demo_score_history_seed.sql`; it deletes only
 chart says it was 692 in February and has fallen every month since. Origination
 scoring would have approved it in February. That gap is the argument for
 continuous monitoring.
+
+---
+
+## Loan-case pushes
+
+`t_LoanCasePush` records every attempt to raise a scored MSME as a loan case in
+**LOS**, **ULI** or **ONDC** from bank Customer 360 (**Push to LOS / ULI / ONDC**
+in the crumb bar). Append-only — a re-push after a re-score is a real event, not a
+correction.
+
+Current state, seeded by an actual push on 2026-09-15 (not hand-inserted):
+
+| ID | Account | Channel | Status | Case reference | Score at push |
+|---|---|---|---|---|---|
+| 2 | D · Sankalp | LOS | Simulated | `IBKL-LOS-20260915-934261` | 806 |
+| 3 | D · Sankalp | ULI | Simulated | `IBKL-ULI-20260915-E44E4C` | 806 |
+| 4 | D · Sankalp | ONDC | Simulated | `IBKL-ONDC-20260915-2BA5A9` | 806 |
+
+All three are **Simulated** because `LoanCase:Endpoints:*` is blank — the payload
+was built and recorded exactly as it would have been sent, and the chip says `sim`.
+That is deliberate: a banking jury will ask whether the integration is real, and
+"recorded, not sent, and the screen says so" is a better answer than a faked 200.
+
+**Before a live demo, decide which you want:**
+
+- *Show the push happening* — clear Sankalp's rows first, so the officer raises the
+  case on stage:
+  ```sql
+  DELETE FROM [FinRiskLensAI].[t_LoanCasePush] WHERE Uan = 'UDYAM-MH-25-0042817';
+  ```
+- *Show the "already raised" state* — leave them; the three chips render on load and
+  the modal warns before a re-push.
+
+A chip turns **amber (`re-score`)** when the current score has moved away from
+`ScoreAtPush` — re-analyse Sankalp after pushing and you get that state for free.
+
+Any other demo account works too: push from B · Ratnadeep (627) to show a Fair-band
+case going downstream with the band frozen on the receipt.
 
 ---
 

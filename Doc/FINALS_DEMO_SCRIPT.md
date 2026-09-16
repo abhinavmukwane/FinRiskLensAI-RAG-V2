@@ -22,6 +22,7 @@ order** and don't change it on the day.
 | **1** | **Abhinav** | The problem & what we built | 0:00 – 2:00 | Slides |
 | **2** | **Mayur** | The MSME journey — live | 2:00 – 6:00 | App, customer side |
 | **3** | **Thakre** | The banker's view — live | 6:00 – 10:30 | App, bank portal |
+| — | *(Thakre)* | *Optional:* the loan-case hand-off | +45 s | Customer 360 → push modal |
 | **4** | **Abhinav** | Where we are & the ask | 10:30 – 12:00 | Slides |
 | — | **All three** | Q&A | — | Hold on Customer 360 |
 
@@ -46,6 +47,10 @@ Tick every line. Most demo failures are setup failures.
 - [ ] Phone hotspot ready as backup internet
 - [ ] Slides open in a separate window, already on slide 1
 - [ ] **Know these five numbers cold:** 813 · 806 · 715 · 627 · 376
+- [ ] *If you plan to run the optional loan-case beat:* decide whether Sankalp should
+      start clean (raise the case live) or already pushed (show the chips). Sankalp
+      currently has all three channels pushed — clearing SQL is in
+      `DEMO_ACCOUNTS.md` → "Loan-case pushes"
 
 ### The one hard rule
 
@@ -314,6 +319,33 @@ the same session. Bankers notice, and admitting it costs you nothing.
 > GST filings lapse, if a new charge appears — those are all comparisons between
 > two points on this chart."
 
+### Optional · 45 s · The hand-off — LOS / ULI / ONDC
+
+**[Same customer → Push to LOS / ULI / ONDC → pick LOS → Preview payload]**
+
+> "One last thing, because it's the question every bank asks: what do we actually
+> hand you?
+>
+> The officer raises this as a loan case — into your **LOS**, into **ULI**, or onto
+> **ONDC**. Three different standards, three different payload shapes, same score
+> underneath.
+>
+> And before anything is sent, they see the payload. This is the LOS appraisal
+> case: applicant, eligibility, all six dimensions, the ratio table, and where every
+> number came from. Nothing is sent until they confirm.
+>
+> On ULI it looks different on purpose — the score goes across as a **derived data
+> packet** next to the source packets and the consent artefacts, with no decision
+> block, because under ULI the lender decides and we supply the evidence.
+>
+> Today no endpoint is configured, so this is **recorded, not sent** — and the badge
+> says so. Point it at your LOS URL and the same code path posts it. That is a
+> setting, not a project."
+
+> ⚠️ Optional — it is not in the 12-minute budget. Run it only if the room is
+> technical and you are ahead of the clock; the 45 s comes out of the Ratnadeep
+> judgement case below. Cut this before you cut the charges panel or score history.
+
 ### 9:30 – 10:30 · Explainability & the judgement case
 
 **[Open Ratnadeep Textile Traders (627)]**
@@ -348,16 +380,23 @@ the same session. Bankers notice, and admitting it costs you nothing.
 >
 > **Working today:** end-to-end onboarding, the scoring engine, the Health Card,
 > Udyam, GST, ITR, MCA and DIN screens, the AA consent journey, the printable
-> report, the bank portal, score history, and seven languages.
+> report, the bank portal, score history, the loan-case hand-off to LOS, ULI and
+> ONDC, and seven languages.
 >
 > **Running on:** cached and synthetic responses in the documented API shapes. We
 > submitted our Data Field Requirements covering all seventeen APIs.
 >
-> **Not yet done:** live sandbox access, EPFO, and the outbound ULI/OCEN score
-> API."
+> **Not yet done:** live sandbox access, EPFO, and the *inbound* score API — the
+> one a lender calls us on. The outbound direction is built: we can raise the case
+> into LOS, ULI or ONDC today, and because no endpoint is configured yet, the push
+> is recorded rather than sent — and the screen says so."
 
 > ⚠️ Say this plainly. Bank teams respect precision and will find the gap anyway.
 > Overselling readiness is the fastest way to lose a technical room.
+
+> ⚠️ If asked "so is the LOS integration real?" — the honest answer is: the payload
+> is real, the transport is one config line. Say exactly that. Do not claim a live
+> LOS connection.
 
 ### 11:00 – 11:35 · What's next
 
@@ -366,9 +405,10 @@ the same session. Bankers notice, and admitting it costs you nothing.
 > **One — the early warning system.** Score history is in place; the rules on top
 > of it are the next build. Band drop, GST lapse, a new charge, a bounce spike.
 >
-> **Two — a secured, documented API.** JWT plus an OpenAPI spec, so your LOS team
-> has something concrete to code against. The same endpoint answers the LOS
-> question, the LMS monitoring question, and the ULI/OCEN question.
+> **Two — a secured, documented API.** We can already push a case *to* you; what's
+> next is you pulling *from* us — JWT plus an OpenAPI spec, so your LOS team has
+> something concrete to code against. The same endpoint answers the LOS question,
+> the LMS monitoring question, and the ULI/OCEN question.
 >
 > **Three — a credit policy layer.** Approve, refer, decline — with cut-offs your
 > policy team edits, hard knock-outs, and officer overrides captured with a reason.
@@ -404,6 +444,7 @@ Agree this now. Nothing reads worse than three people starting to answer at once
 | Onboarding, consent, AA flow, languages | **Mayur** | Consent is explicit, artefact-backed and revocable |
 | The score engine, ML, explainability | **Mayur** | 60% rules / 40% LightGBM. PFI reasons, template-based, never free text |
 | Bank portal, MCA, charges, score history | **Thakre** | Charges come from the public register — no borrower declaration needed |
+| Loan-case push — LOS / ULI / ONDC | **Thakre** | The payload is real and shown before sending; the endpoint is one config line. Never claim a live connection |
 | Architecture, data storage, security | **Thakre** | One deployable, SQL + Blob per MSME, CSP headers, OTP login |
 | Anything about timelines or commercials | **Abhinav only** | "Let us come back to you with a number we've checked as a team" |
 
@@ -412,6 +453,13 @@ Agree this now. Nothing reads worse than three people starting to answer at once
 **"Is this a credit decision?"**
 > No. It's an indicative assessment and a product recommendation. The sanction is
 > always the bank's. We deliberately never use the word approved.
+
+**"How does this plug into our LOS?"**
+> From Customer 360 the officer raises the case, previews the exact JSON, and
+> confirms. Today no endpoint is set, so it is recorded as simulated with that
+> payload. Set `LoanCase:Endpoints:LOS` to your URL and the same action posts it —
+> no code change. ULI and ONDC are the same mechanism with the envelope each
+> standard expects.
 
 **"What if the MSME gives no AA consent?"**
 > We redistribute that dimension's weight across the sources we do have, and we
@@ -468,6 +516,7 @@ If they cut you short, drop these and nothing stops making sense:
 | §2 Navdeep contrast (5:15–5:50) | 35 s |
 | §3 portfolio dashboard (6:00–6:20) — go straight to the customer list | 20 s |
 | §3 Ratnadeep judgement case (9:30–10:30) | 60 s |
+| §3 the loan-case hand-off — it is optional to begin with | 45 s |
 | §4 "what's next" (11:00–11:35) — compress to one sentence | 35 s |
 
 **Never cut:** the charges panel (7:40) and score history (8:40). Those two are

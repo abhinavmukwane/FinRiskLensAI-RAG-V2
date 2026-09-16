@@ -173,14 +173,27 @@ include them in the ULI/OCEN external API responses described in
 `04_API_CONTRACTS.md` (those responses are score-focused; there's no
 reason a third-party lender query needs bank account details).
 
-## ULI (Unified Lending Interface) and OCEN 2.0
+## ULI (Unified Lending Interface), OCEN and ONDC
 
 These aren't inbound data sources — they're the outbound side described
-in `04_API_CONTRACTS.md` §3-4. Documented here only to note the
-distinction clearly: AA/GST/ITR/EPFO/Udyam are things we *call*; ULI/
-OCEN are the standards our *own* API should conform to so other lenders
-can call *us*. Don't build an "ULI connector" — build a compliant
-DSP-facing endpoint instead.
+in `04_API_CONTRACTS.md` §3-4a. Documented here only to note the
+distinction clearly: AA/GST/ITR/EPFO/Udyam are things we *call* for
+data; ULI/OCEN/ONDC are lending rails we *hand a case to*, and whose
+standards our own inbound API should conform to so other lenders can
+call *us*.
+
+**Built 2026-09-15 — the hand-off direction.** The bank portal can raise a
+scored MSME as a loan case in **LOS**, **ULI** (OCEN-4.0 loan application)
+or **ONDC** (beckn, domain `ONDC:FIS12`), each with its own payload
+builder; see `04_API_CONTRACTS.md` §4a. Note what this deliberately is
+*not*: it is not a generic "ULI connector" with its own client library,
+credential store and retry machinery. It is one POST per channel, with
+the envelope shaped to the standard and the endpoint read from config —
+blank endpoint means the payload is built and recorded but not sent.
+
+**Still unbuilt:** the inbound DSP-facing endpoint (a lender queries *us*
+by GSTIN), which is gap #2 in `07_SETUP_GAPS.md` and item 2.2 in
+`09_FINALS_ENHANCEMENT_PLAN.md`.
 
 ## Connector interface shape (suggested)
 

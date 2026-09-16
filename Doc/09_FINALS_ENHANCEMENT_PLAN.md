@@ -24,6 +24,8 @@ Verified against the codebase, not the deck:
 | Surfaces | Customer dashboard, Financial Health Card, printable Financial Report, Bank portal (Customer 360 + list + dashboard), Groq chatbot, IP-risk audit |
 | Persistence | SQL Server + EF Core 8, Azure Blob per-MSME folder, `MsmeScoreSummary` SQL projection |
 | Ops | DataProtection keys persisted, SQL session cache, parallel blob download, Serilog |
+| Monitoring | **Added 2026-09-08** — `t_MsmeScoreHistory` (append-only) + Score History trend chart on the Health Card and Customer 360 |
+| Hand-off | **Added 2026-09-15** — loan-case push to LOS / ULI / ONDC from Customer 360 (preview → confirm → receipt, `t_LoanCasePush`) |
 
 That is a genuinely strong prototype. The gaps below are not "missing features" —
 they are the specific things a **banking jury** will probe.
@@ -62,15 +64,27 @@ Also add FIStatus polling — the first FI fetch is usually `PENDING` and return
 
 ### 2.1 Score history + Early Warning System ⭐ highest ROI
 
+> **Status 2026-09-08 — half shipped.** The table and the trend chart are built;
+> the EWS rules on top of them are not. See "Build" below for which bullet is
+> which.
+
 **Problem:** `MsmeScoreSummary` is one row per UAN, **upserted** — every re-analyze
 destroys the previous value. There is no history, therefore no trend, therefore no
 monitoring.
 
 **Build:**
-- `MsmeScoreHistory` — append-only table, one row per computed score (UAN, all six
-  dimension scores, overall, band, `ComputedAt`, model version).
-- Score trend line on the Financial Health Card.
-- **EWS panel on the bank portal:** *"14 accounts dropped a band this month."*
+- ~~`MsmeScoreHistory` — append-only table, one row per computed score (UAN, all six
+  dimension scores, overall, band, `ComputedAt`, model version).~~ **Done** —
+  `t_MsmeScoreHistory`, appended by `AnalyzeAsync` on every run; the six dimensions
+  are columns, not JSON, precisely so an EWS rule can be a `WHERE` clause. Rows carry
+  `Source` (`analysis` / `seed`). See `DB_SCRIPTS.md`.
+- ~~Score trend line on the Financial Health Card.~~ **Done** — a **Score History**
+  button on the Health Card and on bank Customer 360 opens a modal with a Chart.js
+  line (overall + cash-flow health + compliance, points coloured by band). Served by
+  `/score-history`, which reads the bank session when an operator supplies a UAN and
+  the customer session otherwise.
+- **EWS panel on the bank portal:** *"14 accounts dropped a band this month."* —
+  **still to build**, and now the cheap half: the series it compares against exists.
   Triggers: GST filing lapse, turnover fall >25% QoQ, new MCA charge registered,
   cheque-return spike, AA balance trend inversion, band downgrade.
 
@@ -97,6 +111,12 @@ and undocumented.
 - Map the endpoints explicitly to the four integration questions the mentors asked:
   **LOS** (score pull at application), **LMS** (monitoring webhook),
   **OCEN/ULI** (DSP-shaped score API), **ONDC** (transaction-data ingest).
+
+> **Partly answered 2026-09-15.** The *outbound* half of the LOS / ULI / ONDC
+> question is built — the bank portal raises a loan case in any of the three, each
+> with a standard-shaped payload, endpoint read from config
+> (`04_API_CONTRACTS.md` §4a). What remains here is the *inbound* half: a secured,
+> versioned, Swagger-documented endpoint a lender calls to pull a score.
 
 **Why it wins:** the answer to all four mentor questions is a single artefact.
 *"Here is the OpenAPI spec your LOS team codes against, live, right now"* beats three
@@ -172,8 +192,10 @@ Credibility without burning finals time:
 
 - **EPFO** — employee-count and PF-remittance regularity (the `epfo.json` /
   `HasEpfo` slot is already stubbed).
-- **ULI / OCEN 2.0** DSP certification path.
-- **ONDC / GeM / e-NAM** transaction-history pulls.
+- **ULI / OCEN 2.0** DSP *certification* path (the outbound case hand-off is
+  built — certification, mTLS and registry onboarding are the roadmap part).
+- **ONDC / GeM / e-NAM** transaction-history pulls (again: we can *place* a beckn
+  order; ingesting their transaction history is the roadmap part).
 - **UPI merchant settlement** data for micro-enterprises.
 - **Geospatial / satellite** signals for agri-MSME.
 - **Fleet telematics** for logistics MSMEs.
@@ -201,8 +223,8 @@ Each of these costs days and wins nothing:
 | Order | Item | Section | Effort |
 |---|---|---|---|
 | 1 | Wire AA into the score | 1.1 | 0.5–3 d |
-| 2 | Score history + EWS | 2.1 | 2–3 d |
-| 3 | Swagger + JWT on the API | 2.2 | 1 d |
+| 2 | ~~Score history~~ + EWS | 2.1 | history **done**; EWS 1 d |
+| 3 | Swagger + JWT on the API | 2.2 | 1 d (outbound push **done**) |
 | 4 | PDF appraisal memo | 2.4 | 1 d |
 
 **~6 working days across 3 members — one comfortable sprint.** Everything else is upside.
@@ -217,6 +239,10 @@ We currently pitch: *"we score NTC MSMEs."*
 Pitch instead:
 
 > **"We score them, we keep watching them, and we plug into your LOS on day one."**
+
+As of 2026-09-15 all three clauses are demonstrable on screen, not just on a slide:
+the score, the Score History chart, and a loan case raised into LOS / ULI / ONDC
+with the exact payload shown before it is sent.
 
 Origination + monitoring + integration is a **system a bank can buy**.
 A score is a feature.

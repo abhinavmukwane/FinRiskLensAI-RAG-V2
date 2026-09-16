@@ -45,6 +45,13 @@ business already generates.
   bank-lending assessment (indicative WC / term-loan eligibility), GST deep-dive, bank
   statement analysis, MCA charges, and credit-product recommendations (CGTMSE / MUDRA /
   standard working capital).
+- **Score history & trend** — every analysis is kept (append-only), so the Health Card
+  and the bank portal show the *series*, not just today's number — the substrate for
+  post-disbursement monitoring rather than one-time origination scoring.
+- **Loan-case hand-off** — a bank officer can raise a scored MSME as a loan case in
+  **LOS**, **ULI** (OCEN 4.0) or **ONDC** (beckn, `ONDC:FIS12`) straight from Customer
+  360: preview the exact payload, confirm, get a receipt. Endpoints come from config, so
+  pointing a channel at a live system is a setting, not a code change.
 - **Lender-ready surfaces** — designed for IDBI's LOS and ULI DSP / OCEN 2.0 integration.
 
 ## Tech stack

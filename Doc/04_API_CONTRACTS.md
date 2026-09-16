@@ -106,6 +106,11 @@ action for an already-scored MSME)
   computed date only — enough for the trend chart, not full detail per
   point)
 
+> **Direction matters.** §3 and §4 below are *inbound*: a lender calls us and we
+> answer with a score. They are still unbuilt. What **is** built (2026-09-15) is the
+> *outbound* direction — we call them, raising a scored MSME as a loan case. See
+> §6.
+
 ## 3. ULI DSP-compatible Score API (external — any OCEN-compliant lender)
 
 This is the contract that makes the platform reusable infrastructure,
@@ -149,6 +154,47 @@ integration, not an arms-length OCEN query)
 **Officer override note** (optional, if built)
 - Input: ScoreComputation identifier, officer identifier, note text
 - Output: confirmation; stored as an addendum, never mutates the score
+
+## 4a. Outbound loan-case push — LOS / ULI / ONDC (**built 2026-09-15**)
+
+The mirror image of §3–4: instead of waiting to be asked for a score, the bank
+officer raises the MSME as a loan case downstream from Customer 360. Three
+channels, three genuinely different payload shapes, one contract
+(`ILoanCasePayloadBuilder`, registered by the `*PayloadBuilder` suffix — a fourth
+channel is one class).
+
+| Channel | Shape | Score travels as |
+|---|---|---|
+| **LOS** | `finrisklens.los.case.v1` — an appraisal case: applicant, decision, eligibility, six dimensions, the ratio table, bank/GST/ITR conduct, provenance | a decision block, because this is our own bank's system |
+| **ULI** | OCEN-4.0 loan application | a **derived data packet** beside the source packets and consent artefacts, with **no decision block** — ULI's model is that the lender decides and we supply evidence |
+| **ONDC** | beckn envelope, domain `ONDC:FIS12` — `context` + `message.order`, borrower as customer, loan as item | order tags |
+
+**Surface** (bank session only, `[BankAdminAuthorize]`):
+
+| Route | Does |
+|---|---|
+| `GET /loan-case/status?uan=` | latest push per channel + which channels have a live endpoint |
+| `GET /loan-case/preview?uan=&channel=` | renders the exact payload in a new tab — pure read, writes nothing |
+| `POST /loan-case/push` | builds, sends (or simulates), records, returns the receipt URL. `[ValidateAntiForgeryToken]` |
+| `GET /loan-case/receipt/{id}` | the recorded payload, response and frozen score for one push |
+
+**Preview-then-push, not one-click.** Raising a loan case is outward-facing and
+hard to reverse, so the officer sees the payload before committing. Preview and
+push run the same builder over the same inputs — the previewed bytes are the sent
+bytes.
+
+**Sent vs Simulated is honest, not faked.** `LoanCase:Endpoints:{LOS|ULI|ONDC}` is
+blank by default, so a push is recorded as `Simulated` with the exact payload that
+would have gone over the wire and a generated reference. Point a channel at a real
+URL (optional `LoanCase:ApiKeys:{channel}` as Bearer) and the same code path does a
+real POST, records `Sent`/`Failed` and extracts the downstream case id. **Pointing
+this at IDBI's LOS is a config change, not a code change** — which is the claim
+`09_FINALS_ENHANCEMENT_PLAN.md` makes about LOS integration.
+
+Every attempt is stored append-only in `t_LoanCasePush` with the score, band,
+eligibility and enterprise name **frozen at push time** — see `DB_SCRIPTS.md`. That
+is the audit trail §3 asks for above (the `ScoreQueryLog` idea), for the outbound
+direction.
 
 ## 5. Internal refresh trigger (Azure Function endpoints, not
 public-facing, but worth documenting since Claude Code will build

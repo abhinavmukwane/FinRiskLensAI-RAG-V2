@@ -19,7 +19,9 @@ handing this to Claude Code rather than writing it all by hand.
 1. `01_DOMAIN_MODEL.md` — entities, relationships, what each layer owns
 2. `02_CUSTOMER_FLOW.md` — the end-to-end MSME journey, step by step
 3. `03_SCORING_ENGINE.md` — how the 6-dimension score is computed
-4. `04_API_CONTRACTS.md` — internal + external API surface (ULI/OCEN, LOS)
+4. `04_API_CONTRACTS.md` — internal + external API surface: inbound score
+   APIs (ULI/OCEN DSP, LOS) and the built outbound loan-case push
+   (LOS / ULI / ONDC, §4a)
 5. `05_INTEGRATIONS.md` — AA, GST, ITR, EPFO, Udyam — what each one is
    and how
    we talk to it

@@ -368,6 +368,17 @@ Serilog. Layering: Core → Data → Services → Web, plus a new ML project.
   (e.g. Finvu AA callback) — don't rely on session in redirect landing pages; carry
   what you need in the URL / persisted row instead.
 
+## SimBanks sandbox registration on onboarding (added 2026-09-14)
+
+New registrations POST the generated mobile to the FinFactor SimBanks sandbox
+(`https://simbanks.finfactor.in/ConnectHub/AccountManagement/Account`, FIP
+`dhanagarbank`) so the number exists on the AA side when the consent journey runs.
+`SimBankAccountService`, called from `OnboardingController` inside
+`if (!saveResult.AlreadyRegistered)`. Statement window is **yesterday back one
+year**; AADHAR and DOB are derived deterministically from the mobile with a seeded
+`Random`, so re-running for the same number yields the same identity. Best-effort:
+any failure is logged and never fails the registration.
+
 ## Loan-case push — LOS / ULI / ONDC (added 2026-09-15)
 
 Bank portal → Customer 360 → **Push to LOS / ULI / ONDC** raises a scored MSME as
@@ -424,8 +435,10 @@ Customers list has a "Loan case" column.
 4. EPFO extractor when the data source arrives (slot exists: `EpfoJson`,
    `epfo.json`, `HasEpfo`).
 5. Map `RiskAnalysisResult` onto `ScoreComputation`/`ScoreExplanation`/
-   `CreditProductRecommendation` entities (not created yet) per `Doc/01_DOMAIN_MODEL.md`;
-   then add the score **trend line** to the Financial Health Card.
+   `CreditProductRecommendation` entities (not created yet) per `Doc/01_DOMAIN_MODEL.md`.
+   ~~then add the score **trend line** to the Financial Health Card.~~ Trend line is
+   done — `t_MsmeScoreHistory` + the Score History modal. The **EWS rules** on top of
+   that series are the open half (`Doc/09_FINALS_ENHANCEMENT_PLAN.md` §2.1).
 6. Swap synthetic training data for IDBI sandbox data when it opens **July 22**.
 7. Anomaly-detector thresholds need tuning with realistic data (current test mixed
    one company's GST with personal ITR/AA, so cross-source figures were incoherent).
