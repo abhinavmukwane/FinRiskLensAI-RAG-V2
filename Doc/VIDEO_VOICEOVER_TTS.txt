@@ -1,0 +1,43 @@
+A small business in India can be perfectly creditworthy, and still be invisible to a bank. No bureau file. No score.
+
+So we developed FinRiskLens A-I.
+
+We start with the one thing every registered MSME already has. Its Udyam number. Name, constitution, PAN, GSTIN, address, all come back from the government registry. One OTP, and the owner is verified.
+
+Before anything is fetched, the session itself is checked. VPN, proxy, Tor, network origin. Then the owner chooses what to share. Five sources. Every one of them opt-in.
+
+GST first. The authorisation is explicit and on the record. The business authorises this platform to pull its returns, for credit assessment, and for nothing else. Twenty-four months of G-S-T-R one, three B and two B come back.
+
+Bank statements go through the R-B-I's Account Aggregator framework. We never see a password, and we never see a PDF. The customer picks the bank, approves the consent inside the aggregator's own app, and can revoke it there at any time. Consent granted. The data flows.
+
+Income tax returns next. And because this business is a private limited company, the Ministry of Corporate Affairs record as well. The company, its directors, and the charges registered against it.
+
+Run A-I analysis. M-L dot NET scores it. Six hundred and eighty out of a thousand. Good. Rules engine, six seventy-one. Model, six ninety-four. The blend is what you see.
+
+Six dimensions, each one scored out of its own maximum. Six point one five crore of indicative eligibility, on the Nayak method. Indicative. Never a sanction.
+
+And here is the part that matters for a new-to-credit borrower. No bureau record found. So that dimension takes a neutral default, instead of a penalty.
+
+Every score we compute is kept. Append only. So the bank sees the trend, not just today's number.
+
+Under the score, every source opens up. Udyam. Verified identity, classification, location.
+
+GST. Ninety-four out of a hundred. Eighteen of eighteen returns filed, none late, turnover growing eighteen percent, and a hundred and twenty-six active B-to-B customers behind it.
+
+Bank conduct. Sixty-nine. And notice the platform does not flatter this one. Transaction trustworthiness is the weakest of the six dimensions, because very little of the declared turnover actually lands in this account. The model says so on the screen.
+
+Income tax. Ninety-five. Filed on time, tax fully discharged, seventeen point eight percent net margin off a two crore turnover.
+
+And the corporate record. Ninety. Company active. Two directors, both director identification numbers verified against M-C-A and screened. Three charges still open, the largest two point four nine crore. That is two and a half crore of assets already pledged elsewhere, read off the public register, without asking the borrower to declare it.
+
+That is the borrower's side. This is the bank's.
+
+Eighteen enterprises onboarded, sixteen scored, eleven lendable today. And two the officer should look at before anyone else does.
+
+One customer, one screen. Score, eligibility, recommended product, and every source behind it on its own tab. Including how the session that submitted this data was verified.
+
+Then the officer raises it as a loan case. Into the bank's own L-O-S. Into R-B-I's Unified Lending Interface. Or onto O-N-D-C. The exact payload is shown before anything is sent. And because no endpoint is configured yet, it is recorded, not sent, and the screen says so.
+
+One column tells the officer what has already gone downstream, and where.
+
+FinRiskLens A-I. One score. Five sources. No paperwork.
