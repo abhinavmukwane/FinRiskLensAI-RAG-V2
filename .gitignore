@@ -27,6 +27,8 @@ bld/
 [Ll]ogs/
 
 .claude/
+CLAUDE.md
+CLAUDE.md.md
 .vs/
 bin/
 obj/
