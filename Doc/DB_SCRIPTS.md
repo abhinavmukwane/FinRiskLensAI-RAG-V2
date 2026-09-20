@@ -15,8 +15,10 @@ migrations history table is pinned elsewhere, at
 `[cre].[__EFMigrationsHistory]` (set in `DataServiceCollectionExtensions`).
 Adjust the prefix if your environment differs.
 
-Current UAT target: `103.21.58.192` / `FinRiskLensAI_UAT`
-(`appsettings.Development.json`).
+Current UAT target: the host and database named in `appsettings.Development.json`
+(`ConnectionStrings:SqlServer`) — DB `FinRiskLensAI_UAT`. That file is git-ignored and
+the host is deliberately not written down in a public repository; ask a team member if
+you need it.
 
 **Add a new entry to this file whenever a table is created, a column is added,
 or a column is altered — before running the migration.**

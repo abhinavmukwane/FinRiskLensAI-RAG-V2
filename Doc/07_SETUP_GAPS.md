@@ -14,7 +14,8 @@
 >   remains inert. Needed before the external API surface
 >   (`04_API_CONTRACTS.md` §3/§4) ships.
 > - **Gap 3 (PostgreSQL as target) — DECISION REVERSED.** The team chose SQL
->   Server (remote instance at 4.247.173.231). Do NOT regenerate migrations
+>   Server (a remote instance; host in `appsettings.Development.json`). Do NOT
+>   regenerate migrations
 >   for Npgsql; the guidance below is retained for history only.
 
 `ARCHITECTURE.md` §11 flags these explicitly. Listing them here as a

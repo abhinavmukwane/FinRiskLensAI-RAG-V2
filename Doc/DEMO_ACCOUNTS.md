@@ -1,7 +1,8 @@
 # IDBI Live Demo — three seeded MSME accounts
 
-Three synthetic customers covering the score range, published to **UAT**
-(`103.21.58.192` / `FinRiskLensAI_UAT`) and the `msme-data` blob container.
+Three synthetic customers covering the score range, published to the **UAT** database
+(`FinRiskLensAI_UAT`, host in `appsettings.Development.json`) and the `msme-data` blob
+container.
 
 Generated 2026-09-04. Data is deterministic — regenerating produces byte-identical
 files and the same scores.

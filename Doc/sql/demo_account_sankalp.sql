@@ -90,7 +90,7 @@ IF NOT EXISTS (SELECT 1 FROM FinRiskLensAI.t_UserRegistration WHERE UdyamNumber=
 INSERT INTO FinRiskLensAI.t_UserRegistration
  (MobileNumber,Email,UdyamNumber,GstinNumber,PanNumber,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy,MsmeEnquiryID,IPAddress)
 VALUES (N'9823714402',N'sankalp.autotech@finrisklens.demo',N'UDYAM-MH-25-0042817',N'27AAJCS7412K1Z0',N'AAJCS7412K',
-  SYSUTCDATETIME(),SYSUTCDATETIME(),N'demo-seed',N'demo-seed',@eid,N'103.21.58.192');
+  SYSUTCDATETIME(),SYSUTCDATETIME(),N'demo-seed',N'demo-seed',@eid,N'127.0.0.1');
 
 DECLARE @rid INT = (SELECT UserRegistrationID FROM FinRiskLensAI.t_UserRegistration WHERE UdyamNumber=N'UDYAM-MH-25-0042817');
 

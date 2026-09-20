@@ -16,9 +16,11 @@ Serilog. Layering: Core → Data → Services → Web, plus a new ML project.
 ## Current state — everything below is BUILT, TESTED, and PUSHED to main
 
 ### 1. Database (SQL Server, remote)
-- Connection: remote SQL Server at `103.21.58.192` (moved from 4.247.173.231 on
-  2026-07-03), DB `FinRiskLensAI`, SQL auth (login `FinRiskLensAI`) — real string in
-  `appsettings.Development.json` (`Database:ConnectionStrings:SqlServer`); `appsettings.json`
+- Connection: remote SQL Server (host moved to the current box on 2026-07-03), DB
+  `FinRiskLensAI`, SQL auth — real host, login and password in
+  `appsettings.Development.json` (`Database:ConnectionStrings:SqlServer`), which is
+  git-ignored. Host and credentials are deliberately not recorded in this file, because
+  the repository is public. `appsettings.json`
   has a placeholder now (see §7b). `ApplicationDbContextFactory` (design-time) still hardcodes
   it — keep it in sync / read from config. `TrustServerCertificate=True` required.
   Tables land in the login's default schema `FinRiskLensAI`, not `dbo`. PostgreSQL
@@ -153,8 +155,9 @@ Serilog. Layering: Core → Data → Services → Web, plus a new ML project.
   `gstr1_cdnr_MMyyyy.json`, `gstr1_hsn_summary_MMyyyy.json`,
   `gstr2a_b2b_MMyyyy.json`, plus `_manifest.json` and `result.json`).
   Engine writes `result.json` back; manifest lifecycle Collecting→Processing→Completed/Failed.
-- Azure Storage connection string in `appsettings.json` under `AzureBlob:*`
-  (account `tflgspblobstorage`). Verified end-to-end against the real account;
+- Azure Storage connection string in `appsettings.Development.json` under `AzureBlob:*`
+  (the account name and key live there, not in this file — public repository).
+  `appsettings.json` carries a placeholder. Verified end-to-end against the real account;
   test folder `UDYAM-MH-20-0033382` may still exist there (contains real personal
   data — deletable).
 
