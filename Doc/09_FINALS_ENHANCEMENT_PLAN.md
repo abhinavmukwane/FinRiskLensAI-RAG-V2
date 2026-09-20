@@ -5,7 +5,7 @@
 **Scope:** what to add, why it wins, what it costs, and — equally important — what NOT to build.
 
 Companion docs: [`00_README.md`](00_README.md) (product), [`08_ML_ENGINE.md`](08_ML_ENGINE.md)
-(scoring internals), [`../HANDOFF.md`](../HANDOFF.md) (build state), and the IDBI
+(scoring internals), [`DB_SCRIPTS.md`](DB_SCRIPTS.md) (schema log), and the IDBI
 data-field submission (`IDBI Innovate 2026 - Data Field Requirements - FinRiskLens AI.docx`).
 
 ---
@@ -36,7 +36,7 @@ they are the specific things a **banking jury** will probe.
 
 ### 1.1 AA data does not reach the score
 
-**Evidence:** `HANDOFF.md` § "Likely next steps" item 1. `FinancialInfoFetch` persists
+**Evidence:** `FinancialInfoFetch` persists
 Finvu's **encrypted** FI response to `aa.json`; `AaFeatureExtractor` expects decrypted
 `body[*].fiObjects[*]`. `BlobAnalysisService.AnalyzeAsync` logs a "no fiObjects"
 warning and scores without bank data.

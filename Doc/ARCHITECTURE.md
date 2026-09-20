@@ -163,7 +163,7 @@ cache, unique per UAN, raw JSON in `Payload`), `t_MsmeLocations`,
   the caller).
 - Migrations: one clean `InitialCreate` baseline under
   `Data/Migrations/SqlServer/`; history table `cre.__EFMigrationsHistory`.
-  Commands are documented in `HANDOFF.md`. Runtime connection comes from
+  Commands are documented in `DB_SCRIPTS.md`. Runtime connection comes from
   `appsettings.json`, design-time from `ApplicationDbContextFactory` — keep in
   sync.
 
@@ -240,7 +240,7 @@ Azure Blob  msme-data/{UAN}/…  ──►  BlobAnalysisService  ──►  resu
    shared result/DTO shapes in `Core/Models/...`.
 2. **Persistence** — `IEntityTypeConfiguration<T>` (+ `UseIdentityColumn()` on
    the key) in `Data/Configurations`; `DbSet` on the context; migration via the
-   commands in `HANDOFF.md`.
+   commands in `DB_SCRIPTS.md`.
 3. **Application/ML** — `IFooService` in Core, `FooService` in `Services` (or
    `ML` if it needs ML/storage packages); auto-registers by naming convention.
 4. **Presentation** — controller depends on the Core interface; Razor views;

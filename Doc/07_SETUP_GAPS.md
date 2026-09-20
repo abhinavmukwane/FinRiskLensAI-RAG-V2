@@ -8,7 +8,7 @@
 >   exists in code but is unused. Migrations live in
 >   `FinRiskLensAI.Data/Migrations/SqlServer/` and are applied to the remote
 >   shared SQL Server (connection string in `appsettings.json`). Migration
->   commands are documented in `HANDOFF.md`.
+>   commands are documented in `DB_SCRIPTS.md`.
 > - **Gap 2 (JWT bearer) — STILL OPEN.** Nothing registers
 >   `AddAuthentication().AddJwtBearer(...)` yet; the `Jwt` config section
 >   remains inert. Needed before the external API surface

@@ -29,11 +29,44 @@ or a column is altered — before running the migration.**
 
 | Date | Change | Table |
 |---|---|---|
+| 2026-07-07 | Create — SQL-backed session store | `SessionCache` |
 | 2026-08-24 | Create — bank portal login | `ADM_BankLogin` |
 | 2026-08-24 | Create — SQL index over blob `result.json` | `t_MsmeScoreSummary` |
 | 2026-09-08 | Create — append-only score series behind the trend chart | `t_MsmeScoreHistory` |
 | 2026-09-15 | Create — append-only loan-case pushes to LOS / ULI / ONDC | `t_LoanCasePush` |
 | 2026-09-15 | Alter — add `EnterpriseName` (frozen at push time) | `t_LoanCasePush` |
+
+---
+
+## 2026-07-07 — `SessionCache` (new table)
+
+Not an EF entity — this is the ASP.NET Core distributed session store
+(`AddDistributedSqlServerCache`, registered before `AddSession` in `Program.cs`).
+
+It exists because of a production bug: a heavy re-analyze (LightGBM / PCA training)
+recycled the IIS app pool, the in-memory session was wiped, and the next request
+redirected the user to the login page. A SQL-backed session survives an app-pool
+recycle *and* a multi-instance farm. The `GetCurrentUser()` API is unchanged.
+
+Run once per database. The table lives in the login's own schema — no `dbo` needed.
+
+```sql
+CREATE TABLE [FinRiskLensAI].[SessionCache](
+    [Id]                         NVARCHAR(449) COLLATE SQL_Latin1_General_CP1_CS_AS NOT NULL,
+    [Value]                      VARBINARY(MAX)    NOT NULL,
+    [ExpiresAtTime]              DATETIMEOFFSET(7) NOT NULL,
+    [SlidingExpirationInSeconds] BIGINT            NULL,
+    [AbsoluteExpiration]         DATETIMEOFFSET(7) NULL,
+    CONSTRAINT [pk_Id] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+GO
+
+CREATE NONCLUSTERED INDEX [Index_ExpiresAtTime]
+    ON [FinRiskLensAI].[SessionCache] ([ExpiresAtTime]);
+GO
+```
+
+Equivalent to `dotnet sql-cache create "<conn>" FinRiskLensAI SessionCache`.
 
 ---
 

@@ -1,4 +1,4 @@
-using Autofac;
+﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.DI;
@@ -72,7 +72,7 @@ builder.Services.AddDataProtection()
 // Otherwise an app-pool recycle (a heavy re-analyze can trigger one) or a web-farm
 // instance switch wipes the in-memory session, and the next request silently logs
 // the user out (redirected to Auth/CustLogin). SQL-backed session survives both.
-// Table: [FinRiskLensAI].[SessionCache] — see the create SQL in HANDOFF.md.
+// Table: [FinRiskLensAI].[SessionCache] — see the create SQL in Doc/DB_SCRIPTS.md.
 builder.Services.AddDistributedSqlServerCache(o =>
 {
     o.ConnectionString = builder.Configuration["Database:ConnectionStrings:SqlServer"];

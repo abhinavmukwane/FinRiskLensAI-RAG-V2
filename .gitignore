@@ -29,6 +29,7 @@ bld/
 .claude/
 CLAUDE.md
 CLAUDE.md.md
+HANDOFF.md
 .vs/
 bin/
 obj/
