@@ -36,6 +36,14 @@ handing this to Claude Code rather than writing it all by hand.
 9. `09_FINALS_ENHANCEMENT_PLAN.md` — the top-5 finals build plan: verified
    prototype state, the AA scoring gap, tiered priorities with effort
    estimates, and what deliberately not to build
+10. `10_FRAUD_LENS_BUILD.md` — the RAG-V2 fork's build plan: what this
+    codebase keeps, removes and adds to become evidence-based fraud
+    detection, the Google Cloud services required, and the phased
+    schedule with the parallel RAG lane
+11. `11_RAG_ARCHITECTURE.md` — retrieval-augmented generation in full:
+    where RAG belongs and where it deliberately does not, the five
+    corpora, chunking, hybrid retrieval, the citation contract and its
+    verifier, evaluation and failure modes
 
 ## Ground rules for implementation
 
