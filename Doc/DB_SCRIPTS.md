@@ -399,11 +399,11 @@ code path into a real POST — `Status` becomes `Sent` or `Failed`.
 Preferred — EF migration from the repository root:
 
 ```bash
-dotnet ef migrations add <MigrationName> --project FinRiskLensAI.Data --startup-project FinRiskLensAI
+dotnet ef migrations add <MigrationName> --project FinRiskLensAI.Data --startup-project FinRiskLensAI-RAG-V2
 ```
 
 ```bash
-dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI
+dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI-RAG-V2
 ```
 
 If EF tooling is unavailable, run the `CREATE TABLE` scripts above by hand and

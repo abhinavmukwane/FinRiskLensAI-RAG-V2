@@ -170,7 +170,7 @@ live connection that does not exist.
 ## Architecture
 
 ```
-FinRiskLensAI            →  Web / MVC — controllers, Razor views, Program.cs, config
+FinRiskLensAI-RAG-V2     →  Web / MVC — controllers, Razor views, Program.cs, config
 FinRiskLensAI.Services   →  application and business logic   (*Service,    auto-registered)
 FinRiskLensAI.ML         →  ML.NET scoring engine, blob store, feature extractors
 FinRiskLensAI.Data       →  EF Core, repositories            (*Repository, auto-registered)
@@ -194,13 +194,14 @@ cd FinRiskLensAI
 dotnet restore
 ```
 
-Configuration lives in `FinRiskLensAI/appsettings.json`, which ships with **placeholder
-values only**. Create `FinRiskLensAI/appsettings.Development.json` (git-ignored) with your
+Configuration lives in `FinRiskLensAI-RAG-V2/appsettings.json`, which ships with
+**placeholder values only**. Create `FinRiskLensAI-RAG-V2/appsettings.Development.json`
+(git-ignored) with your
 own connection string, Azure Blob connection, SMTP and Finvu credentials, then:
 
 ```bash
-dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI
-dotnet run --project FinRiskLensAI
+dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI-RAG-V2
+dotnet run --project FinRiskLensAI-RAG-V2
 ```
 
 Open the `https://localhost:…` URL it prints. Every table and the SQL to create it by hand
@@ -230,7 +231,7 @@ The `Doc/` folder is the real specification, not an afterthought.
 ## Repository layout
 
 ```
-FinRiskLensAI/            web application — controllers, views, wwwroot, appsettings
+FinRiskLensAI-RAG-V2/     web application — controllers, views, wwwroot, appsettings
 FinRiskLensAI.Services/   business logic
 FinRiskLensAI.ML/         scoring engine
 FinRiskLensAI.Data/       EF Core and repositories

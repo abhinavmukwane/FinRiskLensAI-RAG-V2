@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36717.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinRiskLensAI", "FinRiskLensAI\FinRiskLensAI.csproj", "{1A77D9B3-75D9-4B21-83E1-D970C3A98821}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinRiskLensAI-RAG-V2", "FinRiskLensAI-RAG-V2\FinRiskLensAI-RAG-V2.csproj", "{1A77D9B3-75D9-4B21-83E1-D970C3A98821}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinRiskLensAI.Services", "FinRiskLensAI.Services\FinRiskLensAI.Services.csproj", "{3E51F75F-1921-4812-A6CA-7DF92844F0B0}"
 EndProject

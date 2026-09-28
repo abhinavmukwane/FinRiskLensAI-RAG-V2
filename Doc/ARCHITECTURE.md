@@ -30,9 +30,9 @@ payload storage via **Azure Blob Storage**, logging via **Serilog**.
 
 ```
 F:\FinRiskLensAI_Git\
-├── FinRiskLensAI.sln
+├── FinRiskLensAI-RAG-V2.sln
 │
-├── FinRiskLensAI\                 → Web / Presentation layer (startup project)
+├── FinRiskLensAI-RAG-V2\          → Web / Presentation layer (startup project)
 │   ├── Controllers\               HomeController · OnboardingController
 │   │                              DashboardController   (Financial Health Card UI)
 │   │                              MsmeDataController    (blob upload/status/analyze API)

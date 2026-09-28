@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <!-- Project/folder renamed for the RAG V2 fork; the namespace and the output
+         assembly stay FinRiskLensAI so no using, Razor view or deployment changes. -->
+    <RootNamespace>FinRiskLensAI</RootNamespace>
+    <AssemblyName>FinRiskLensAI</AssemblyName>
 	<UseAppHost>false</UseAppHost>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
