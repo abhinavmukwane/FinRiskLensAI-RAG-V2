@@ -110,10 +110,10 @@ That is the part a competitor cannot copy — it is earned, not built.
                          └───────────────────┬─────────────────────┘
                                              ▼
                               ┌──────────────────────────────┐
-                              │ SQL Server                   │
-                              │  KnowledgeDocs               │
-                              │  KnowledgeChunks (+FULLTEXT) │
-                              │  ChunkEmbeddings (VARBINARY) │
+                              │ Cloud SQL for PostgreSQL     │
+                              │  knowledge_docs              │
+                              │  knowledge_chunks (+GIN ts)  │
+                              │  chunk_embeddings (pgvector) │
                               └──────────────┬───────────────┘
                                              │
    Underwriter question                      │
@@ -167,8 +167,10 @@ collapse whitespace, keep clause numbers.
 **Step 5 — Embed.** Batch chunks through the Vertex AI embedding model with task
 type `RETRIEVAL_DOCUMENT`. See [§7](#7-embeddings).
 
-**Step 6 — Index.** Write `KnowledgeChunks` + `ChunkEmbeddings`, and let SQL Server
-full-text indexing cover the chunk text for the keyword arm of hybrid search.
+**Step 6 — Index.** Write `knowledge_chunks` + `chunk_embeddings`. Both indexes
+maintain themselves: the `ts` generated column feeds the GIN index for the keyword
+arm, and the HNSW index covers the new vector on insert. There is no post-ingest
+rebuild step to forget.
 
 **Idempotency.** Every source document carries a SHA-256. Re-ingesting an identical
 file is a no-op. A changed file supersedes the previous version: old chunks are
@@ -210,9 +212,11 @@ is worse than useless because the model reads the wrong row.
 - **Task types matter.** Documents are embedded with `RETRIEVAL_DOCUMENT`, queries
   with `RETRIEVAL_QUERY`. Using the same task type for both measurably degrades
   recall; this is the single most common implementation mistake.
-- **Dimensionality** is whatever the pinned model emits; stored as a float array in
-  `VARBINARY(MAX)`. The dimension is recorded on the row so a model change is
-  detectable rather than silently corrupting cosine scores.
+- **Dimensionality** is whatever the pinned model emits, declared on the column as
+  `vector(n)`. The dimension is also recorded on the row, so a model change is
+  detectable rather than silently corrupting distances — and changing `n` is a
+  migration, which is the right amount of friction for something that invalidates
+  the index.
 - **Batching:** chunks are embedded in batches (config `Rag:EmbedBatchSize`, default
   32) with retry and exponential backoff.
 - **Versioning:** `ChunkEmbeddings.ModelId` records which model produced the vector.
@@ -223,31 +227,58 @@ is worse than useless because the model reads the wrong row.
 
 ## 8. Vector storage
 
-**Hackathon scale: SQL Server + cosine in C#.**
+**Cloud SQL for PostgreSQL with the `pgvector` extension.** One database holds the
+application data, the knowledge chunks and their vectors — no separate vector
+service, and a chunk and its embedding are written in the same transaction.
 
-The corpus is thousands of chunks, not millions. Loading candidate vectors and
-computing cosine in memory takes single-digit milliseconds and needs no extra
-infrastructure — which matters when the whole system already depends on Cloud SQL,
-Cloud Run, Vertex AI and GCS.
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
 
-```csharp
-// Rag/VectorMath.cs — deliberately boring
-public static float Cosine(ReadOnlySpan<float> a, ReadOnlySpan<float> b)
-{
-    float dot = 0, na = 0, nb = 0;
-    for (var i = 0; i < a.Length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
-    return dot / (MathF.Sqrt(na) * MathF.Sqrt(nb) + 1e-9f);
-}
+ALTER TABLE chunk_embeddings
+  ADD COLUMN embedding vector(768);        -- dimension from Gemini:EmbeddingModel
+
+-- HNSW: fast approximate search, built once, cheap to query.
+CREATE INDEX idx_chunk_embedding_hnsw
+  ON chunk_embeddings USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
 ```
 
-Vectors are **pre-filtered in SQL** by corpus, `IsCurrent` and `ModelId` before
-they are loaded, so we never scan the whole table. Normalised vectors are stored so
-cosine reduces to a dot product.
+Retrieval is then a single query — the distance operator, the metadata filter and
+the ordering all happen in the database:
 
-> **ponytail:** in-memory cosine over a pre-filtered candidate set. Upgrade to
-> Vertex AI Vector Search when the corpus passes ~100k chunks or p95 retrieval
-> exceeds 150 ms — not before. The `IVectorIndex` interface exists so that swap is
-> one class.
+```sql
+SELECT c.chunk_id, c.breadcrumb, c.chunk_text,
+       1 - (e.embedding <=> @queryVec) AS score      -- <=> is cosine distance
+FROM   chunk_embeddings e
+JOIN   knowledge_chunks c ON c.chunk_id = e.chunk_id
+JOIN   knowledge_docs   d ON d.knowledge_doc_id = c.knowledge_doc_id
+WHERE  d.corpus = ANY(@corpora)
+  AND  c.is_current
+  AND  e.model_id = @modelId
+  AND  (d.lender_id IS NULL OR d.lender_id = @lenderId)
+ORDER  BY e.embedding <=> @queryVec
+LIMIT  @denseTopK;
+```
+
+**Why this and not a vector database.** The corpus is thousands of chunks, not
+millions. pgvector in the database we already run is exact enough, fast enough, and
+adds no service to deploy, secure or pay for. It also keeps chunk metadata and
+vector in one place, so the corpus/`is_current`/model filters run *before* the
+distance scan rather than as a post-filter — which is where standalone vector stores
+get awkward.
+
+**Store normalised vectors** so cosine distance and inner product agree, and record
+`model_id` + `dimensions` on the row. A mixed-model index is a silent correctness
+bug; retrieval filters on the current model id and a background job re-embeds
+stragglers.
+
+**Index choice.** HNSW over IVFFlat: it needs no training step, tolerates a corpus
+that grows continuously (C4 case memory does), and its recall/latency trade-off is
+tuned at query time with `hnsw.ef_search` rather than at build time.
+
+> **ponytail:** pgvector + HNSW in the primary database. No separate vector store
+> until the corpus passes roughly a million chunks or p95 retrieval exceeds 150 ms —
+> and `IVectorIndex` exists so that swap stays one class.
 
 ---
 
@@ -257,10 +288,34 @@ Pure vector search fails on exactly the queries this domain generates, because
 underwriters use **exact terms**: "FOIR", "44AB", "CERSAI", "§4.2". Embeddings
 blur precisely those tokens. So retrieval runs two arms and fuses them.
 
-**Arm A — dense.** Embed the query (`RETRIEVAL_QUERY`), cosine against the filtered
-candidate set, take top 20.
+**Arm A — dense.** Embed the query (`RETRIEVAL_QUERY`), then the pgvector query in
+[§8](#8-vector-storage), top 20.
 
-**Arm B — sparse.** SQL Server full-text `CONTAINS` / `FREETEXT` with rank, top 20.
+**Arm B — sparse.** PostgreSQL full-text search — `tsvector` / `tsquery` with
+`ts_rank_cd`, top 20. Full-text is part of the core engine, so there is no optional
+feature to enable and no dependency on the managed instance's configuration:
+
+```sql
+ALTER TABLE knowledge_chunks
+  ADD COLUMN ts tsvector
+  GENERATED ALWAYS AS (to_tsvector('english', coalesce(breadcrumb,'') || ' ' || chunk_text)) STORED;
+
+CREATE INDEX idx_chunk_ts ON knowledge_chunks USING GIN (ts);
+```
+
+```sql
+SELECT c.chunk_id, ts_rank_cd(c.ts, q) AS score
+FROM   knowledge_chunks c
+JOIN   knowledge_docs d ON d.knowledge_doc_id = c.knowledge_doc_id,
+       websearch_to_tsquery('english', @question) q
+WHERE  c.ts @@ q AND c.is_current AND d.corpus = ANY(@corpora)
+ORDER  BY score DESC
+LIMIT  @sparseTopK;
+```
+
+The generated column means the index maintains itself on insert and update — nothing
+to rebuild after ingestion. `websearch_to_tsquery` accepts quoted phrases and `-`
+exclusions, which is what an underwriter types without being taught a syntax.
 
 **Fusion — Reciprocal Rank Fusion.** Simple, parameter-light, and it does not
 require the two arms' scores to be comparable:
@@ -388,58 +443,77 @@ account numbers or applicant refs).
 
 ## 14. Data model
 
+PostgreSQL. Snake-case table and column names are the Npgsql/EF Core default and are
+kept rather than fought.
+
 ```sql
-CREATE TABLE KnowledgeDocs (
-  KnowledgeDocId  INT IDENTITY PRIMARY KEY,
-  Corpus          VARCHAR(20)  NOT NULL,      -- POLICY, REGULATION, TYPOLOGY, CASE_MEMORY, EXEMPLAR
-  Title           NVARCHAR(300) NOT NULL,
-  SourceUri       NVARCHAR(400) NULL,         -- gs://... or NULL for generated
-  Sha256          VARBINARY(32) NOT NULL,
-  Version         NVARCHAR(40)  NULL,         -- "Credit Policy v3"
-  EffectiveFrom   DATE NULL,
-  EffectiveTo     DATE NULL,
-  LenderId        INT NULL,                   -- NULL = applies to all tenants
-  IsCurrent       BIT NOT NULL DEFAULT 1,
-  IngestedAt      DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
-);
-CREATE INDEX IX_KDoc_Corpus ON KnowledgeDocs (Corpus, IsCurrent);
+CREATE EXTENSION IF NOT EXISTS vector;
 
-CREATE TABLE KnowledgeChunks (
-  ChunkId         BIGINT IDENTITY PRIMARY KEY,
-  KnowledgeDocId  INT NOT NULL REFERENCES KnowledgeDocs,
-  Ordinal         INT NOT NULL,
-  Breadcrumb      NVARCHAR(400) NULL,         -- "Credit Policy v3 > S4 Exposure > S4.2"
-  ChunkText       NVARCHAR(MAX) NOT NULL,
-  TokenCount      INT NOT NULL,
-  SourceFindingId INT NULL,                   -- C4 provenance
-  SourceRingId    INT NULL,
-  IsCurrent       BIT NOT NULL DEFAULT 1
+CREATE TABLE knowledge_docs (
+  knowledge_doc_id  SERIAL PRIMARY KEY,
+  corpus            VARCHAR(20)  NOT NULL,     -- POLICY, REGULATION, TYPOLOGY, CASE_MEMORY, EXEMPLAR
+  title             TEXT         NOT NULL,
+  source_uri        TEXT         NULL,         -- gs://... or NULL for generated
+  sha256            BYTEA        NOT NULL,
+  version           VARCHAR(40)  NULL,         -- "Credit Policy v3"
+  effective_from    DATE NULL,
+  effective_to      DATE NULL,
+  lender_id         INT  NULL,                 -- NULL = applies to all tenants
+  is_current        BOOLEAN NOT NULL DEFAULT TRUE,
+  ingested_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IX_KChunk_Doc ON KnowledgeChunks (KnowledgeDocId, Ordinal);
--- full-text index on ChunkText powers the sparse arm of hybrid search
+CREATE INDEX idx_kdoc_corpus ON knowledge_docs (corpus, is_current);
 
-CREATE TABLE ChunkEmbeddings (
-  ChunkId         BIGINT PRIMARY KEY REFERENCES KnowledgeChunks,
-  ModelId         NVARCHAR(100) NOT NULL,
-  Dimensions      INT NOT NULL,
-  Vector          VARBINARY(MAX) NOT NULL,    -- normalised float32 array
-  EmbeddedAt      DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+CREATE TABLE knowledge_chunks (
+  chunk_id          BIGSERIAL PRIMARY KEY,
+  knowledge_doc_id  INT NOT NULL REFERENCES knowledge_docs,
+  ordinal           INT NOT NULL,
+  breadcrumb        TEXT NULL,                 -- "Credit Policy v3 > S4 Exposure > S4.2"
+  chunk_text        TEXT NOT NULL,
+  token_count       INT NOT NULL,
+  source_finding_id INT NULL,                  -- C4 provenance
+  source_ring_id    INT NULL,
+  is_current        BOOLEAN NOT NULL DEFAULT TRUE,
+  ts                tsvector GENERATED ALWAYS AS
+                      (to_tsvector('english', coalesce(breadcrumb,'') || ' ' || chunk_text)) STORED
 );
+CREATE INDEX idx_kchunk_doc ON knowledge_chunks (knowledge_doc_id, ordinal);
+CREATE INDEX idx_kchunk_ts  ON knowledge_chunks USING GIN (ts);   -- sparse arm
 
-CREATE TABLE RagQueryLog (
-  RagQueryId      BIGINT IDENTITY PRIMARY KEY,
-  ApplicationId   INT NULL,
-  Actor           NVARCHAR(100) NOT NULL,     -- user id, or 'INVESTIGATOR_AGENT'
-  Question        NVARCHAR(MAX) NOT NULL,
-  Corpora         VARCHAR(100) NOT NULL,
-  RetrievedIds    NVARCHAR(MAX) NOT NULL,     -- JSON array of chunkIds + scores
-  Answer          NVARCHAR(MAX) NULL,
-  Grounded        VARCHAR(20) NOT NULL,       -- GROUNDED, PARTIAL, REFUSED, BLOCKED
-  StrippedClaims  INT NOT NULL DEFAULT 0,
-  LatencyMs       INT NOT NULL,
-  At              DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+CREATE TABLE chunk_embeddings (
+  chunk_id     BIGINT PRIMARY KEY REFERENCES knowledge_chunks ON DELETE CASCADE,
+  model_id     VARCHAR(100) NOT NULL,
+  dimensions   INT NOT NULL,
+  embedding    vector(768)  NOT NULL,          -- normalised; dimension per model
+  embedded_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_chunk_embedding_hnsw
+  ON chunk_embeddings USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);        -- dense arm
+
+CREATE TABLE rag_query_log (
+  rag_query_id    BIGSERIAL PRIMARY KEY,
+  application_id  INT NULL,
+  actor           VARCHAR(100) NOT NULL,       -- user id, or 'INVESTIGATOR_AGENT'
+  question        TEXT NOT NULL,
+  corpora         VARCHAR(100) NOT NULL,
+  retrieved_ids   JSONB NOT NULL,              -- chunk ids + scores, queryable
+  answer          TEXT NULL,
+  grounded        VARCHAR(20) NOT NULL,        -- GROUNDED, PARTIAL, REFUSED, BLOCKED
+  stripped_claims INT NOT NULL DEFAULT 0,
+  latency_ms      INT NOT NULL,
+  at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
+
+Two PostgreSQL features earn their place here. **`retrieved_ids` is `JSONB`**, not a
+string, so evaluation queries can aggregate over retrieval results directly. And the
+**`ts` generated column** keeps the full-text index correct on every insert and
+update with no ingestion step to remember.
+
+`vector(768)` is written explicitly for clarity — set it from the pinned embedding
+model's dimension. Changing it is a migration, which is the correct amount of
+friction for a change that invalidates the whole index.
 
 Chunks are **never hard-deleted**. Superseding sets `IsCurrent = 0`, so a citation
 recorded against a case last quarter still resolves to the text the underwriter
@@ -453,7 +527,7 @@ actually read.
 FinRiskLensAI.Fraud/Rag/
 ├─ IKnowledgeStore.cs           corpus CRUD, chunk fetch
 ├─ IVectorIndex.cs              search(vector, filter, k)  ← swap point for Vector Search
-├─ SqlVectorIndex.cs            pre-filter in SQL + cosine in memory
+├─ PgVectorIndex.cs             single pgvector query, filters pushed to SQL
 ├─ KnowledgeIngestor.cs         acquire → parse → chunk → embed → index
 ├─ Chunkers/
 │  ├─ IChunker.cs
@@ -464,9 +538,11 @@ FinRiskLensAI.Fraud/Rag/
 ├─ Reranker.cs                  Gemini Flash relevance scoring
 ├─ RagAnswerer.cs               prompt, structured output, refusal
 ├─ RagGroundingVerifier.cs      citation + quote verification
-├─ VectorMath.cs                cosine / dot
 └─ KnowledgeSearchTool.cs       the agent-facing tool wrapper
 ```
+
+There is deliberately no `VectorMath.cs` — with pgvector the distance arithmetic
+lives in the database, so there is none left to write in C#.
 
 Everything ending in `Service` auto-registers via the existing Autofac convention;
 the rest is registered explicitly in a small `RagModule`.
@@ -486,6 +562,7 @@ the rest is registered explicitly in a small `RagModule`.
   "SkipRerankAbove": 0.85,
   "ExpandQueries": false,
   "MaxContextTokens": 8000,
+  "HnswEfSearch": 64,            // pgvector recall/latency knob, tuned at query time
   "Corpora": {
     "POLICY":      { "Enabled": true },
     "REGULATION":  { "Enabled": true },
@@ -517,7 +594,7 @@ stages have no model dependency at all.
 | **R1** | Schema + `KnowledgeDocs`/`Chunks`/`Embeddings` tables, migration logged in `DB_SCRIPTS.md` | Migration applies clean |
 | **R2** | Chunkers + unit tests, no embeddings yet | A policy PDF chunks with clause boundaries intact; tests assert no mid-clause split |
 | **R3** | `EmbeddingClient` + batch ingest of C3 typology corpus (smallest, cleanest) | Vectors land, dimensions recorded |
-| **R4** | `SqlVectorIndex` + dense retrieval, CLI harness | A known question returns its known chunk in top 3 |
+| **R4** | `PgVectorIndex` + HNSW index + dense retrieval, CLI harness | A known question returns its known chunk in top 3 |
 | **R5** | Sparse arm + RRF fusion | Abbreviation queries ("FOIR", "44AB") that failed dense-only now succeed |
 | **R6** | `RagAnswerer` + citation schema + refusal path | Answers cite; out-of-corpus questions refuse |
 | **R7** | `RagGroundingVerifier` + `RagQueryLog` | A deliberately fabricated citation is stripped in test |
@@ -576,6 +653,10 @@ on high-confidence hits; `MaxContextTokens` caps prompt size; the agent's tool
 returns passages rather than generating, so the expensive path runs once per user
 question rather than once per tool call.
 
+Retrieval itself is not the cost. With HNSW over a few thousand chunks both arms
+return in single-digit milliseconds, and the network round trip to Vertex AI for the
+query embedding dominates the retrieval budget.
+
 ---
 
 ## 20. Failure modes and mitigations
@@ -616,9 +697,10 @@ question rather than once per tool call.
 
 | Trigger | Change |
 |---|---|
-| Corpus > ~100k chunks, or p95 retrieval > 150 ms | Swap `SqlVectorIndex` for **Vertex AI Vector Search** behind `IVectorIndex` |
-| SQL Server 2025 `VECTOR` type available on Cloud SQL | Native vector column + index; drop the in-memory cosine |
-| Many lenders | Per-tenant index partitions; corpus filter becomes a partition key |
+| Recall drops as the corpus grows | Raise `hnsw.ef_search` first — a config change, no index rebuild |
+| Corpus > ~1M chunks, or p95 retrieval > 150 ms | **AlloyDB for PostgreSQL** (ScaNN index, same pgvector SQL) or **Vertex AI Vector Search** behind `IVectorIndex` |
+| Embedding model changes | New `model_id`, re-embed in the background, cut the retrieval filter over — old and new vectors coexist safely |
+| Many lenders | Partition `knowledge_chunks` by `lender_id`; the corpus filter becomes the partition key |
 | Ingest volume grows | Move `KnowledgeIngestor` to Cloud Run Jobs triggered by a GCS notification |
 | Cross-institution intelligence (roadmap v4) | Share **typology and de-identified case-memory chunks** across lenders — text carries no PII, which is exactly why C4 is de-identified at write time |
 

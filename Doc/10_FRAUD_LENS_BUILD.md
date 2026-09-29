@@ -73,7 +73,19 @@ Core/Models/Scoring/
 ```
 
 **Packages dropped:** `Microsoft.ML`, `Microsoft.ML.LightGbm`, `Microsoft.ML.TimeSeries`,
-`Azure.Storage.Blobs`, `Npgsql.EntityFrameworkCore.PostgreSQL` (unused legacy).
+`Azure.Storage.Blobs`, `Microsoft.EntityFrameworkCore.SqlServer`,
+`Microsoft.Extensions.Caching.SqlServer`.
+
+**`Npgsql.EntityFrameworkCore.PostgreSQL` is already referenced** and stops being
+dead weight — it becomes the provider. Add `Pgvector.EntityFrameworkCore` alongside
+it.
+
+> ⚠ **The session store needs a decision.** Sessions are SQL-backed today via
+> `AddDistributedSqlServerCache` and the `SessionCache` table (`DB_SCRIPTS.md`,
+> 2026-07-07), which exists because app-pool recycles were wiping in-memory sessions.
+> There is no first-party PostgreSQL distributed-cache provider. On Cloud Run with
+> `--session-affinity` and `--min-instances=1`, in-memory sessions are fine for the
+> hackathon — take that, and note the ceiling rather than adding Memorystore.
 
 **Kept but repurposed:** `AaFeatureExtractor` — it parses AA data, which the AA
 cross-check needs. Moves into the fraud project rather than being deleted.
@@ -110,10 +122,14 @@ FinRiskLensAI.Fraud/
 ```
 
 ### New tables
-`Applications`, `Documents`, `StatementRows`, `PageSummaries`, `DocFields`,
-`Findings`, `Evidence`, `Rings`, `AiDropLog`, graph tables (`gApplication`,
-`gDocument`, `gEntity`, `gTemplate` + edges), and the RAG tables
-(`KnowledgeDocs`, `KnowledgeChunks`, `ChunkEmbeddings`, `RagQueryLog`).
+`applications`, `documents`, `statement_rows`, `page_summaries`, `doc_fields`,
+`findings`, `evidence`, `rings`, `ai_drop_log`, the link tables that replace SQL
+Server's graph tables (`entities`, `application_entities`, `document_templates`,
+`application_links`), and the RAG tables (`knowledge_docs`, `knowledge_chunks`,
+`chunk_embeddings`, `rag_query_log` — see
+[`11_RAG_ARCHITECTURE.md`](11_RAG_ARCHITECTURE.md) §14).
+
+Snake-case naming is the Npgsql/EF Core default and is kept rather than fought.
 
 Every one gets an entry in [`DB_SCRIPTS.md`](DB_SCRIPTS.md) **before** the migration runs.
 
@@ -146,7 +162,7 @@ There is none today. `DeterministicChecksTests`, `GroundingVerifierTests`,
 | Service | API | Purpose |
 |---|---|---|
 | Vertex AI | `aiplatform.googleapis.com` | Gemini Pro + Flash + embeddings |
-| Cloud SQL for SQL Server | `sqladmin.googleapis.com` | Main DB — **graph tables + full-text required** |
+| **Cloud SQL for PostgreSQL** | `sqladmin.googleapis.com` | Main DB — app data, knowledge chunks and vectors in one place. Needs the **`pgvector`** extension |
 | Cloud Storage | `storage.googleapis.com` | Case documents + knowledge bucket |
 | Cloud Run | `run.googleapis.com` | Hosting, session affinity |
 | Artifact Registry | `artifactregistry.googleapis.com` | Images |
@@ -161,23 +177,62 @@ There is none today. `DeterministicChecksTests`, `GroundingVerifierTests`,
 (to sign URLs without key files).
 
 ### Two warnings
-- **Cloud SQL for SQL Server has no free tier** — roughly $50–90/month at the
-  smallest usable size. **Stop the instance when not working.** The $300 trial
-  credit covers the project comfortably if you do.
+- **Cloud SQL still has no free tier**, but PostgreSQL carries no licence component
+  in the instance price, so the smallest usable size is materially cheaper than the
+  SQL Server equivalent. **Stop the instance when not working** and the $300 trial
+  credit covers the project comfortably.
 - **Gemini may not serve from `asia-south1`.** Documents stay in Mumbai; AI calls
   may route via `global`. Fine for synthetic data — say so in the deck rather than
   letting a judge find it.
 
+### Why PostgreSQL and not SQL Server
+
+The project runs on SQL Server today, so this is a deliberate reversal — recorded
+here because `07_SETUP_GAPS.md` documents the team choosing SQL Server originally.
+
+| | SQL Server on Cloud SQL | PostgreSQL on Cloud SQL |
+|---|---|---|
+| Vectors | No `VECTOR` type — that is SQL Server 2025, not offered. Vectors stored as blobs, distance computed in C# | **`pgvector`** — real vector column, HNSW index, distance in SQL |
+| Full-text (the sparse retrieval arm) | Optional install feature; **availability on Cloud SQL must be verified** | Core engine — `tsvector`/GIN, nothing to enable |
+| Price | Licence cost inside the instance price | No licence component |
+| Graph tables | `AS NODE` / `AS EDGE` / `MATCH` | Not available — see below |
+| Migration cost | Zero | Regenerate EF migrations for Npgsql |
+
+Hybrid retrieval is load-bearing for policy lookups, and on SQL Server its keyword
+arm depends on a feature we cannot confirm is present. That alone decides it.
+
+**Losing graph tables costs little.** They were syntactic sugar for link-discovery
+queries that are ordinary joins underneath, and the clustering itself was always
+specified as union-find in C#. The `gApplication` / `gEntity` / `gTemplate` node and
+edge tables become plain tables with foreign keys; the `MATCH` queries become joins
+or a recursive CTE.
+
+**The migration cost is smaller than it looks**, because the schema is being rebuilt
+anyway: scoring tables deleted, ten new tables added, fresh database. What changes is
+the dialect of the raw SQL in the deterministic checks — `ISNULL` → `COALESCE`,
+`DATEADD` → interval arithmetic. Window functions are identical.
+
 ### Local development
 `gcloud auth application-default login` — no key files in the repo, ever.
+Local PostgreSQL with `pgvector` for development; the connection string slot for it
+already exists in `appsettings.json`.
 
 ---
 
 ## 6. Project updates
 
 **Packages added:** `Google.Cloud.AIPlatform.V1` (or `Google.GenAI`) ·
-`Google.Cloud.Storage.V1` · `UglyToad.PdfPig` · `Dapper` · `QuestPDF` (tools only) ·
-`xunit` + `Microsoft.NET.Test.Sdk`
+`Google.Cloud.Storage.V1` · `Pgvector.EntityFrameworkCore` · `UglyToad.PdfPig` ·
+`Dapper` · `QuestPDF` (tools only) · `xunit` + `Microsoft.NET.Test.Sdk`
+
+**Migrations are regenerated for Npgsql.** The existing ones live in
+`Migrations/SqlServer/` and are provider-specific. Target is a fresh database with a
+substantially new schema, so this is a clean baseline under `Migrations/Postgres/`,
+not a conversion. Keep the SQL Server folder in git history; delete it from the tree.
+
+**Raw SQL needs dialect changes** in the deterministic checks: `ISNULL` →
+`COALESCE`, `DATEADD(DAY, 3, d)` → `d + INTERVAL '3 days'`, `TOP n` → `LIMIT n`.
+Window functions (`LAG() OVER`) are identical.
 
 **`IMsmeDataStore` must change.** It is string-only today:
 ```csharp
@@ -189,7 +244,9 @@ PDFs are binary. Rename to `ICaseDocumentStore`, add byte overloads and
 
 **`appsettings.json`:** remove `AzureBlob`; add `Gcp`, `Gcs`, `Gemini`, `Fraud`,
 `Rag` (see [`11_RAG_ARCHITECTURE.md`](11_RAG_ARCHITECTURE.md) §16). Keep `Finvu`,
-`Database`, `Smtp`, `Jwt`, `Serilog`. `Groq` goes once Gemini replaces the chatbot.
+`Smtp`, `Jwt`, `Serilog`. Under `Database:ConnectionStrings`, **PostgreSQL becomes
+the live entry and the SqlServer entry is removed** — the slot already exists.
+`Groq` goes once Gemini replaces the chatbot.
 
 **Stays on .NET 8 + MVC.** Upgrading to .NET 10 and rewriting the UI in Blazor costs
 a week we do not have, and neither is required by the rules. Live pipeline progress
@@ -206,12 +263,15 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 - **Register the team.** Free, and the only irreversible deadline (Oct 11)
 - GCP project, billing on, APIs enabled, service account, region confirmed
 - Settle: .NET 8 + MVC, `FinRiskLensAI.Fraud` as the new project, scoring removal approved
+- **Verify `CREATE EXTENSION vector;` succeeds on your Cloud SQL PostgreSQL version.**
+  Everything in `11_RAG_ARCHITECTURE.md` sits on top of it, so confirm it before
+  writing a line of retrieval code
 
 ### Phase 1 — Prove the platform on GCP · Sep 30 – Oct 2
 | Lane | Work |
 |---|---|
-| Main | `GcsDocumentStore`, `GeminiClient`, Cloud SQL provisioned, existing migrations applied, **existing app deployed to Cloud Run unchanged** |
-| RAG | **R1** — knowledge schema + migration, logged in `DB_SCRIPTS.md` |
+| Main | `GcsDocumentStore` · `GeminiClient` · **Cloud SQL for PostgreSQL provisioned, `CREATE EXTENSION vector` verified** · EF provider switched to Npgsql, baseline migration generated and applied · **existing app deployed to Cloud Run** |
+| RAG | **R1** — knowledge schema + `pgvector` + HNSW and GIN indexes, logged in `DB_SCRIPTS.md` |
 
 > Ship nothing new until the current app runs on Google's infrastructure. Three days
 > that de-risk everything after them.
@@ -293,6 +353,7 @@ retrieval layer is stable and the remaining work is integration.
 - [ ] At least one finding comes from **AA or MCA cross-check**, not the upload alone
 - [ ] The ring case shows **≥ 10 linked applications** and a generated narrative
 - [ ] The dashboard shows discarded AI findings **and** stripped RAG claims
+- [ ] Hybrid retrieval demonstrably beats dense-only on the eval set (both arms live)
 - [ ] Every table in `DB_SCRIPTS.md`; every threshold in config
 - [ ] Synthetic data only — no real bank names or logos anywhere
 - [ ] Services stay up through the evaluation window (Oct 19 – Nov 6)
