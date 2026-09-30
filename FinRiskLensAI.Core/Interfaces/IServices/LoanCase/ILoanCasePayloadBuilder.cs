@@ -1,6 +1,6 @@
 using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.LoanCase;
-using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Facts;
 
 namespace FinRiskLensAI.Core.Interfaces.IServices.LoanCase
 {
@@ -18,10 +18,10 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.LoanCase
         /// Builds the payload as a plain object graph; the service serialises it so
         /// preview and push are guaranteed to show identical bytes.
         /// </summary>
-        object Build(BankCustomerRow customer, RiskAnalysisResult result, LoanCaseContext context);
+        object Build(BankCustomerRow customer, SourceFacts facts, LoanCaseContext context);
     }
 
-    /// <summary>Per-push facts that are not part of the customer or the score.</summary>
+    /// <summary>Per-push details that are not part of the customer or the source facts.</summary>
     public class LoanCaseContext
     {
         public string CaseReference { get; set; } = string.Empty;

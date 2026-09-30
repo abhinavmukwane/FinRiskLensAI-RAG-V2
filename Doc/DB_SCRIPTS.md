@@ -8,17 +8,26 @@ it by hand when a migration cannot be run.
 `UpdatedBy`) come from `AuditableEntity` and are stamped automatically in
 `ApplicationDbContext.SaveChangesAsync`.
 
-**Schema:** application tables live in the `[FinRiskLensAI]` schema — the
-default schema of the `FinRiskLensAI` SQL login — because the entity
-configurations call `ToTable("Name")` without an explicit schema. Only the EF
-migrations history table is pinned elsewhere, at
-`[cre].[__EFMigrationsHistory]` (set in `DataServiceCollectionExtensions`).
-Adjust the prefix if your environment differs.
+**Database: PostgreSQL** (since 2026-09-30 — the RAG-V2 fork moved off SQL Server;
+reasoning in `10_FRAUD_LENS_BUILD.md` §5). Development runs on **Neon**; the submission
+target is Cloud SQL for PostgreSQL, a connection-string change. The connection string
+lives in the git-ignored `appsettings.Development.json`
+(`Database:ConnectionStrings:PostgreSQL`) and is deliberately not written down here.
 
-Current UAT target: the host and database named in `appsettings.Development.json`
-(`ConnectionStrings:SqlServer`) — DB `FinRiskLensAI_UAT`. That file is git-ignored and
-the host is deliberately not written down in a public repository; ask a team member if
-you need it.
+**Schema:** application tables live in `public`. The EF migrations history table is
+pinned at `cre."__EFMigrationsHistory"` (set in `PostgresSetup`).
+
+**Naming:** a snake_case convention (`EFCore.NamingConventions`) applies to every column
+and to tables without an explicit name. Tables kept from V1 keep their explicit names
+(`"t_LoanCasePush"`, `"ADM_BankLogin"`) and need quoting in hand-written SQL; new tables
+are named snake_case outright (`knowledge_chunks`) and need none.
+
+**Timestamps:** `timestamp without time zone`, via Npgsql's legacy timestamp mode — the
+codebase writes both `DateTime.Now` and `DateTime.UtcNow`, and modern Npgsql rejects one
+or the other. Values are UTC by convention (`AuditableEntity` stamps `UtcNow`).
+
+> Entries dated before 2026-09-30 record the **SQL Server era** and are kept as history.
+> Their DDL is SQL Server syntax and does not apply to the current database.
 
 **Add a new entry to this file whenever a table is created, a column is added,
 or a column is altered — before running the migration.**
@@ -35,6 +44,7 @@ or a column is altered — before running the migration.**
 | 2026-09-08 | Create — append-only score series behind the trend chart | `t_MsmeScoreHistory` |
 | 2026-09-15 | Create — append-only loan-case pushes to LOS / ULI / ONDC | `t_LoanCasePush` |
 | 2026-09-15 | Alter — add `EnterpriseName` (frozen at push time) | `t_LoanCasePush` |
+| **2026-09-30** | **PostgreSQL baseline** — 12 tables carried over, 4 knowledge tables created, score tables dropped | *(all)* |
 
 ---
 
@@ -391,6 +401,67 @@ GO
 `Status = 'Simulated'` and a generated reference (`IBKL-LOS-yyyyMMdd-xxxxxx`),
 carrying the payload that *would* have been sent. Setting a URL turns the same
 code path into a real POST — `Status` becomes `Sent` or `Failed`.
+
+---
+
+## 2026-09-30 — PostgreSQL baseline
+
+Migration `20260930174140_PostgresBaseline` (in `Migrations/Postgres/`). A fresh baseline,
+not a conversion: the SQL Server migrations were retired (kept in git history) and the
+schema was regenerated for Npgsql. Applied to Neon via the **direct** endpoint.
+
+**Carried over (12):** `ADM_BankLogin`, `ADM_Login`, `m_StaticResponces`,
+`t_AAConsentRequest`, `t_AccAggreToken`, `t_GSTR2And3BResponce`, `t_LoanCasePush`,
+`t_MsmeEnquiry`, `t_MsmeLocations`, `t_MsmeNicCodes`, `t_UserOtp`, `t_UserRegistration`.
+
+**Dropped:** `t_MsmeScoreSummary` and `t_MsmeScoreHistory` — the scoring engine is gone.
+`SessionCache` is no longer used; sessions are in-memory (`Program.cs` explains the ceiling).
+
+**Altered:** `t_LoanCasePush` loses `ScoreAtPush`, `BandAtPush`, `EligibilityAtPush`,
+`ModelVersion` and `ScoreComputedAt`. The `payload` column already holds the exact bytes
+sent, which is the frozen snapshot.
+
+**Created — the RAG knowledge base (R1):** `knowledge_docs`, `knowledge_chunks`,
+`chunk_embeddings`, `rag_query_log`. Design in `11_RAG_ARCHITECTURE.md` §14. What the
+baseline actually creates for retrieval:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- sparse arm: generated, so it is correct on every insert with no ingest step
+search_vector tsvector GENERATED ALWAYS AS
+    (to_tsvector('english', coalesce(breadcrumb, '') || ' ' || chunk_text)) STORED
+CREATE INDEX ix_knowledge_chunks_search_vector ON knowledge_chunks USING GIN (search_vector);
+
+-- dense arm
+embedding vector(768) NOT NULL
+CREATE INDEX ix_chunk_embeddings_embedding ON chunk_embeddings
+    USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
+
+-- one vector per chunk per model, so a re-embed writes alongside the old vectors
+CREATE UNIQUE INDEX ... ON chunk_embeddings (knowledge_chunk_id, model_id);
+```
+
+**Verified on Neon after applying** (PostgreSQL 18.6, pgvector 0.8.6): all 16 tables
+present, both indexes present, `search_vector` generated, `embedding` typed
+`vector(768)`, no score tables. A rolled-back smoke insert proved both retrieval arms: a
+full-text query for `FOIR` matched, and a vector's cosine distance to itself was 0.
+
+**Seeded by the migration:** the bank portal login `bankadmin` (`HasData` in
+`AdmBankLoginConfiguration`), so a fresh database has a working sign-in with no manual step.
+
+### Reproducing
+
+```bash
+dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI-RAG-V2
+```
+
+On Neon, run schema changes against the direct endpoint — drop `-pooler` from the host —
+by overriding for the one command rather than editing the settings file:
+
+```bash
+Database__ConnectionStrings__PostgreSQL="<direct connection string>" dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI-RAG-V2
+```
 
 ---
 

@@ -11,7 +11,6 @@ namespace FinRiskLensAI.Data.Configurations
             builder.ToTable("ADM_Login");
 
             builder.HasKey(x => x.AdmLoginID);
-            builder.Property(x => x.AdmLoginID).UseIdentityColumn();
 
             builder.Property(x => x.Username).IsRequired().HasMaxLength(100);
             builder.Property(x => x.Email).IsRequired().HasMaxLength(256);

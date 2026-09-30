@@ -11,7 +11,6 @@ namespace FinRiskLensAI.Data.Configurations
             builder.ToTable("t_LoanCasePush");
 
             builder.HasKey(x => x.LoanCasePushID);
-            builder.Property(x => x.LoanCasePushID).UseIdentityColumn();
 
             builder.Property(x => x.Uan).IsRequired().HasMaxLength(25);
             builder.Property(x => x.EnterpriseName).HasMaxLength(250);
@@ -23,11 +22,8 @@ namespace FinRiskLensAI.Data.Configurations
 
             builder.Property(x => x.CaseReference).HasMaxLength(80);
             builder.Property(x => x.Endpoint).HasMaxLength(500);
-            builder.Property(x => x.Payload).IsRequired();          // nvarchar(max)
+            builder.Property(x => x.Payload).IsRequired();          // text
             builder.Property(x => x.ErrorMessage).HasMaxLength(1000);
-            builder.Property(x => x.BandAtPush).IsRequired().HasMaxLength(20);
-            builder.Property(x => x.ModelVersion).HasMaxLength(50);
-            builder.Property(x => x.EligibilityAtPush).HasPrecision(18, 2);
             builder.Property(x => x.PushedByUserId).IsRequired().HasMaxLength(100);
             builder.Property(x => x.PushedByName).HasMaxLength(150);
             builder.Property(x => x.PushedFromIp).HasMaxLength(64);

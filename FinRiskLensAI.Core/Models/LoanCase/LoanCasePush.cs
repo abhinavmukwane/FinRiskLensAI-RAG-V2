@@ -29,10 +29,10 @@ namespace FinRiskLensAI.Core.Models.LoanCase
     /// <para>
     /// Why append-only rather than one row per UAN: a case can legitimately be
     /// raised in LOS <i>and</i> ULI, and a re-push after a re-score is a real event
-    /// a bank must be able to audit. The score, band and eligibility are frozen on
-    /// the row because six months on you need to know what they were <i>when the
-    /// case was raised</i>, not what they are now. "Already sent" is simply the
-    /// latest row per (Uan, Channel).
+    /// a bank must be able to audit. <see cref="Payload"/> holds the exact bytes that
+    /// were sent, so six months on you can see what the case said <i>when it was
+    /// raised</i>, not what the sources say now. "Already sent" is simply the latest
+    /// row per (Uan, Channel).
     /// </para>
     /// </summary>
     public class LoanCasePush : AuditableEntity
@@ -57,14 +57,6 @@ namespace FinRiskLensAI.Core.Models.LoanCase
         public string? ResponseBody { get; set; }
         public string? ErrorMessage { get; set; }
 
-        // ── frozen at push time
-        public double ScoreAtPush { get; set; }
-        public string BandAtPush { get; set; } = string.Empty;
-        public decimal EligibilityAtPush { get; set; }
-        public string? ModelVersion { get; set; }
-        /// <summary>When the score being pushed was computed — lets a later viewer see how stale it was.</summary>
-        public DateTime ScoreComputedAt { get; set; }
-
         // ── who
         public int PushedByLoginId { get; set; }
         public string PushedByUserId { get; set; } = string.Empty;
@@ -74,27 +66,15 @@ namespace FinRiskLensAI.Core.Models.LoanCase
         public DateTime PushedAt { get; set; }
     }
 
-    /// <summary>
-    /// The latest push for one (Uan, Channel) — what the Customer 360 chip and the
-    /// customers list show. Carries the current score so the view can flag a
-    /// case whose score has moved since it was raised.
-    /// </summary>
+    /// <summary>The latest push for one (Uan, Channel) — what the Customer 360 chip and the customers list show.</summary>
     public class LoanCasePushSummary
     {
         public int LoanCasePushID { get; set; }
         public LoanCaseChannel Channel { get; set; }
         public LoanCasePushStatus Status { get; set; }
         public string? CaseReference { get; set; }
-        public double ScoreAtPush { get; set; }
-        public string BandAtPush { get; set; } = string.Empty;
         public DateTime PushedAt { get; set; }
         public string? PushedByName { get; set; }
-
-        /// <summary>True when the MSME has been re-scored since this push.</summary>
-        public bool IsStale(double? currentScore, DateTime? currentComputedAt)
-            => currentScore.HasValue
-               && (Math.Abs(currentScore.Value - ScoreAtPush) >= 1
-                   || (currentComputedAt.HasValue && currentComputedAt.Value > PushedAt));
     }
 
     /// <summary>Outcome of a push, returned to the UI.</summary>

@@ -1,4 +1,4 @@
-﻿using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Facts;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
@@ -18,7 +18,6 @@ namespace FinRiskLensAI.Controllers
     [CustDashboardAuthorize]
     public class DashboardController : Controller
     {
-        private readonly IBlobAnalysisService _analysis;
         private readonly IMsmeDataStore _store;
         private readonly ILogger<DashboardController> _logger;
         private readonly IAccountAggregatorService _aaService;
@@ -26,12 +25,10 @@ namespace FinRiskLensAI.Controllers
         private readonly IGSTR2And3BResponceService _gstResponces;
         private readonly IDummyDataService _dummyData;
         private readonly CustomerProfileBuilder _profile;
-        private readonly IEmailService _emailService;
-        public DashboardController(IBlobAnalysisService analysis, IMsmeDataStore store, ILogger<DashboardController> logger, 
+        public DashboardController(IMsmeDataStore store, ILogger<DashboardController> logger, 
             IAccountAggregatorService AAService, IIpRiskService ipRisk, IGSTR2And3BResponceService gstResponces, 
-            IDummyDataService dummyData, IEmailService emailService, CustomerProfileBuilder profile)
+            IDummyDataService dummyData, CustomerProfileBuilder profile)
         {
-            _analysis = analysis;
             _store = store;
             _logger = logger;
             _aaService = AAService;
@@ -39,7 +36,6 @@ namespace FinRiskLensAI.Controllers
             _gstResponces = gstResponces;
             _dummyData = dummyData;
             _profile = profile;
-            _emailService = emailService;
         }
 
         /// <summary>
@@ -395,132 +391,6 @@ namespace FinRiskLensAI.Controllers
                 _logger.LogError(ex, "ITR seed failed for {Uan}", uan);
                 return Json(new { status = false, message = "Could not fetch the ITR details. Please try again." });
             }
-        }
-
-        /// <summary>
-        /// Sends the "report ready" email for the logged-in MSME's current score.
-        /// Called explicitly by the client — fetchGstrBtn (CustDashboard) and
-        /// reAnalyzeBtn (Financial Health Card) — never from a GET/page load, so
-        /// simply viewing or refreshing the card never sends an email. A no-op
-        /// (status: false) when there's no score yet, e.g. right after fetching
-        /// GSTR data but before the first analysis has run.
-        /// <para>
-        /// <paramref name="theme"/> comes from the caller's own
-        /// localStorage.getItem('frl-theme') — that's the only reliable source
-        /// for "what theme is this browser actually showing" (see theme.js);
-        /// nothing server-side (session/cookie) tracks it.
-        /// </para>
-        /// </summary>
-        [HttpPost]
-        public async Task<IActionResult> SendFinancialHealthReportEmail(string? theme, CancellationToken ct)
-        {
-            theme = string.Equals(theme, "theme2", StringComparison.OrdinalIgnoreCase) ? "theme2" : "theme1";
-
-            var user = HttpContext.Session.GetCurrentUser();
-            var uan = user?.UdyamNumber?.Trim();
-            if (string.IsNullOrWhiteSpace(uan))
-                return Json(new { status = false, message = "No Udyam number on this account." });
-
-            if (string.IsNullOrWhiteSpace(user!.Email))
-            {
-                _logger.LogWarning("Report-ready email skipped for {Uan} — no email on session user.", uan);
-                return Json(new { status = false, message = "No email on file." });
-            }
-
-            try
-            {
-                var result = await _analysis.GetResultAsync(uan, ct);
-                if (result == null)
-                    return Json(new { status = false, message = "No score computed yet." });
-
-                var udyamJson = await _store.DownloadAsync(uan, MsmeDataFiles.Udyam, ct);
-                var enterpriseName = udyamJson != null
-                    ? JObject.Parse(udyamJson).SelectToken("main_details.name_of_enterprise")?.Value<string>()
-                    : null;
-
-                string DimText(string name)
-                {
-                    var d = result.Dimensions.FirstOrDefault(x =>
-                        string.Equals(x.Dimension, name, StringComparison.OrdinalIgnoreCase));
-                    return d == null ? "N/A" : $"{d.Score:0}/{d.MaxPoints:0}";
-                }
-
-                var sent = await _emailService.SendReportReadyEmailAsync(
-                    toEmail: user.Email,
-                    recipientName: user.NameOfEnterprise,
-                    businessName: enterpriseName ?? uan,
-                    financialHealthScore: (int)Math.Round(result.OverallScore),
-                    riskBand: result.ScoreBand.ToString(),
-                    reportDate: result.ComputedAt.ToString("dd MMM yyyy"),
-                    reportUrl: "",
-                    metric1Label: "Revenue Vitality",
-                    metric1Value: DimText("Revenue Vitality"),
-                    metric2Label: "Cash Flow Health",
-                    metric2Value: DimText("Cash Flow Health"),
-                    metric3Label: "Compliance Quotient",
-                    metric3Value: DimText("Compliance Quotient"),
-                    theme: theme,
-                    ct: ct);
-
-                if (!sent)
-                    _logger.LogWarning("Report-ready email failed to send for {Uan}.", uan);
-
-                return Json(new { status = sent, message = sent ? "Report email sent." : "Could not send the email." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed sending report-ready email for {Uan}", uan);
-                return Json(new { status = false, message = "Something went wrong sending the email." });
-            }
-        }
-
-        /// <summary>
-        /// Financial Health Card — renders the ML risk analysis result for the
-        /// logged-in MSME only. The UAN is taken from the authenticated session
-        /// (never from the request), so a user can only ever see their own card.
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> FinancialHealthCard(CancellationToken ct)
-        {
-            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
-            var model = new FinancialHealthCardViewModel { Uan = uan?.Trim() };
-
-            if (string.IsNullOrWhiteSpace(model.Uan))
-            {
-                // Logged in but no Udyam number on the account yet — nothing to show.
-                model.LoadError = "No Udyam number is linked to your account yet, so there is no Financial Health Card to display.";
-                return View(model);
-            }
-
-            try
-            {
-                model.Status = await _analysis.GetStatusAsync(model.Uan, ct);
-                model.Result = await _analysis.GetResultAsync(model.Uan, ct);
-
-                // Enterprise name for the card header, straight from the stored Udyam payload
-                var udyamJson = await _store.DownloadAsync(model.Uan, MsmeDataFiles.Udyam, ct);
-                if (udyamJson != null)
-                    model.EnterpriseName = JObject.Parse(udyamJson)
-                        .SelectToken("main_details.name_of_enterprise")?.Value<string>();
-
-                // Report-ready email is sent only from explicit user actions — see
-                // SendFinancialHealthReportEmail, called by fetchGstrBtn/reAnalyzeBtn.
-                // Loading or refreshing this page must never trigger it.
-            }
-            catch (OperationCanceledException)
-            {
-                // Blob read stalled/cancelled — typically a slow cold start (ML warmup)
-                // saturating the box, or the client navigated away. Not a hard failure.
-                _logger.LogWarning("Financial Health Card load canceled/timed out for {Uan} (likely a warming cold start).", model.Uan);
-                model.LoadError = "Your Financial Health Card is still being prepared while the service warms up. Please refresh in a few seconds.";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed loading Financial Health Card for {Uan}", model.Uan);
-                model.LoadError = "Could not load your Financial Health Card right now. Please try again later.";
-            }
-
-            return View(model);
         }
     }
 }

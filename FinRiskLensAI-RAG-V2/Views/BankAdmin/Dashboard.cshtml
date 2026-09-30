@@ -1,4 +1,4 @@
-﻿@model FinRiskLensAI.Core.Models.Admin.BankDashboardViewModel
+@model FinRiskLensAI.Core.Models.Admin.BankDashboardViewModel
 @using FinRiskLensAI.Common
 @{
     ViewBag.Title = "Portfolio Dashboard";
@@ -31,7 +31,7 @@ else if (s.TotalOnboarded == 0)
     <div class="bp-empty">
         <i class="bi bi-inbox"></i>
         <h2>No onboarded MSMEs yet</h2>
-        <p>Once enterprises complete Udyam onboarding they will appear here with their Financial Health Score.</p>
+        <p>Once enterprises complete Udyam onboarding they will appear here.</p>
     </div>
 }
 else
@@ -44,51 +44,18 @@ else
             <div class="bp-kpi-k">Onboarded MSMEs</div>
         </div>
         <div class="bp-kpi">
-            <div class="bp-kpi-ic"><i class="bi bi-check2-circle"></i></div>
-            <div class="bp-kpi-v">@s.TotalScored</div>
-            <div class="bp-kpi-k">Scored</div>
-            <div class="bp-kpi-d">@s.PendingAnalysis pending analysis</div>
-        </div>
-        <div class="bp-kpi bp-kpi-good">
-            <div class="bp-kpi-ic"><i class="bi bi-hand-thumbs-up"></i></div>
-            <div class="bp-kpi-v">@s.LendableCount</div>
-            <div class="bp-kpi-k">Lendable Now</div>
-            <div class="bp-kpi-d">Excellent or Good band</div>
-        </div>
-        <div class="bp-kpi">
             <div class="bp-kpi-ic"><i class="bi bi-calendar-plus"></i></div>
             <div class="bp-kpi-v">@s.NewThisMonth</div>
             <div class="bp-kpi-k">New This Month</div>
             <div class="bp-kpi-d">@DateTime.UtcNow.ToString("MMMM yyyy")</div>
-        </div>
-        <div class="bp-kpi bp-kpi-warn">
-            <div class="bp-kpi-ic"><i class="bi bi-exclamation-triangle"></i></div>
-            <div class="bp-kpi-v">@s.HighRiskCount</div>
-            <div class="bp-kpi-k">At Risk / High Risk</div>
-        </div>
-        <div class="bp-kpi bp-kpi-warn">
-            <div class="bp-kpi-ic"><i class="bi bi-shield-exclamation"></i></div>
-            <div class="bp-kpi-v">@s.AnomalyCount</div>
-            <div class="bp-kpi-k">Anomaly Flags</div>
-            <div class="bp-kpi-d">cross-source mismatch</div>
         </div>
     </div>
 
     <!-- ===================== Charts ===================== -->
     <div class="bp-chart-grid">
         <div class="bp-card">
-            <div class="bp-card-label"><i class="bi bi-pie-chart"></i>Score Band Distribution</div>
-            <div class="bp-chart-box"><canvas id="bandChart"></canvas></div>
-        </div>
-
-        <div class="bp-card">
             <div class="bp-card-label"><i class="bi bi-graph-up"></i>Onboarding Trend &mdash; last 12 months</div>
             <div class="bp-chart-box"><canvas id="trendChart"></canvas></div>
-        </div>
-
-        <div class="bp-card">
-            <div class="bp-card-label"><i class="bi bi-bar-chart"></i>Score Distribution</div>
-            <div class="bp-chart-box"><canvas id="histChart"></canvas></div>
         </div>
 
         <div class="bp-card">
@@ -99,11 +66,6 @@ else
         <div class="bp-card">
             <div class="bp-card-label"><i class="bi bi-diagram-3"></i>Industry Mix</div>
             <div class="bp-chart-box"><canvas id="activityChart"></canvas></div>
-        </div>
-
-        <div class="bp-card">
-            <div class="bp-card-label"><i class="bi bi-lightbulb"></i>Recommended Product Mix</div>
-            <div class="bp-chart-box"><canvas id="productChart"></canvas></div>
         </div>
     </div>
 
@@ -117,8 +79,6 @@ else
                         <th>Enterprise</th>
                         <th>Udyam Number</th>
                         <th>State</th>
-                        <th class="text-center">Score</th>
-                        <th class="text-center">Band</th>
                         <th>Onboarded</th>
                         <th></th>
                     </tr>
@@ -130,26 +90,6 @@ else
                             <td class="bp-strong">@c.EnterpriseName</td>
                             <td class="bp-mono">@c.Uan</td>
                             <td>@(c.State ?? "—")</td>
-                            <td class="text-center">
-                                @if (c.IsScored)
-                                {
-                                    <span class="bp-score">@c.OverallScore!.Value.ToString("0")</span>
-                                }
-                                else
-                                {
-                                    <span class="bp-muted">—</span>
-                                }
-                            </td>
-                            <td class="text-center">
-                                @if (c.IsScored)
-                                {
-                                    <span class="bp-band bp-band-@c.ScoreBand">@c.ScoreBand</span>
-                                }
-                                else
-                                {
-                                    <span class="bp-band bp-band-Pending">Pending</span>
-                                }
-                            </td>
                             <td>@c.OnboardedOn.ToString("dd MMM yyyy")</td>
                             <td class="text-end">
                                 <a class="bp-link" href="@Url.Action("Customer", "BankAdmin", new { uan = c.Uan })">
@@ -182,32 +122,14 @@ else
             };
             let { brand: BRAND, primary: PRIMARY } = palette();
 
-            // Band colours stay semantic — red means risk in any theme
-            const BAND_COLORS = ['#2e7d4f', '#7fae5e', '#e6c34c', '#e08a3c', '#c22f3e'];
-
-            const bands = @Html.Raw(Json.Serialize(s.BandDistribution));
             const trend = @Html.Raw(Json.Serialize(s.OnboardingTrend));
-            const hist = @Html.Raw(Json.Serialize(s.ScoreHistogram));
             const states = @Html.Raw(Json.Serialize(s.TopStates));
             const activity = @Html.Raw(Json.Serialize(s.ActivityMix));
-            const products = @Html.Raw(Json.Serialize(s.ProductMix));
 
             const charts = {};
 
             const noLegend = { legend: { display: false } };
             const intAxis = { y: { beginAtZero: true, ticks: { precision: 0 } } };
-
-            charts.bandChart = new Chart(document.getElementById('bandChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(bands),
-                    datasets: [{ data: Object.values(bands), backgroundColor: BAND_COLORS, borderColor: '#fff', borderWidth: 2 }]
-                },
-                options: {
-                    maintainAspectRatio: false, cutout: '58%',
-                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }
-                }
-            });
 
             const monthLabel = k => {
                 const [y, m] = k.split('-');
@@ -221,15 +143,6 @@ else
                         data: Object.values(trend), borderColor: BRAND, backgroundColor: BRAND + '25',
                         fill: true, tension: .35, pointRadius: 3
                     }]
-                },
-                options: { maintainAspectRatio: false, plugins: noLegend, scales: intAxis }
-            });
-
-            charts.histChart = new Chart(document.getElementById('histChart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(hist),
-                    datasets: [{ data: Object.values(hist), backgroundColor: BAND_COLORS, borderRadius: 6 }]
                 },
                 options: { maintainAspectRatio: false, plugins: noLegend, scales: intAxis }
             });
@@ -262,25 +175,8 @@ else
                 }
             });
 
-            const pKeys = Object.keys(products);
-            if (pKeys.length === 0) {
-                document.getElementById('productChart').closest('.bp-chart-box').innerHTML =
-                    '<div class="bp-chart-empty">No scored customers with a recommended product yet.</div>';
-            } else {
-                charts.productChart = new Chart(document.getElementById('productChart'), {
-                    type: 'bar',
-                    data: { labels: pKeys, datasets: [{ data: Object.values(products), backgroundColor: BRAND, borderRadius: 6 }] },
-                    options: {
-                        indexAxis: 'y', maintainAspectRatio: false, plugins: noLegend,
-                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { font: { size: 10 } } } }
-                    }
-                });
-            }
-
             // Theme switch — recolour in place, no page refresh. Only the two
-            // brand-driven colours move; BAND_COLORS and the activity palette's
-            // fixed entries stay put because they are semantic (red means risk
-            // in either theme).
+            // brand-driven colours move; the activity palette's fixed entries stay put.
             document.addEventListener('frl-theme-changed', function () {
                 ({ brand: BRAND, primary: PRIMARY } = palette());
 
@@ -298,10 +194,6 @@ else
                     const ds = charts.activityChart.data.datasets[0];
                     ds.backgroundColor = [PRIMARY, BRAND, '#7fae5e', '#c98a2b', '#8a6d00', '#5c8a99'];
                     charts.activityChart.update();
-                }
-                if (charts.productChart) {
-                    charts.productChart.data.datasets[0].backgroundColor = BRAND;
-                    charts.productChart.update();
                 }
             });
         </script>

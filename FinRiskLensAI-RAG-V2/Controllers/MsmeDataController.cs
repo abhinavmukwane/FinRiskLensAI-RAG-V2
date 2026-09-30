@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace FinRiskLensAI.Controllers
 {
     /// <summary>
-    /// Blob-storage based data collection + analysis flow. Source payloads are uploaded
-    /// one file at a time into the MSME's folder (named by Udyam number), so no single
-    /// request ever carries the full data set. Analysis starts once the folder is complete.
+    /// Blob-storage based data collection. Source payloads are uploaded one file at a
+    /// time into the MSME's folder (named by Udyam number), so no single request ever
+    /// carries the full data set. Facts are built from the folder on demand by
+    /// IBlobAnalysisService.GetFactsAsync — deliberately not exposed here, because this
+    /// controller has no authorization and the facts include bank and tax figures.
     /// </summary>
     [ApiController]
     [Route("api/msme-data/{uan}")]
@@ -56,39 +58,9 @@ namespace FinRiskLensAI.Controllers
             return Ok(new { stored = fileName, status.FilesMissing, status.ReadyForAnalysis });
         }
 
-        /// <summary>Collection progress: what's present, what's missing, whether analysis can start.</summary>
+        /// <summary>Collection progress: what's present, what's missing, whether the folder is complete.</summary>
         [HttpGet("status")]
         public async Task<IActionResult> GetStatus(string uan, CancellationToken ct)
             => Ok(await _analysis.GetStatusAsync(uan, ct));
-
-        /// <summary>
-        /// Run the AI analysis from the folder. Refuses with the missing-file list when the
-        /// manifest isn't satisfied, unless force=true (partial data → weight redistribution).
-        /// </summary>
-        [HttpPost("analyze")]
-        public async Task<IActionResult> Analyze(string uan, [FromQuery] bool force = false, CancellationToken ct = default)
-        {
-            try
-            {
-                var result = await _analysis.AnalyzeAsync(uan, force, ct);
-                _logger.LogInformation("Blob analysis for {Uan}: score {Score} band {Band}",
-                    uan, result.OverallScore, result.ScoreBand);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);   // folder empty or incomplete
-            }
-        }
-
-        /// <summary>Fetch the last computed result.json without recomputing.</summary>
-        [HttpGet("result")]
-        public async Task<IActionResult> GetResult(string uan, CancellationToken ct)
-        {
-            var result = await _analysis.GetResultAsync(uan, ct);
-            return result == null
-                ? NotFound($"No analysis result stored for '{uan}' yet — run POST api/msme-data/{uan}/analyze first.")
-                : Ok(result);
-        }
     }
 }

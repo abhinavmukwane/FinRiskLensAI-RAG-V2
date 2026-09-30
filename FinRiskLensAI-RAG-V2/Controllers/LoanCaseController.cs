@@ -39,7 +39,7 @@ namespace FinRiskLensAI.Controllers
                 pushes = pushes.Select(p => new
                 {
                     id = p.LoanCasePushID, channel = p.Channel.ToString(), state = p.Status.ToString(),
-                    caseReference = p.CaseReference, scoreAtPush = Math.Round(p.ScoreAtPush), band = p.BandAtPush,
+                    caseReference = p.CaseReference,
                     pushedAt = p.PushedAt.ToString("dd MMM yyyy HH:mm"), pushedBy = p.PushedByName
                 }),
                 live = Enum.GetValues<LoanCaseChannel>().Where(_loanCase.IsLive).Select(c => c.ToString())
@@ -72,8 +72,6 @@ namespace FinRiskLensAI.Controllers
                 Channel = ch.ToString(),
                 IsLive = preview.IsLive,
                 Endpoint = preview.Endpoint,
-                Score = preview.Score,
-                Band = preview.Band,
                 PayloadJson = preview.PayloadJson
             });
         }
@@ -126,8 +124,6 @@ namespace FinRiskLensAI.Controllers
                 IsLive = push.Status == LoanCasePushStatus.Sent,
                 Endpoint = push.Endpoint,
                 HttpStatus = push.HttpStatus,
-                Score = push.ScoreAtPush,
-                Band = push.BandAtPush,
                 PushedAt = push.PushedAt,
                 PushedBy = push.PushedByName ?? push.PushedByUserId,
                 PayloadJson = push.Payload,
@@ -153,8 +149,6 @@ namespace FinRiskLensAI.Controllers
         public bool IsLive { get; set; }
         public string? Endpoint { get; set; }
         public int? HttpStatus { get; set; }
-        public double Score { get; set; }
-        public string? Band { get; set; }
         public DateTime? PushedAt { get; set; }
         public string? PushedBy { get; set; }
         public string PayloadJson { get; set; } = "";

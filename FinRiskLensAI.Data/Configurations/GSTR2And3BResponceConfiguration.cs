@@ -41,8 +41,7 @@ namespace FinRiskLensAI.Data.Configurations
                    .IsRequired();
 
             builder.Property(x => x.CreatedDate)
-                   .HasColumnType("datetime")
-                   .HasDefaultValueSql("GETDATE()");
+                   .HasDefaultValueSql("now()");
 
             builder.Property(x => x.CreatedBy);
 

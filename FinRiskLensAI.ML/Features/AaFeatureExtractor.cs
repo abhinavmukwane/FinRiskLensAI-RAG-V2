@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Facts;
 using Newtonsoft.Json.Linq;
 
 namespace FinRiskLensAI.ML.Features

@@ -36,9 +36,6 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.LoanCase
         public string PayloadJson { get; set; } = string.Empty;
         public string? Endpoint { get; set; }
         public bool IsLive { get; set; }
-        public double Score { get; set; }
-        public string Band { get; set; } = string.Empty;
-        public decimal Eligibility { get; set; }
         public string? Error { get; set; }
     }
 }

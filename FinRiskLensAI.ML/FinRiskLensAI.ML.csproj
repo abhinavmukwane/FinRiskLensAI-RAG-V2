@@ -9,10 +9,6 @@
   <ItemGroup>
     <PackageReference Include="Autofac" Version="8.4.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.22.2" />
-    <PackageReference Include="Microsoft.ML" Version="3.0.1" />
-    <PackageReference Include="Microsoft.ML.LightGbm" Version="3.0.1" />
-    <PackageReference Include="Microsoft.ML.TimeSeries" Version="3.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 

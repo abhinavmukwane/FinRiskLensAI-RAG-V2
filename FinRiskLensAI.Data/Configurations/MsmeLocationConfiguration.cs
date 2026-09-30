@@ -11,7 +11,6 @@ namespace FinRiskLensAI.Data.Configurations
             builder.ToTable("t_MsmeLocations");
 
             builder.HasKey(x => x.MsmeLocationID);
-            builder.Property(x => x.MsmeLocationID).UseIdentityColumn();
 
             builder.Property(x => x.UnitName).HasMaxLength(300);
             builder.Property(x => x.Line1).HasMaxLength(200);

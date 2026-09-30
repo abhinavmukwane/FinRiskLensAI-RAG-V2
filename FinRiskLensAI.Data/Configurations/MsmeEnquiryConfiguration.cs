@@ -11,7 +11,6 @@ namespace FinRiskLensAI.Data.Configurations
             builder.ToTable("t_MsmeEnquiry");
 
             builder.HasKey(x => x.MsmeEnquiryID);
-            builder.Property(x => x.MsmeEnquiryID).UseIdentityColumn();
 
             builder.Property(x => x.ClientId).IsRequired().HasMaxLength(100);
             builder.Property(x => x.Uan).IsRequired().HasMaxLength(30);

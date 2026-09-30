@@ -1,24 +1,23 @@
 using FinRiskLensAI.Core.Interfaces.IServices.LoanCase;
 using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.LoanCase;
-using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Facts;
 
 namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
 {
     /// <summary>
     /// RBI Unified Lending Interface — OCEN lineage. ULI's model is that the
-    /// <i>lender</i> decides; a service provider supplies evidence. So the score
-    /// travels as a derived data packet alongside the source packets and consent
-    /// artefacts, inside a loan application, and there is no "decision" block.
+    /// <i>lender</i> decides; a service provider supplies evidence. So what the
+    /// verification sources establish travels as a derived data packet alongside the
+    /// source packets and consent artefacts, and there is no "decision" block.
     /// </summary>
     public class UliPayloadBuilder : ILoanCasePayloadBuilder
     {
         public LoanCaseChannel Channel => LoanCaseChannel.ULI;
 
-        public object Build(BankCustomerRow c, RiskAnalysisResult r, LoanCaseContext ctx)
+        public object Build(BankCustomerRow c, SourceFacts facts, LoanCaseContext ctx)
         {
-            var lending = r.Lending;
-            var top = r.Recommendations.FirstOrDefault();
+            var f = facts.Features;
 
             var sourcePackets = ctx.DataSources.Select(s => new
             {
@@ -36,17 +35,14 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                 timestamp = ctx.Timestamp,
 
                 lender = new { id = ctx.LenderId, name = ctx.LenderName, branchIfsc = ctx.BranchIfsc },
-                serviceProvider = new { id = "FINRISKLENSAI", role = "DERIVED_DATA_PROVIDER", modelVersion = r.ModelVersion },
+                serviceProvider = new { id = "FINRISKLENS", role = "DERIVED_DATA_PROVIDER", factsVersion = facts.Version },
 
                 loanApplication = new
                 {
                     applicationId = ctx.CaseReference,
-                    productType = top?.SchemeCode ?? "WORKING_CAPITAL",
-                    productName = top?.ProductName,
-                    requestedAmount = Rupees(lending?.TotalIndicativeEligibility ?? 0),
+                    productType = "WORKING_CAPITAL",
                     currency = "INR",
-                    purpose = "MSME_BUSINESS",
-                    tenureMonths = lending != null && lending.TermLoanCapacity > 0 ? 60 : 12
+                    purpose = "MSME_BUSINESS"
                 },
 
                 borrower = new
@@ -58,7 +54,7 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                     identifiers = new { pan = c.PanNumber, gstin = c.GstinNumber, mobile = c.MobileNumber, email = c.Email },
                     address = new { city = c.City, state = c.State, country = "IN" },
                     dateOfIncorporation = c.DateOfIncorporation?.ToString("yyyy-MM-dd"),
-                    industry = r.Industry == null ? null : new { nicCode = r.Industry.Nic2Digit, description = r.Industry.SectorName }
+                    industry = facts.Industry == null ? null : new { nicCode = facts.Industry.Nic2Digit, description = facts.Industry.SectorName }
                 },
 
                 consentArtefacts = ctx.DataSources.Select(s => new
@@ -76,29 +72,36 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                     {
                         new
                         {
-                            packetType = "CREDIT_ASSESSMENT",
-                            provider = "FINRISKLENSAI",
-                            computedAt = r.ComputedAt,
+                            packetType = "VERIFIED_FACTS",
+                            provider = "FINRISKLENS",
+                            computedAt = facts.ComputedAt,
                             content = new
                             {
-                                financialHealthScore = Math.Round(r.OverallScore),
-                                scale = "0-1000",
-                                band = r.ScoreBand.ToString(),
-                                dimensions = r.Dimensions.ToDictionary(d => ToKey(d.Dimension), d => Math.Round(d.Score, 1)),
-                                dataIntegrityFlag = r.Anomaly.IsAnomalous,
-                                indicativeEligibility = lending == null ? null : new
+                                crossSourceTurnover = new
                                 {
-                                    workingCapital = Rupees(lending.WorkingCapitalLimit),
-                                    termLoan = Rupees(lending.TermLoanCapacity),
-                                    total = Rupees(lending.TotalIndicativeEligibility)
+                                    gstMonthly = Rupees(f.GstMonthlyAvgTurnover),
+                                    itrMonthly = f.ItrBusinessTurnover > 0 ? Rupees(f.ItrBusinessTurnover / 12) : (decimal?)null,
+                                    bankCreditsMonthly = Rupees(f.AaMonthlyAvgBankCredit)
                                 },
-                                keyRatios = (lending?.Ratios ?? new List<LendingRatio>())
-                                    .ToDictionary(x => ToKey(x.Name), x => new { value = x.Value, status = x.Status.ToString() }),
-                                financials = lending == null ? null : new
+                                bankConduct = facts.BankAnalysis == null ? null : new
                                 {
-                                    annualTurnover = Rupees(lending.AnnualTurnover),
-                                    monthlySurplus = Rupees(lending.MonthlySurplus),
-                                    existingMonthlyEmi = Rupees(lending.ExistingMonthlyEmi)
+                                    averageMonthlyBalance = Rupees(facts.BankAnalysis.AverageMonthlyBalance),
+                                    existingMonthlyEmi = Rupees(f.AaEmiMonthlyOutflow),
+                                    bounces = facts.BankAnalysis.BounceCount,
+                                    ecsNachReturns = facts.BankAnalysis.EcsNachReturnCount
+                                },
+                                gstConduct = facts.GstAnalysis == null ? null : new
+                                {
+                                    annualisedTurnover = Rupees(f.GstAnnualisedTurnover),
+                                    gstr1Vs3bConsistency = facts.GstAnalysis.R1Vs3bConsistency,
+                                    supplierFilingRate = facts.GstAnalysis.SupplierFilingRate
+                                },
+                                itr = facts.Financials == null || !facts.Financials.HasFinancials ? null : new
+                                {
+                                    assessmentYear = facts.Financials.SourceYear,
+                                    declaredTurnover = Rupees(facts.Financials.BusinessTurnover),
+                                    netWorth = Rupees(facts.Financials.NetWorth),
+                                    taxDemandOutstanding = facts.Financials.HasTaxDemand
                                 }
                             }
                         }
@@ -131,10 +134,6 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
             if (f.StartsWith("mca") || f.StartsWith("din")) return "MCA21";
             return "PLATFORM";
         }
-
-        private static string ToKey(string name)
-            => new string(name.Where(ch => char.IsLetterOrDigit(ch) || ch == ' ').ToArray())
-                .Trim().Replace(' ', '_').ToUpperInvariant();
 
         private static decimal Rupees(double v) => Math.Round((decimal)v, 2);
     }

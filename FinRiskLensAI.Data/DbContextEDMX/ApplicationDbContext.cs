@@ -2,8 +2,8 @@ using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.Common;
 using FinRiskLensAI.Core.Models.GST;
+using FinRiskLensAI.Core.Models.Knowledge;
 using FinRiskLensAI.Core.Models.Onboarding;
-using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Core.Models.Universal;
 using FinRiskLensAI.Core.Models.User_Activity;
 using Microsoft.EntityFrameworkCore;
@@ -22,8 +22,6 @@ namespace FinRiskLensAI.Data.DbContextEDMX
 
         public DbSet<AdmLogin> AdmLogins => Set<AdmLogin>();
         public DbSet<AdmBankLogin> AdmBankLogins => Set<AdmBankLogin>();
-        public DbSet<MsmeScoreSummary> MsmeScoreSummaries => Set<MsmeScoreSummary>();
-        public DbSet<MsmeScoreHistory> MsmeScoreHistories => Set<MsmeScoreHistory>();
         public DbSet<FinRiskLensAI.Core.Models.LoanCase.LoanCasePush> LoanCasePushes => Set<FinRiskLensAI.Core.Models.LoanCase.LoanCasePush>();
         public DbSet<MsmeEnquiry> MsmeEnquiries => Set<MsmeEnquiry>();
         public DbSet<MsmeLocation> MsmeLocations => Set<MsmeLocation>();
@@ -35,6 +33,12 @@ namespace FinRiskLensAI.Data.DbContextEDMX
         public DbSet<AAConsentReqModel> AAConsentRequests => Set<AAConsentReqModel>();
         public DbSet<GSTR2And3BResponceModel> GSTR2And3BResponces => Set<GSTR2And3BResponceModel>();
 
+        // RAG knowledge base — Doc/11_RAG_ARCHITECTURE.md
+        public DbSet<KnowledgeDoc> KnowledgeDocs => Set<KnowledgeDoc>();
+        public DbSet<KnowledgeChunk> KnowledgeChunks => Set<KnowledgeChunk>();
+        public DbSet<ChunkEmbedding> ChunkEmbeddings => Set<ChunkEmbedding>();
+        public DbSet<RagQueryLog> RagQueryLogs => Set<RagQueryLog>();
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Default precision for all decimals — keeps both SQL Server and PostgreSQL happy.
@@ -44,6 +48,7 @@ namespace FinRiskLensAI.Data.DbContextEDMX
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasPostgresExtension("vector");   // pgvector — created by the baseline migration
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
             base.OnModelCreating(modelBuilder);
         }

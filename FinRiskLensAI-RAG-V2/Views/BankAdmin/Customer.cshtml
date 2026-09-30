@@ -5,15 +5,6 @@
     Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
     var c = Model.Customer;
 
-    string Inr(decimal? v)
-    {
-        if (v is null || v == 0m) return "—";
-        var d = v.Value;
-        if (d >= 10000000m) return "₹" + (d / 10000000m).ToString("0.##") + " Cr";
-        if (d >= 100000m) return "₹" + (d / 100000m).ToString("0.##") + " L";
-        return "₹" + d.ToString("N0");
-    }
-
     string Tab(string key) => Model.ActiveTab == key ? "bp-tab active" : "bp-tab";
     string Pane(string key) => Model.ActiveTab == key ? "bp-pane active" : "bp-pane";
 }
@@ -30,23 +21,21 @@
 
     @if (c != null)
     {
-        @* ── Raise as a loan case downstream. Lives in the crumb bar rather than
-           the profile card: with three channels the status chips crowd the score,
-           and this reads as the page's action toolbar. *@
+        @* ── Raise as a loan case downstream. Lives in the crumb bar: with three
+           channels the status chips need the width, and this reads as the page's
+           action toolbar. Always enabled — if no source has been fetched yet, the
+           preview says so rather than the button hiding the reason. *@
         <div id="lcRoot" class="lc-root"
              data-uan="@c.Uan"
-             data-scored="@(c.IsScored ? "true" : "false")"
-             data-score="@(c.OverallScore?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")"
              data-token="@Xsrf.GetAndStoreTokens(Context).RequestToken"
              data-live="@System.Text.Json.JsonSerializer.Serialize(Model.LiveChannels)"
              data-pushes="@System.Text.Json.JsonSerializer.Serialize(Model.Pushes.Select(p => new {
                  id = p.LoanCasePushID, channel = p.Channel.ToString(), state = p.Status.ToString(),
-                 caseReference = p.CaseReference, scoreAtPush = Math.Round(p.ScoreAtPush), band = p.BandAtPush,
+                 caseReference = p.CaseReference,
                  pushedAt = p.PushedAt.ToString("dd MMM yyyy HH:mm"), pushedBy = p.PushedByName }))">
             <div id="lcChips" class="lc-chips"></div>
-            <button type="button" id="lcOpen" class="bp-btn @(c.IsScored ? "" : "bp-btn-ghost")"
-                    @(c.IsScored ? "" : "disabled")
-                    title="@(c.IsScored ? "Raise this MSME as a loan case in LOS, ULI or ONDC" : "Score the MSME first")">
+            <button type="button" id="lcOpen" class="bp-btn"
+                    title="Raise this MSME as a loan case in LOS, ULI or ONDC">
                 <i class="bi bi-send"></i> Push to LOS / ULI / ONDC
             </button>
         </div>
@@ -88,23 +77,6 @@ else if (c != null)
                 </div>
             </div>
         </div>
-
-        <div class="bp-profile-side">
-            <div class="bp-profile-score">
-                @if (c.IsScored)
-                {
-                    <div class="v">@c.OverallScore!.Value.ToString("0")</div>
-                    <div class="k">Score / 1000</div>
-                    <span class="bp-band bp-band-@c.ScoreBand">@c.ScoreBand</span>
-                }
-                else
-                {
-                    <div class="v bp-muted">—</div>
-                    <div class="k">Not scored</div>
-                    <span class="bp-band bp-band-Pending">Pending</span>
-                }
-            </div>
-        </div>
     </div>
 
     @* ===================== Loan-case push modal ===================== *@
@@ -117,9 +89,7 @@ else if (c != null)
         <div class="detail-modal-body">
             <div class="lc-summary">
                 <div><b>Enterprise</b>@c.EnterpriseName</div>
-                <div><b>Score</b>@(c.IsScored ? $"{c.OverallScore:0} · {c.ScoreBand}" : "not scored")</div>
-                <div><b>Eligibility</b>@Inr(c.TotalIndicativeEligibility)</div>
-                <div><b>Product</b>@(c.TopProductName ?? "—")</div>
+                <div><b>Udyam</b>@c.Uan</div>
             </div>
 
             <div class="lc-label">Send to</div>
@@ -154,14 +124,6 @@ else if (c != null)
     <!-- ===================== Quick facts ===================== -->
     <div class="bp-fact-grid">
         <div class="bp-fact">
-            <div class="k">Indicative Eligibility</div>
-            <div class="v">@Inr(c.TotalIndicativeEligibility)</div>
-        </div>
-        <div class="bp-fact">
-            <div class="k">Recommended Product</div>
-            <div class="v bp-fact-sm">@(c.TopProductName ?? "—")</div>
-        </div>
-        <div class="bp-fact">
             <div class="k">Major Activity</div>
             <div class="v bp-fact-sm">@(c.MajorActivity ?? "—")</div>
         </div>
@@ -174,10 +136,6 @@ else if (c != null)
             <div class="v bp-fact-sm">@c.OnboardedOn.ToString("dd MMM yyyy")</div>
         </div>
         <div class="bp-fact">
-            <div class="k">Score Computed</div>
-            <div class="v bp-fact-sm">@(c.ComputedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
-        </div>
-        <div class="bp-fact">
             <div class="k">Email</div>
             <div class="v bp-fact-sm">@(c.Email ?? "—")</div>
         </div>
@@ -187,20 +145,8 @@ else if (c != null)
         </div>
     </div>
 
-    @if (c.IsAnomalous)
-    {
-        <div class="bp-alert bp-alert-warn">
-            <i class="bi bi-shield-exclamation"></i>
-            Cross-source anomaly flagged — GST turnover, ITR income and bank credits
-            disagree materially. Review the data-integrity note on the score card.
-        </div>
-    }
-
     <!-- ===================== Tabs ===================== -->
     <div class="bp-tabs" role="tablist">
-        <button type="button" class="@Tab("score")" data-pane="score" role="tab">
-            <i class="bi bi-speedometer2"></i><span>Financial Score</span>
-        </button>
         <button type="button" class="@Tab("udyam")" data-pane="udyam" role="tab">
             <i class="bi bi-grid-3x3-gap"></i><span>Udyam Identity</span>
         </button>
@@ -230,15 +176,6 @@ else if (c != null)
 
     <!-- ===================== Panes ===================== -->
     <div class="bp-panes">
-
-        <section class="@Pane("score")" data-pane="score">
-            <div class="fhc-wrap bp-fhc">
-                @if (Model.Card != null)
-                {
-                    @await Html.PartialAsync("_FinancialHealthCardBody", Model.Card)
-                }
-            </div>
-        </section>
 
         <section class="@Pane("udyam")" data-pane="udyam">
             @if (Model.Udyam != null)

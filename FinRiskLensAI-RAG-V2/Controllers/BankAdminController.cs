@@ -1,4 +1,4 @@
-using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Facts;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
@@ -23,17 +23,15 @@ namespace FinRiskLensAI.Controllers
     public class BankAdminController : Controller
     {
         private readonly IBankAdminService _bankAdmin;
-        private readonly IBlobAnalysisService _analysis;
         private readonly CustomerProfileBuilder _profile;
         private readonly FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService _loanCase;
         private readonly ILogger<BankAdminController> _logger;
 
-        public BankAdminController(IBankAdminService bankAdmin, IBlobAnalysisService analysis,
+        public BankAdminController(IBankAdminService bankAdmin,
             CustomerProfileBuilder profile, FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService loanCase,
             ILogger<BankAdminController> logger)
         {
             _bankAdmin = bankAdmin;
-            _analysis = analysis;
             _profile = profile;
             _loanCase = loanCase;
             _logger = logger;
@@ -59,7 +57,7 @@ namespace FinRiskLensAI.Controllers
         /// <summary>Searchable, filterable list of every onboarded MSME.</summary>
         [HttpGet]
         public async Task<IActionResult> Customers(
-            string? search, string? band, string? state, string? status,
+            string? search, string? state,
             string sortBy = "onboarded", bool sortDesc = true,
             int page = 1, int pageSize = 25, CancellationToken ct = default)
         {
@@ -67,7 +65,7 @@ namespace FinRiskLensAI.Controllers
             {
                 Query = new BankCustomerQuery
                 {
-                    Search = search, Band = band, State = state, Status = status,
+                    Search = search, State = state,
                     SortBy = sortBy, SortDesc = sortDesc, Page = page, PageSize = pageSize
                 }
             };
@@ -87,8 +85,8 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>
-        /// Customer 360 — the full file on one MSME: Financial Health Card, Udyam
-        /// identity, GST returns, MCA corporate report and the source-IP audit.
+        /// Customer 360 — the full file on one MSME: Udyam identity, GST returns, ITR,
+        /// Account Aggregator, MCA corporate report and the source-IP audit.
         /// Every section is built by CustomerProfileBuilder, the same code path the
         /// customer's own screens use, so the bank sees identical data.
         /// <para>
@@ -103,7 +101,7 @@ namespace FinRiskLensAI.Controllers
             var model = new BankCustomerDetailViewModel
             {
                 Uan = uan?.Trim(),
-                ActiveTab = string.IsNullOrWhiteSpace(tab) ? "score" : tab.Trim().ToLowerInvariant()
+                ActiveTab = string.IsNullOrWhiteSpace(tab) ? "udyam" : tab.Trim().ToLowerInvariant()
             };
 
             if (string.IsNullOrWhiteSpace(model.Uan))
@@ -118,16 +116,7 @@ namespace FinRiskLensAI.Controllers
                     return View(model);
                 }
 
-                // Same source the customer's own health card reads — the blob result.json
-                model.Card = new FinancialHealthCardViewModel
-                {
-                    Uan = model.Uan,
-                    EnterpriseName = model.Customer.EnterpriseName,
-                    Status = await _analysis.GetStatusAsync(model.Uan, ct),
-                    Result = await _analysis.GetResultAsync(model.Uan, ct)
-                };
-
-                // The remaining sections come from the shared builder. They are
+                // Every section comes from the shared builder. They are
                 // independent, so a failure in one must not blank the whole page —
                 // each view model carries its own LoadError for the tab to show.
                 model.Udyam = await _profile.GetUdyamAsync(model.Uan);

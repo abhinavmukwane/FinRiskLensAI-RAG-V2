@@ -7,7 +7,11 @@ namespace FinRiskLensAI.Core.Models.Storage
     public static class MsmeDataFiles
     {
         public const string Manifest = "_manifest.json";
-        public const string Result = "result.json";
+        /// <summary>
+        /// V1's persisted score. Nothing writes it any more, but folders copied from V1
+        /// demo data still carry one, so it is excluded from the data-file listing.
+        /// </summary>
+        public const string LegacyResult = "result.json";
 
         public const string Udyam = "udyam.json";
         public const string Itr = "itr.json";
@@ -30,7 +34,7 @@ namespace FinRiskLensAI.Core.Models.Storage
         /// <summary>Auto-drafted ITC statement, e.g. gstr2b_get_all_details_MMyyyy.json.</summary>
         public const string Gstr2bPrefix = "gstr2b_";
 
-        private static readonly string[] KnownFixed = { Udyam, Itr, Aa, GstTaxpayer, Epfo, Mca, Manifest, Result };
+        private static readonly string[] KnownFixed = { Udyam, Itr, Aa, GstTaxpayer, Epfo, Mca, Manifest, LegacyResult };
         private static readonly string[] KnownPrefixes =
             { Gstr3bPrefix, Gstr1SummaryPrefix, Gstr1B2bPrefix, Gstr1CdnrPrefix, Gstr1HsnPrefix, Gstr2aB2bPrefix, Gstr2bPrefix, DinPrefix };
 

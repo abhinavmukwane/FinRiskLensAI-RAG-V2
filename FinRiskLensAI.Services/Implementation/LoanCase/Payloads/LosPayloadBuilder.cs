@@ -1,32 +1,32 @@
 using FinRiskLensAI.Core.Interfaces.IServices.LoanCase;
 using FinRiskLensAI.Core.Models.Admin;
+using FinRiskLensAI.Core.Models.Facts;
 using FinRiskLensAI.Core.Models.LoanCase;
-using FinRiskLensAI.Core.Models.Scoring;
 
 namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
 {
     /// <summary>
     /// Loan Origination System — a credit appraisal case. This is the bank's own
-    /// system, so the shape is ours: everything a credit officer's memorandum
-    /// carries, in the order they read it. Identity, the decision headline, the six
-    /// dimensions, the ratio table, deep-dive signals, and provenance.
+    /// system, so the shape is ours: identity, what each verification source
+    /// establishes, the cross-source income comparison, and provenance. No score and
+    /// no decision — the sanction is the bank's. The findings block joins here once the
+    /// fraud engine produces findings.
     /// </summary>
     public class LosPayloadBuilder : ILoanCasePayloadBuilder
     {
         public LoanCaseChannel Channel => LoanCaseChannel.LOS;
 
-        public object Build(BankCustomerRow c, RiskAnalysisResult r, LoanCaseContext ctx)
+        public object Build(BankCustomerRow c, SourceFacts facts, LoanCaseContext ctx)
         {
-            var lending = r.Lending;
-            var top = r.Recommendations.FirstOrDefault();
+            var f = facts.Features;
 
             return new
             {
-                schema = "finrisklens.los.case.v1",
+                schema = "finrisklens.los.case.v2",
                 caseReference = ctx.CaseReference,
                 submittedAt = ctx.Timestamp,
                 submittedBy = new { userId = ctx.RequestedByUserId, name = ctx.RequestedByName, branchIfsc = ctx.BranchIfsc, branch = ctx.BranchName },
-                source = new { system = "FinRiskLensAI", modelVersion = r.ModelVersion, scoreComputedAt = r.ComputedAt },
+                source = new { system = "FinRiskLens", factsVersion = facts.Version, factsComputedAt = facts.ComputedAt },
 
                 applicant = new
                 {
@@ -39,116 +39,65 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                     email = c.Email,
                     dateOfIncorporation = c.DateOfIncorporation?.ToString("yyyy-MM-dd"),
                     majorActivity = c.MajorActivity,
-                    sector = r.Industry == null ? null : new { nic2Digit = r.Industry.Nic2Digit, name = r.Industry.SectorName, outlook = r.Industry.Outlook },
+                    sector = facts.Industry == null ? null : new { nic2Digit = facts.Industry.Nic2Digit, name = facts.Industry.SectorName, outlook = facts.Industry.Outlook },
                     city = c.City,
                     state = c.State
                 },
 
-                decision = new
+                // Three independent turnover signals, like for like. ITR's leg is declared
+                // turnover (revenue from operations), NOT gross total income — income is
+                // after expenses, so comparing it to GST turnover measures the profit
+                // margin rather than a mismatch. Null when the return keeps no books.
+                crossSourceTurnover = new
                 {
-                    financialHealthScore = Math.Round(r.OverallScore),
-                    scoreOutOf = 1000,
-                    band = r.ScoreBand.ToString(),
-                    rulesEngineScore = Math.Round(r.HeuristicScore),
-                    mlCalibratedScore = Math.Round(r.MlCalibratedScore),
-                    recommendedProduct = top == null ? null : new
-                    {
-                        name = top.ProductName,
-                        scheme = top.SchemeCode,
-                        indicativeAmountMin = top.IndicativeAmountMin,
-                        indicativeAmountMax = top.IndicativeAmountMax,
-                        reason = top.RecommendationReason
-                    },
-                    dataIntegrityFlag = r.Anomaly.IsAnomalous,
-                    dataIntegrityNote = r.Anomaly.Note
+                    gstMonthly = Rupees(f.GstMonthlyAvgTurnover),
+                    itrMonthly = f.ItrBusinessTurnover > 0 ? Rupees(f.ItrBusinessTurnover / 12) : (decimal?)null,
+                    bankCreditsMonthly = Rupees(f.AaMonthlyAvgBankCredit)
                 },
 
-                eligibility = lending == null ? null : new
+                bankConduct = facts.BankAnalysis == null ? null : new
                 {
-                    workingCapitalLimit = Rupees(lending.WorkingCapitalLimit),
-                    termLoanCapacity = Rupees(lending.TermLoanCapacity),
-                    totalIndicative = Rupees(lending.TotalIndicativeEligibility),
-                    marginMoneyRequired = Rupees(lending.MarginMoneyRequired),
-                    affordableMonthlyEmi = Rupees(lending.AffordableMonthlyEmi),
-                    bandAdjustmentFactor = lending.BandAdjustmentFactor,
-                    basis = "Working capital via turnover (Nayak) method; term loan via EMI-headroom annuity, 5y @ 11%"
+                    averageMonthlyBalance = Rupees(facts.BankAnalysis.AverageMonthlyBalance),
+                    peakBalance = Rupees(facts.BankAnalysis.PeakBalance),
+                    averageMonthlyCredit = Rupees(facts.BankAnalysis.AverageMonthlyCredit),
+                    existingMonthlyEmi = Rupees(f.AaEmiMonthlyOutflow),
+                    bounces = facts.BankAnalysis.BounceCount,
+                    chequeReturns = facts.BankAnalysis.ChequeReturnCount,
+                    ecsNachReturns = facts.BankAnalysis.EcsNachReturnCount,
+                    overdrawnTransactions = facts.BankAnalysis.OverdrawnTxnCount,
+                    minBalanceBreaches = facts.BankAnalysis.MinBalanceBreachCount
                 },
 
-                financials = lending == null ? null : new
+                gstConduct = facts.GstAnalysis == null ? null : new
                 {
-                    annualTurnover = Rupees(lending.AnnualTurnover),
-                    monthlySales = Rupees(lending.MonthlySales),
-                    monthlyPurchases = Rupees(lending.MonthlyPurchases),
-                    monthlyBankInflow = Rupees(lending.MonthlyBankInflow),
-                    monthlyBankOutflow = Rupees(lending.MonthlyBankOutflow),
-                    monthlySurplus = Rupees(lending.MonthlySurplus),
-                    existingMonthlyEmi = Rupees(lending.ExistingMonthlyEmi),
-                    cashflowTrendSlope = r.CashflowTrendSlope
+                    annualisedTurnover = Rupees(f.GstAnnualisedTurnover),
+                    gstr1Vs3bConsistency = facts.GstAnalysis.R1Vs3bConsistency,
+                    topCustomerShare = facts.GstAnalysis.TopCustomerShare,
+                    topVendorShare = facts.GstAnalysis.TopVendorShare,
+                    supplierFilingRate = facts.GstAnalysis.SupplierFilingRate,
+                    itcMonthlyAverage = Rupees(facts.GstAnalysis.ItcMonthlyAvg)
                 },
 
-                dimensions = r.Dimensions.Select(d => new
+                itr = facts.Financials == null || !facts.Financials.HasFinancials ? null : new
                 {
-                    name = d.Dimension,
-                    score = Math.Round(d.Score, 1),
-                    maxPoints = d.MaxPoints,
-                    weight = d.EffectiveWeight,
-                    dataAvailable = d.DataAvailable,
-                    neutralDefaultUsed = d.UsedNeutralDefault
-                }),
-
-                appraisalRatios = (lending?.Ratios ?? new List<LendingRatio>()).Select(x => new
-                {
-                    name = x.Name,
-                    value = x.Value,
-                    display = x.Display,
-                    benchmark = x.Benchmark,
-                    status = x.Status.ToString()
-                }),
-
-                strengths = r.Explanations.Where(e => e.Impact == ImpactDirection.Positive).Select(e => e.ExplanationText),
-                risks = r.Explanations.Where(e => e.Impact == ImpactDirection.Negative).Select(e => e.ExplanationText),
-
-                bankConduct = r.BankAnalysis == null ? null : new
-                {
-                    averageMonthlyBalance = Rupees(r.BankAnalysis.AverageMonthlyBalance),
-                    peakBalance = Rupees(r.BankAnalysis.PeakBalance),
-                    bounces = r.BankAnalysis.BounceCount,
-                    chequeReturns = r.BankAnalysis.ChequeReturnCount,
-                    ecsNachReturns = r.BankAnalysis.EcsNachReturnCount,
-                    overdrawnTransactions = r.BankAnalysis.OverdrawnTxnCount,
-                    minBalanceBreaches = r.BankAnalysis.MinBalanceBreachCount
-                },
-
-                gstConduct = r.GstAnalysis == null ? null : new
-                {
-                    gstr1Vs3bConsistency = r.GstAnalysis.R1Vs3bConsistency,
-                    topCustomerShare = r.GstAnalysis.TopCustomerShare,
-                    topVendorShare = r.GstAnalysis.TopVendorShare,
-                    supplierFilingRate = r.GstAnalysis.SupplierFilingRate,
-                    itcMonthlyAverage = Rupees(r.GstAnalysis.ItcMonthlyAvg)
-                },
-
-                itr = r.Financials == null || !r.Financials.HasFinancials ? null : new
-                {
-                    formType = r.Financials.FormType,
-                    filingSection = r.Financials.FilingSection,
-                    assessmentYear = r.Financials.SourceYear,
-                    declaredTurnover = Rupees(r.Financials.BusinessTurnover),
-                    pbtMargin = r.Financials.PbtMargin,
-                    netProfitMargin = r.Financials.NetProfitMargin,
-                    netWorth = Rupees(r.Financials.NetWorth),
-                    debtToEquity = r.Financials.DebtToEquity,
-                    eVerified = r.Financials.EVerified,
-                    auditCompleted = r.Financials.AuditCompleted,
-                    taxDemandOutstanding = r.Financials.HasTaxDemand,
-                    gstTurnoverVariancePct = r.Financials.GstTurnoverVariancePct
+                    formType = facts.Financials.FormType,
+                    filingSection = facts.Financials.FilingSection,
+                    assessmentYear = facts.Financials.SourceYear,
+                    declaredTurnover = Rupees(facts.Financials.BusinessTurnover),
+                    pbtMargin = facts.Financials.PbtMargin,
+                    netProfitMargin = facts.Financials.NetProfitMargin,
+                    netWorth = Rupees(facts.Financials.NetWorth),
+                    debtToEquity = facts.Financials.DebtToEquity,
+                    eVerified = facts.Financials.EVerified,
+                    auditCompleted = facts.Financials.AuditCompleted,
+                    taxDemandOutstanding = facts.Financials.HasTaxDemand,
+                    gstTurnoverVariancePct = facts.Financials.GstTurnoverVariancePct
                 },
 
                 provenance = new
                 {
                     dataSources = ctx.DataSources,
-                    dimensionsExcluded = r.ExcludedDimensions,
-                    consent = "Udyam / GST / ITR / Account Aggregator data obtained under customer consent recorded on the FinRiskLensAI platform"
+                    consent = "Udyam / GST / ITR / Account Aggregator data obtained under customer consent recorded on the FinRiskLens platform"
                 }
             };
         }

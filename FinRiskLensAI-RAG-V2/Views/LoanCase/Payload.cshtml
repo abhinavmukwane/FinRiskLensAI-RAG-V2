@@ -55,7 +55,6 @@ else
         <div class="meta">
             <div><b>Enterprise</b>@(Model.EnterpriseName ?? Model.Uan)</div>
             <div><b>UAN</b>@Model.Uan</div>
-            <div><b>Score</b>@Model.Score.ToString("0") · @Model.Band</div>
             @if (isReceipt)
             {
                 <div><b>Case reference</b>@(Model.CaseReference ?? "—")</div>

@@ -1,7 +1,7 @@
 using FinRiskLensAI.Core.Interfaces.IServices.LoanCase;
 using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.LoanCase;
-using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Facts;
 
 namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
 {
@@ -9,17 +9,18 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
     /// ONDC financial services — beckn protocol, domain ONDC:FIS12 (credit). A beckn
     /// message is a <c>context</c> envelope (who, what action, which transaction)
     /// around a <c>message.order</c>: the borrower is the customer, the loan is the
-    /// item, and our score rides along as tags on the order. Nothing like the other
-    /// two shapes, which is the whole reason each channel has its own builder.
+    /// item, and the verified facts ride along as tags on the order. Offer terms
+    /// (rate, tenure, fees) are the lender's to set in its on_init reply, so none are
+    /// sent here. Nothing like the other two shapes, which is the whole reason each
+    /// channel has its own builder.
     /// </summary>
     public class OndcPayloadBuilder : ILoanCasePayloadBuilder
     {
         public LoanCaseChannel Channel => LoanCaseChannel.ONDC;
 
-        public object Build(BankCustomerRow c, RiskAnalysisResult r, LoanCaseContext ctx)
+        public object Build(BankCustomerRow c, SourceFacts facts, LoanCaseContext ctx)
         {
-            var lending = r.Lending;
-            var top = r.Recommendations.FirstOrDefault();
+            var f = facts.Features;
             var isoTime = ctx.Timestamp.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'");
 
             return new
@@ -49,21 +50,8 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                         {
                             new
                             {
-                                id = top?.SchemeCode ?? "MSME_WC",
-                                descriptor = new { name = top?.ProductName ?? "MSME Working Capital", code = top?.SchemeCode ?? "MSME_WC" },
-                                price = new { currency = "INR", value = Rupees(lending?.TotalIndicativeEligibility ?? 0).ToString("0.00") },
-                                tags = new object[]
-                                {
-                                    Tag("LOAN_INFO", new Dictionary<string, string>
-                                    {
-                                        ["INTEREST_RATE"] = "11",
-                                        ["TERM"] = lending != null && lending.TermLoanCapacity > 0 ? "P60M" : "P12M",
-                                        ["INTEREST_RATE_TYPE"] = "FLOATING",
-                                        ["APPLICATION_FEE"] = "0",
-                                        ["WORKING_CAPITAL_LIMIT"] = Rupees(lending?.WorkingCapitalLimit ?? 0).ToString("0"),
-                                        ["TERM_LOAN_CAPACITY"] = Rupees(lending?.TermLoanCapacity ?? 0).ToString("0")
-                                    })
-                                }
+                                id = "MSME_WC",
+                                descriptor = new { name = "MSME Working Capital", code = "MSME_WC" }
                             }
                         },
                         customer = new
@@ -90,23 +78,19 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                                 ["GSTIN"] = c.GstinNumber ?? "",
                                 ["CONSTITUTION"] = c.OrganizationType ?? "",
                                 ["STATE"] = c.State ?? "",
-                                ["NIC_2_DIGIT"] = r.Industry?.Nic2Digit ?? ""
+                                ["NIC_2_DIGIT"] = facts.Industry?.Nic2Digit ?? ""
                             }),
-                            Tag("CREDIT_ASSESSMENT", new Dictionary<string, string>
+                            Tag("VERIFIED_FACTS", new Dictionary<string, string>
                             {
-                                ["PROVIDER"] = "FINRISKLENSAI",
-                                ["MODEL_VERSION"] = r.ModelVersion,
-                                ["FINANCIAL_HEALTH_SCORE"] = Math.Round(r.OverallScore).ToString("0"),
-                                ["SCALE"] = "0-1000",
-                                ["BAND"] = r.ScoreBand.ToString(),
-                                ["COMPUTED_AT"] = r.ComputedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"),
-                                ["DATA_INTEGRITY_FLAG"] = r.Anomaly.IsAnomalous ? "Y" : "N",
-                                ["ANNUAL_TURNOVER"] = Rupees(lending?.AnnualTurnover ?? 0).ToString("0"),
-                                ["MONTHLY_SURPLUS"] = Rupees(lending?.MonthlySurplus ?? 0).ToString("0")
+                                ["PROVIDER"] = "FINRISKLENS",
+                                ["FACTS_VERSION"] = facts.Version,
+                                ["COMPUTED_AT"] = facts.ComputedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"),
+                                ["GST_MONTHLY_TURNOVER"] = Rupees(f.GstMonthlyAvgTurnover).ToString("0"),
+                                ["ITR_MONTHLY_TURNOVER"] = f.ItrBusinessTurnover > 0 ? Rupees(f.ItrBusinessTurnover / 12).ToString("0") : "",
+                                ["BANK_MONTHLY_CREDITS"] = Rupees(f.AaMonthlyAvgBankCredit).ToString("0"),
+                                ["EXISTING_MONTHLY_EMI"] = Rupees(f.AaEmiMonthlyOutflow).ToString("0"),
+                                ["BOUNCES"] = (facts.BankAnalysis?.BounceCount ?? 0).ToString()
                             }),
-                            Tag("SCORE_DIMENSIONS", r.Dimensions.ToDictionary(
-                                d => ToKey(d.Dimension),
-                                d => $"{Math.Round(d.Score, 1)}/{d.MaxPoints:0}")),
                             Tag("DATA_SOURCES", ctx.DataSources
                                 .Select((s, i) => (key: $"SOURCE_{i + 1}", value: s))
                                 .ToDictionary(x => x.key, x => x.value))
@@ -121,10 +105,6 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
             descriptor = new { code },
             list = values.Select(kv => new { descriptor = new { code = kv.Key }, value = kv.Value })
         };
-
-        private static string ToKey(string name)
-            => new string(name.Where(ch => char.IsLetterOrDigit(ch) || ch == ' ').ToArray())
-                .Trim().Replace(' ', '_').ToUpperInvariant();
 
         private static decimal Rupees(double v) => Math.Round((decimal)v, 2);
     }

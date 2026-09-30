@@ -212,8 +212,11 @@ is worse than useless because the model reads the wrong row.
 - **Task types matter.** Documents are embedded with `RETRIEVAL_DOCUMENT`, queries
   with `RETRIEVAL_QUERY`. Using the same task type for both measurably degrades
   recall; this is the single most common implementation mistake.
-- **Dimensionality** is whatever the pinned model emits, declared on the column as
-  `vector(n)`. The dimension is also recorded on the row, so a model change is
+- **Dimensionality is 768**, declared on the column as `vector(768)` and held in
+  `ChunkEmbedding.VectorDimensions`. Request that output size from the embedding model
+  explicitly: pgvector's HNSW index supports at most **2,000 dimensions** on the `vector`
+  type, so a model whose native output is larger (3,072, for example) must be truncated
+  to fit, or it cannot be indexed at all. Declared as `vector(n)`. The dimension is also recorded on the row, so a model change is
   detectable rather than silently corrupting distances — and changing `n` is a
   migration, which is the right amount of friction for something that invalidates
   the index.
@@ -481,12 +484,17 @@ CREATE INDEX idx_kchunk_doc ON knowledge_chunks (knowledge_doc_id, ordinal);
 CREATE INDEX idx_kchunk_ts  ON knowledge_chunks USING GIN (ts);   -- sparse arm
 
 CREATE TABLE chunk_embeddings (
-  chunk_id     BIGINT PRIMARY KEY REFERENCES knowledge_chunks ON DELETE CASCADE,
-  model_id     VARCHAR(100) NOT NULL,
-  dimensions   INT NOT NULL,
-  embedding    vector(768)  NOT NULL,          -- normalised; dimension per model
-  embedded_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  chunk_embedding_id  BIGSERIAL PRIMARY KEY,
+  knowledge_chunk_id  BIGINT NOT NULL REFERENCES knowledge_chunks ON DELETE CASCADE,
+  model_id            VARCHAR(100) NOT NULL,
+  dimensions          INT NOT NULL,
+  embedding           vector(768)  NOT NULL,   -- normalised; dimension per model
+  created_at          TIMESTAMP NOT NULL
 );
+-- One vector per chunk PER MODEL — not per chunk. A re-embed under a new model writes
+-- alongside the old vectors and retrieval cuts over on model_id (§22), so there is no
+-- window where search returns nothing.
+CREATE UNIQUE INDEX ux_chunk_embeddings_chunk_model ON chunk_embeddings (knowledge_chunk_id, model_id);
 CREATE INDEX idx_chunk_embedding_hnsw
   ON chunk_embeddings USING hnsw (embedding vector_cosine_ops)
   WITH (m = 16, ef_construction = 64);        -- dense arm
@@ -505,6 +513,16 @@ CREATE TABLE rag_query_log (
   at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
+
+> **As built (2026-09-30).** The baseline migration follows this design with two
+> refinements. Keys follow the codebase convention — each table has its own
+> `<entity>_id` — and `chunk_embeddings` is unique on `(knowledge_chunk_id, model_id)`
+> rather than keyed on the chunk: an earlier draft of this section made `chunk_id` the
+> primary key, which allowed one vector per chunk and contradicted the re-embed path in
+> §22. Audit columns (`created_at`, `updated_at`, `created_by`, `updated_by`) come from
+> `AuditableEntity` and replace the separate `ingested_at` / `embedded_at` / `at` columns.
+> Timestamps are `timestamp without time zone` (Npgsql legacy mode, UTC by convention).
+> Applied and verified on Neon — see `DB_SCRIPTS.md`, 2026-09-30.
 
 Two PostgreSQL features earn their place here. **`retrieved_ids` is `JSONB`**, not a
 string, so evaluation queries can aggregate over retrieval results directly. And the

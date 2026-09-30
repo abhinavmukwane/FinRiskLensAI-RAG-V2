@@ -1,33 +1,28 @@
 using FinRiskLensAI.Core.Interfaces;
-using FinRiskLensAI.Core.Interfaces.IServices.Admin;
+using FinRiskLensAI.Core.Models.Facts;
 using FinRiskLensAI.Core.Models.Storage;
-using FinRiskLensAI.Core.Models.Scoring;
-using FinRiskLensAI.ML.Storage;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace FinRiskLensAI.ML.Services
 {
     /// <summary>
-    /// Blob-folder analysis flow: source payloads are uploaded file-by-file into the
-    /// MSME's folder (named by Udyam number); when everything the manifest expects is
-    /// present, this service downloads one file at a time, feeds the scoring pipeline,
-    /// and writes result.json back into the same folder. Avoids the single-request
+    /// The MSME's data folder (named by Udyam number): source payloads arrive file by
+    /// file, a manifest says what to expect, and <see cref="GetFactsAsync"/> reads the
+    /// folder and builds the facts. Uploading file-by-file avoids the single-request
     /// size limit — no payload ever travels in one giant HTTP body.
     /// </summary>
     public class BlobAnalysisService : IBlobAnalysisService
     {
         private readonly IMsmeDataStore _store;
-        private readonly IRiskScoringService _scoring;
-        private readonly IBankAdminService _bankAdmin;
+        private readonly ISourceFactsService _facts;
         private readonly ILogger<BlobAnalysisService> _logger;
 
-        public BlobAnalysisService(IMsmeDataStore store, IRiskScoringService scoring,
-            IBankAdminService bankAdmin, ILogger<BlobAnalysisService> logger)
+        public BlobAnalysisService(IMsmeDataStore store, ISourceFactsService facts,
+            ILogger<BlobAnalysisService> logger)
         {
             _store = store;
-            _scoring = scoring;
-            _bankAdmin = bankAdmin;
+            _facts = facts;
             _logger = logger;
         }
 
@@ -48,17 +43,9 @@ namespace FinRiskLensAI.ML.Services
         public async Task<MsmeDataStatusReport> GetStatusAsync(string uan, CancellationToken ct = default)
         {
             var manifest = await LoadManifestAsync(uan, ct);
-            var files = (await _store.ListFilesAsync(uan, ct))
-                .Where(f => f != MsmeDataFiles.Manifest && f != MsmeDataFiles.Result)
-                .ToList();
+            var files = await ListDataFilesAsync(uan, ct);
 
-            var report = new MsmeDataStatusReport
-            {
-                Uan = uan,
-                Manifest = manifest,
-                FilesPresent = files,
-                ResultAvailable = await _store.ExistsAsync(uan, MsmeDataFiles.Result, ct)
-            };
+            var report = new MsmeDataStatusReport { Uan = uan, Manifest = manifest, FilesPresent = files };
 
             if (manifest != null)
             {
@@ -73,130 +60,43 @@ namespace FinRiskLensAI.ML.Services
             return report;
         }
 
-        public async Task<RiskAnalysisResult> AnalyzeAsync(string uan, bool force = false, CancellationToken ct = default)
+        public async Task<SourceFacts?> GetFactsAsync(string uan, CancellationToken ct = default)
         {
-            var status = await GetStatusAsync(uan, ct);
-            if (status.FilesPresent.Count == 0)
-                throw new InvalidOperationException($"No data files found in folder '{uan}'.");
-            if (!force && status.Manifest != null && status.FilesMissing.Count > 0)
-                throw new InvalidOperationException(
-                    $"Folder '{uan}' is not complete yet. Missing: {string.Join(", ", status.FilesMissing)}. "
-                    + "Upload the remaining files or call with force=true to analyze partial data.");
+            var files = await ListDataFilesAsync(uan, ct);
+            if (files.Count == 0) return null;
 
-            var manifest = status.Manifest ?? new MsmeDataManifest { MsmeRef = uan };
-            manifest.Status = MsmeDataStatus.Processing;
-            await WriteManifestAsync(uan, manifest, ct);
-
-            try
+            // Download in parallel (bounded). 40+ sequential blob round-trips from a
+            // shared host blow past the reverse-proxy timeout; payloads are small JSON.
+            var downloaded = new System.Collections.Concurrent.ConcurrentDictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            using (var throttler = new SemaphoreSlim(8))
             {
-                // Download every needed file in parallel (bounded). 40+ sequential blob
-                // round-trips from a shared host easily blow past the reverse-proxy
-                // response timeout — the request would die mid-run ("Failed to fetch")
-                // before result.json was written. Payloads are small JSON (~200 KB), so
-                // holding them briefly in one dictionary is fine.
-                var fixedFiles = new[] { MsmeDataFiles.Udyam, MsmeDataFiles.Itr, MsmeDataFiles.Aa,
-                                         MsmeDataFiles.GstTaxpayer, MsmeDataFiles.Epfo };
-                var toDownload = fixedFiles.Concat(status.FilesPresent)
-                    .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-
-                var downloaded = new System.Collections.Concurrent.ConcurrentDictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-                using (var throttler = new SemaphoreSlim(8))
+                await Task.WhenAll(files.Select(async file =>
                 {
-                    await Task.WhenAll(toDownload.Select(async file =>
-                    {
-                        await throttler.WaitAsync(ct);
-                        try { downloaded[file] = await _store.DownloadAsync(uan, file, ct); }
-                        finally { throttler.Release(); }
-                    }));
-                }
-
-                string? Get(string name) => downloaded.TryGetValue(name, out var v) ? v : null;
-
-                var request = new RiskAnalysisRequest
-                {
-                    UdyamJson = Get(MsmeDataFiles.Udyam),
-                    ItrJson = Get(MsmeDataFiles.Itr),
-                    AaJson = Get(MsmeDataFiles.Aa),
-                    GstTaxpayerJson = Get(MsmeDataFiles.GstTaxpayer),
-                    EpfoJson = Get(MsmeDataFiles.Epfo)
-                };
-
-                foreach (var file in status.FilesPresent.OrderBy(f => f))
-                {
-                    var content = Get(file) ?? string.Empty;
-                    if (file.StartsWith(MsmeDataFiles.Gstr3bPrefix, StringComparison.OrdinalIgnoreCase))
-                        request.Gstr3bJsons.Add(content);
-                    else if (file.StartsWith(MsmeDataFiles.Gstr1SummaryPrefix, StringComparison.OrdinalIgnoreCase))
-                        request.Gstr1SummaryJsons.Add(content);
-                    else if (file.StartsWith(MsmeDataFiles.Gstr1CdnrPrefix, StringComparison.OrdinalIgnoreCase))
-                        request.Gstr1CdnrJsons.Add(content);
-                    else if (file.StartsWith(MsmeDataFiles.Gstr1HsnPrefix, StringComparison.OrdinalIgnoreCase))
-                        request.Gstr1HsnJsons.Add(content);
-                    else if (file.StartsWith(MsmeDataFiles.Gstr2aB2bPrefix, StringComparison.OrdinalIgnoreCase))
-                        request.Gstr2aB2bJsons.Add(content);
-                    else if (file.StartsWith(MsmeDataFiles.Gstr2bPrefix, StringComparison.OrdinalIgnoreCase))
-                        request.Gstr2bJsons.Add(content);
-                    else if (file.StartsWith(MsmeDataFiles.Gstr1B2bPrefix, StringComparison.OrdinalIgnoreCase))
-                        request.Gstr1B2bJsons.Add(content);
-                }
-
-                // Diagnostics: confirm which sources actually reached the scorer.
-                _logger.LogInformation(
-                    "Analyze {Uan}: files=[{Files}] udyam={U} itr={I} aa={A} gstTaxpayer={G} gstr3b={G3}",
-                    uan, string.Join(",", status.FilesPresent),
-                    request.UdyamJson != null, request.ItrJson != null, request.AaJson != null,
-                    request.GstTaxpayerJson != null, request.Gstr3bJsons.Count);
-
-                if (!string.IsNullOrWhiteSpace(request.AaJson)
-                    && !request.AaJson.Contains("fiObjects", StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogWarning(
-                        "Analyze {Uan}: aa.json present ({Len} chars) but has no 'fiObjects' node — the AA "
-                        + "extractor expects decrypted FI data (body[*].fiObjects[*]); this looks like the raw/"
-                        + "encrypted Finvu FIFetch response, so AA will NOT contribute to the score.",
-                        uan, request.AaJson.Length);
-                }
-
-                var result = _scoring.Analyze(request);
-
-                await _store.UploadAsync(uan, MsmeDataFiles.Result,
-                    JsonConvert.SerializeObject(result, Formatting.Indented), ct);
-
-                // Mirror the headline figures into t_MsmeScoreSummary so the bank
-                // portal can list, sort and chart every MSME from one SQL query
-                // instead of reading each result.json. The blob stays the source of
-                // truth — a DB hiccup must not fail an otherwise good analysis.
-                try
-                {
-                    await _bankAdmin.SaveScoreSummaryAsync(uan, result, ct);
-                }
-                catch (Exception summaryEx)
-                {
-                    _logger.LogError(summaryEx,
-                        "Analyze {Uan}: score computed and result.json written, but the "
-                        + "t_MsmeScoreSummary upsert failed — the bank portal list may be stale.", uan);
-                }
-
-                manifest.Status = MsmeDataStatus.Completed;
-                manifest.CompletedAt = DateTime.UtcNow;
-                manifest.Error = null;
-                await WriteManifestAsync(uan, manifest, ct);
-                return result;
+                    await throttler.WaitAsync(ct);
+                    try { downloaded[file] = await _store.DownloadAsync(uan, file, ct); }
+                    finally { throttler.Release(); }
+                }));
             }
-            catch (Exception ex)
+
+            var request = SourceFactsRequest.FromFiles(downloaded);
+
+            if (!string.IsNullOrWhiteSpace(request.AaJson)
+                && !request.AaJson.Contains("fiObjects", StringComparison.OrdinalIgnoreCase))
             {
-                manifest.Status = MsmeDataStatus.Failed;
-                manifest.Error = ex.Message;
-                await WriteManifestAsync(uan, manifest, ct);
-                throw;
+                _logger.LogWarning(
+                    "Facts {Uan}: aa.json present ({Len} chars) but has no 'fiObjects' node — the AA "
+                    + "extractor expects decrypted FI data (body[*].fiObjects[*]); this looks like the raw/"
+                    + "encrypted Finvu FIFetch response, so bank facts will be empty.",
+                    uan, request.AaJson.Length);
             }
+
+            return _facts.Build(request);
         }
 
-        public async Task<RiskAnalysisResult?> GetResultAsync(string uan, CancellationToken ct = default)
-        {
-            var json = await _store.DownloadAsync(uan, MsmeDataFiles.Result, ct);
-            return json == null ? null : JsonConvert.DeserializeObject<RiskAnalysisResult>(json);
-        }
+        private async Task<List<string>> ListDataFilesAsync(string uan, CancellationToken ct)
+            => (await _store.ListFilesAsync(uan, ct))
+                .Where(f => f != MsmeDataFiles.Manifest && f != MsmeDataFiles.LegacyResult)
+                .ToList();
 
         private static List<string> ComputeMissing(MsmeDataManifest.ExpectedFiles expected, List<string> present)
         {

@@ -11,7 +11,6 @@ namespace FinRiskLensAI.Data.Configurations
             builder.ToTable("t_MsmeNicCodes");
 
             builder.HasKey(x => x.MsmeNicCodeID);
-            builder.Property(x => x.MsmeNicCodeID).UseIdentityColumn();
 
             // Values arrive as "code - description" strings, e.g.
             // "62011 - Writing, modifying, testing of computer program..."

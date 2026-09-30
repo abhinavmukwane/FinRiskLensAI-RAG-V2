@@ -20,8 +20,5 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Common
         /// ("theme1" = IDBI teal/orange, "theme2" = classic maroon) so the email matches it.
         /// </summary>
         Task<bool> SendLoginOtpAsync(string toEmail, string otpCode, string? recipientName = null, int expiryMinutes = 10, string? theme = null, CancellationToken ct = default);
-
-        Task<bool> SendReportReadyEmailAsync(string toEmail,string? recipientName,string businessName,int financialHealthScore,string riskBand, string reportDate,
-       string reportUrl, string metric1Label, string metric1Value, string metric2Label, string metric2Value, string metric3Label, string metric3Value, string? theme = null, CancellationToken ct = default);
     }
 }

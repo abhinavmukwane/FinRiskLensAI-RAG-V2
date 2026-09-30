@@ -9,29 +9,40 @@ namespace FinRiskLensAI.Data.DI
     {
         public static IServiceCollection AddAppDbContext(this IServiceCollection services, IConfiguration configuration)
         {
-            var dbType = configuration["Database:DbType"] ?? "SqlServer";
+            var connectionString = configuration["Database:ConnectionStrings:PostgreSQL"]
+                ?? throw new InvalidOperationException("Missing Database:ConnectionStrings:PostgreSQL in configuration.");
 
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                if (dbType.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
-                {
-                    var connectionString = configuration["Database:ConnectionStrings:PostgreSQL"]
-                        ?? throw new InvalidOperationException("Missing Database:ConnectionStrings:PostgreSQL in configuration.");
-
-                    options.UseNpgsql(connectionString,
-                        npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "cre"));
-                }
-                else
-                {
-                    var connectionString = configuration["Database:ConnectionStrings:SqlServer"]
-                        ?? throw new InvalidOperationException("Missing Database:ConnectionStrings:SqlServer in configuration.");
-
-                    options.UseSqlServer(connectionString,
-                        sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "cre"));
-                }
-            });
-
+            services.AddDbContext<ApplicationDbContext>(options => PostgresSetup.Configure(options, connectionString));
             return services;
         }
+    }
+
+    /// <summary>
+    /// The one place the PostgreSQL provider is configured. Runtime (above) and
+    /// design-time (<see cref="ApplicationDbContextFactory"/>) both call it, so the
+    /// model the migrations are generated from is the model the app runs against.
+    /// </summary>
+    public static class PostgresSetup
+    {
+        static PostgresSetup()
+        {
+            // ponytail: legacy timestamps. The codebase writes both DateTime.Now (Local)
+            // and DateTime.UtcNow; modern Npgsql maps DateTime to timestamptz and rejects
+            // Local, or to timestamp and rejects Utc. Legacy mode takes both, matching the
+            // SQL Server datetime2 semantics this ported from. Upgrade path: make every
+            // writer UtcNow, then delete this switch and let DateTime map to timestamptz.
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        }
+
+        public static void Configure(DbContextOptionsBuilder options, string connectionString)
+            => options
+                .UseNpgsql(connectionString, npgsql =>
+                {
+                    npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "cre");
+                    npgsql.UseVector();                    // pgvector — knowledge base embeddings
+                })
+                // All data access is LINQ, so snake_case costs nothing today and keeps the
+                // hand-written retrieval and fraud-check SQL free of quoted identifiers.
+                .UseSnakeCaseNamingConvention();
     }
 }

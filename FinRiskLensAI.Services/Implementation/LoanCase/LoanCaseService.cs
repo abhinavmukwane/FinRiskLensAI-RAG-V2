@@ -7,7 +7,7 @@ using FinRiskLensAI.Core.Interfaces.IServices.Admin;
 using FinRiskLensAI.Core.Interfaces.IServices.LoanCase;
 using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Core.Models.LoanCase;
-using FinRiskLensAI.Core.Models.Scoring;
+using FinRiskLensAI.Core.Models.Facts;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -15,9 +15,10 @@ using Newtonsoft.Json.Linq;
 namespace FinRiskLensAI.Services.Implementation.LoanCase
 {
     /// <summary>
-    /// Raises a scored MSME as a loan case downstream. One service, one table, three
-    /// payload builders. Preview and push run the same builder over the same inputs,
-    /// so the bytes an officer previews are the bytes that get sent.
+    /// Raises an MSME as a loan case downstream, carrying what its verification
+    /// sources establish. One service, one table, three payload builders. Preview and
+    /// push run the same builder over the same inputs, so the bytes an officer
+    /// previews are the bytes that get sent.
     /// </summary>
     public class LoanCaseService : ILoanCaseService
     {
@@ -58,7 +59,7 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
             var preview = new LoanCasePreview { Uan = uan?.Trim() ?? "", Channel = channel, IsLive = IsLive(channel),
                                                 Endpoint = _settings.EndpointFor(channel) };
 
-            var (customer, result, error) = await LoadAsync(preview.Uan, ct);
+            var (customer, facts, error) = await LoadAsync(preview.Uan, ct);
             if (error != null) { preview.Error = error; return preview; }
 
             var ctx = await BuildContextAsync(preview.Uan, channel, user, null, ct);
@@ -67,10 +68,7 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
             ctx.CaseReference = $"PREVIEW-{channel}-{preview.Uan[^7..]}";
 
             preview.EnterpriseName = customer!.EnterpriseName;
-            preview.Score = result!.OverallScore;
-            preview.Band = result.ScoreBand.ToString();
-            preview.Eligibility = (decimal)(result.Lending?.TotalIndicativeEligibility ?? 0);
-            preview.PayloadJson = Serialize(_builders[channel].Build(customer, result, ctx));
+            preview.PayloadJson = Serialize(_builders[channel].Build(customer, facts!, ctx));
             return preview;
         }
 
@@ -78,12 +76,12 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
                                                         string? clientIp, CancellationToken ct = default)
         {
             var key = uan?.Trim() ?? "";
-            var (customer, result, error) = await LoadAsync(key, ct);
+            var (customer, facts, error) = await LoadAsync(key, ct);
             if (error != null)
                 return new LoanCasePushResult { Succeeded = false, Channel = channel, Message = error };
 
             var ctx = await BuildContextAsync(key, channel, user, clientIp, ct);
-            var payload = Serialize(_builders[channel].Build(customer!, result!, ctx));
+            var payload = Serialize(_builders[channel].Build(customer!, facts!, ctx));
             var endpoint = _settings.EndpointFor(channel);
 
             var push = new LoanCasePush
@@ -93,11 +91,6 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
                 Channel = channel,
                 Endpoint = endpoint,
                 Payload = payload,
-                ScoreAtPush = result!.OverallScore,
-                BandAtPush = result.ScoreBand.ToString(),
-                EligibilityAtPush = (decimal)(result.Lending?.TotalIndicativeEligibility ?? 0),
-                ModelVersion = result.ModelVersion,
-                ScoreComputedAt = result.ComputedAt,
                 PushedByLoginId = user.AdmBankLoginID,
                 PushedByUserId = user.UserId,
                 PushedByName = user.FullName,
@@ -189,7 +182,7 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
 
         // ── helpers ──────────────────────────────────────────────────────────
 
-        private async Task<(BankCustomerRow? customer, RiskAnalysisResult? result, string? error)> LoadAsync(
+        private async Task<(BankCustomerRow? customer, SourceFacts? facts, string? error)> LoadAsync(
             string uan, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(uan)) return (null, null, "No Udyam number supplied.");
@@ -197,10 +190,10 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
             var customer = await _bankAdmin.GetCustomerAsync(uan, ct);
             if (customer == null) return (null, null, $"No onboarded MSME found for {uan}.");
 
-            var result = await _analysis.GetResultAsync(uan, ct);
-            if (result == null) return (customer, null, "This MSME has not been scored yet — run the analysis before raising a case.");
+            var facts = await _analysis.GetFactsAsync(uan, ct);
+            if (facts == null) return (customer, null, "No verification source has been fetched for this MSME yet — fetch at least one before raising a case.");
 
-            return (customer, result, null);
+            return (customer, facts, null);
         }
 
         private async Task<LoanCaseContext> BuildContextAsync(string uan, LoanCaseChannel channel,
@@ -215,7 +208,7 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
                 // downstream system needs to know GST was present, not every month.
                 sources = status.FilesPresent
                     .Select(f => System.Text.RegularExpressions.Regex.Replace(f, @"_\d{6}\.json$", "").Replace(".json", ""))
-                    .Where(f => !f.StartsWith("_") && f != "result")
+                    .Where(f => !f.StartsWith("_"))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(f => f)
                     .ToList();

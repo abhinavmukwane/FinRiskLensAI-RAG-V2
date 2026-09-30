@@ -59,8 +59,6 @@ namespace FinRiskLensAI.Data.Repositories.Admin
                         Channel = x.Channel,
                         Status = x.Status,
                         CaseReference = x.CaseReference,
-                        ScoreAtPush = x.ScoreAtPush,
-                        BandAtPush = x.BandAtPush,
                         PushedAt = x.PushedAt,
                         PushedByName = x.PushedByName
                     }
@@ -77,8 +75,6 @@ namespace FinRiskLensAI.Data.Repositories.Admin
                 Channel = x.Channel,
                 Status = x.Status,
                 CaseReference = x.CaseReference,
-                ScoreAtPush = x.ScoreAtPush,
-                BandAtPush = x.BandAtPush,
                 PushedAt = x.PushedAt,
                 PushedByName = x.PushedByName
             };

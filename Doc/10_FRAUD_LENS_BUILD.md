@@ -64,7 +64,6 @@ Scoring and its presentation only. **Not** the data acquisition.
 ```
 ML/MachineLearning/*            LightGBM, SSA, PCA, synthetic profile generator
 ML/Services/                    RiskScoringService, LendingCalculator, MlWarmupService
-ML/Features/                    Gst | Itr | Udyam FeatureExtractor   (score features)
 Controllers/                    Scoring, ScoreHistory, Report
 Views/                          Dashboard/FinancialHealthCard, Report/
 wwwroot/                        score-gauge.js, score-history.js
@@ -73,8 +72,9 @@ Core/Models/Scoring/
 ```
 
 **Packages dropped:** `Microsoft.ML`, `Microsoft.ML.LightGbm`, `Microsoft.ML.TimeSeries`,
-`Azure.Storage.Blobs`, `Microsoft.EntityFrameworkCore.SqlServer`,
-`Microsoft.Extensions.Caching.SqlServer`.
+`Microsoft.Extensions.Hosting.Abstractions`, `Microsoft.EntityFrameworkCore.SqlServer`,
+`Microsoft.Extensions.Caching.SqlServer`. `Azure.Storage.Blobs` goes when the GCS store
+lands — it still backs every source-data read until then.
 
 **`Npgsql.EntityFrameworkCore.PostgreSQL` is already referenced** and stops being
 dead weight — it becomes the provider. Add `Pgvector.EntityFrameworkCore` alongside
@@ -87,8 +87,19 @@ it.
 > `--session-affinity` and `--min-instances=1`, in-memory sessions are fine for the
 > hackathon — take that, and note the ceiling rather than adding Memorystore.
 
-**Kept but repurposed:** `AaFeatureExtractor` — it parses AA data, which the AA
-cross-check needs. Moves into the fraud project rather than being deleted.
+**Kept — all four feature extractors** (`Udyam`, `Gst`, `Itr`, `Aa`) and the deep-dives.
+*Corrected 2026-09-30:* an earlier draft listed the GST, ITR and Udyam extractors for
+removal as "score features". They are the **parsers for the verification sources** — the
+bounce counts, ECS returns, GST filing rates, ITR net worth and GST-vs-ITR variance that
+the fraud findings are built from. Deleting them repeats the mistake of deleting the
+registry fetch. They now feed `SourceFactsService` (extract → deep-dives, no score), and
+a golden test pins its output to what the V1 scorer produced for all four demo accounts.
+
+> ⚠ **For Phase 3's `INCOME_MISMATCH`:** compare `ItrBusinessTurnover`, never
+> `ItrMonthlyAvgIncome`. The latter is gross total income — roughly profit — so setting
+> it against GST turnover measures the margin, not a mismatch. V1's anomaly check did
+> exactly that, which is one reason its verdicts were meaningless. Found and fixed in the
+> loan-case payloads during Phase 1.
 
 **`FinRiskLensAI.ML` shrinks to almost nothing.** Fold what survives into
 `FinRiskLensAI.Fraud` and delete the project.
@@ -275,6 +286,22 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 
 > Ship nothing new until the current app runs on Google's infrastructure. Three days
 > that de-risk everything after them.
+
+**Status 2026-09-30 — database and deletions done; GCP pieces blocked on a project.**
+
+| Item | Status |
+|---|---|
+| Scoring engine removed (features A1–A9) | ✅ Health Card, report, score history, scoring API, ML.NET, bank-portal score UI |
+| Facts split from score | ✅ `SourceFactsService`; golden test 5/5 against the V1 scorer |
+| Loan-case push on facts | ✅ LOS / ULI / ONDC payloads carry verified facts, no score; frozen score columns dropped |
+| EF provider → Npgsql, snake_case, legacy timestamps | ✅ `PostgresSetup` — one config shared by runtime and migrations |
+| Baseline migration applied | ✅ on **Neon** (dev), verified from the database |
+| **R1** knowledge schema | ✅ pgvector 0.8.6, HNSW + GIN, both retrieval arms smoke-tested |
+| Sessions | ✅ in-memory (ceiling documented in `Program.cs`) |
+| App runs against PostgreSQL | ✅ bank login, dashboard, customer list, Customer 360, all three payload previews — no server or console errors |
+| Fork isolated from V1's live blob data | ✅ own container `msme-data-rag-v2` |
+| `GcsDocumentStore` · `GeminiClient` · Cloud Run deploy | ⏸ **blocked** — needs the GCP project, region and credentials |
+| Cloud SQL for PostgreSQL | ⏸ Neon stands in for development; switching is a connection-string change |
 
 ### Phase 2 — Case ingest + extraction · Oct 3 – Oct 6
 | Lane | Work |

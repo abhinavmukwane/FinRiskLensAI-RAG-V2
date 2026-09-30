@@ -1,0 +1,130 @@
+{
+  "BankAnalysis": {
+    "AverageMonthlyBalance": 2187837.0,
+    "PeakBalance": 3804019.33,
+    "AverageMonthlyCredit": 1224313.0,
+    "CashDepositsMonthly": 160216.0,
+    "SalaryCreditsMonthly": 0.0,
+    "CustomerReceiptsMonthly": 1064097.0,
+    "SupplierPaymentsMonthly": 724540.0,
+    "BounceCount": 2,
+    "ChequeReturnCount": 0,
+    "EcsNachReturnCount": 2,
+    "OdLimitTotal": 0.0,
+    "OverdrawnTxnCount": 0,
+    "MinBalanceBreachCount": 0,
+    "MonthlyAvgBalance": {
+      "202510": 1454215.0,
+      "202511": 1673107.0,
+      "202512": 1698318.0,
+      "202601": 1927259.0,
+      "202602": 2070611.0,
+      "202603": 2190221.0,
+      "202604": 2420149.0,
+      "202605": 2507514.0,
+      "202606": 2572421.0,
+      "202607": 2608525.0,
+      "202608": 2943869.0
+    },
+    "ModeSplitAmount": {
+      "UPI": 6502883.0,
+      "NEFT": 13172124.0,
+      "OTHERS": 2877062.0,
+      "CASH": 1762373.0,
+      "FT": 1464125.0
+    },
+    "MonthlyCredits": {
+      "202510": 1096804.5699999998,
+      "202511": 1346996.2099999997,
+      "202512": 1014925.24,
+      "202601": 1183047.7399999998,
+      "202602": 1105771.03,
+      "202603": 964360.0400000002,
+      "202604": 1265276.6100000003,
+      "202605": 1524257.5,
+      "202606": 1375574.9,
+      "202607": 1126446.0299999998,
+      "202608": 1463982.8
+    },
+    "MonthlyDebits": {
+      "202510": 976991.5799999998,
+      "202511": 1210637.15,
+      "202512": 842216.17,
+      "202601": 1016977.9600000001,
+      "202602": 806961.39,
+      "202603": 942712.45,
+      "202604": 1292707.0999999999,
+      "202605": 1395753.38,
+      "202606": 1257211.87,
+      "202607": 1080254.29,
+      "202608": 1488700.6199999999
+    }
+  },
+  "GstAnalysis": {
+    "R1Vs3bConsistency": 0.18,
+    "HasTaxPaymentData": false,
+    "CashTaxShare": 0.0,
+    "ItcMonthlyAvg": 133693.0,
+    "TopCustomerShare": 0.568,
+    "TopVendorShare": 0.4909,
+    "TopCustomers": {
+      "24DS•••••G1ZH": 0.568,
+      "24LL•••••Q1ZQ": 0.2008,
+      "24ZI•••••M1ZJ": 0.1093,
+      "24LO•••••I1Z0": 0.071,
+      "24GH•••••B1ZI": 0.0508
+    },
+    "TopVendors": {
+      "24AM•••••Q1ZR": 0.4909,
+      "24OV•••••E1Z0": 0.2137,
+      "24FR•••••R1Z4": 0.1313,
+      "24TQ•••••S1ZU": 0.093,
+      "24HQ•••••V1Z9": 0.0712
+    },
+    "MonthlySales": {
+      "202509": 1048151.48,
+      "202512": 1179292.19,
+      "202601": 1171122.79,
+      "202602": 1212951.85,
+      "202603": 1180858.64,
+      "202604": 1489338.03,
+      "202605": 1163814.5,
+      "202606": 1260495.59,
+      "202607": 1151897.37,
+      "202608": 1121734.98
+    },
+    "Has2bData": true,
+    "ItcAvailableMonthly": 0.0,
+    "ItcClaimVsAvailable": 0.0,
+    "ItcUnavailableShare": 0.0,
+    "SupplierFilingRate": 0.8
+  },
+  "Financials": {
+    "HasFinancials": true,
+    "SourceYear": "2026-27",
+    "BusinessTurnover": 15000000.0,
+    "EbitdaMargin": null,
+    "PbtMargin": 0.0358,
+    "NetProfitMargin": 0.028,
+    "DebtorDays": null,
+    "AssetTurnover": 1.82,
+    "TotalAssets": 8250000.0,
+    "NetWorth": 1650000.0,
+    "DebtToEquity": 3.09,
+    "FormType": "ITR-5",
+    "FilingSection": "139(4)",
+    "IsPresumptive": false,
+    "EVerified": true,
+    "ReturnProcessed": true,
+    "AuditApplicable": false,
+    "AuditCompleted": false,
+    "HasTaxDemand": false,
+    "GstTurnoverVariancePct": 6.4
+  },
+  "Industry": {
+    "SectorName": "Wholesale trade except of motor vehicles",
+    "Nic2Digit": "46",
+    "RiskWeight": 0.65,
+    "Outlook": "Moderate"
+  }
+}

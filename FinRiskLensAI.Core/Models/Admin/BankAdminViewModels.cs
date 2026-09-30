@@ -4,7 +4,6 @@ using FinRiskLensAI.Core.Models.Itr;
 using FinRiskLensAI.Core.Models.GST;
 using FinRiskLensAI.Core.Models.Mca;
 using FinRiskLensAI.Core.Models.Onboarding;
-using FinRiskLensAI.Core.Models.Scoring;
 
 namespace FinRiskLensAI.Core.Models.Admin
 {
@@ -33,10 +32,9 @@ namespace FinRiskLensAI.Core.Models.Admin
         public BankCustomerRow? Customer { get; set; }
         public string? LoadError { get; set; }
 
-        /// <summary>Which tab to open on load: score | udyam | gst | itr | aa | mca | security.</summary>
-        public string ActiveTab { get; set; } = "score";
+        /// <summary>Which tab to open on load: udyam | gst | itr | aa | mca | security.</summary>
+        public string ActiveTab { get; set; } = "udyam";
 
-        public FinancialHealthCardViewModel? Card { get; set; }
         public UdyamDetailsViewModel? Udyam { get; set; }
         public GSTAnalysisViewModel? Gst { get; set; }
         public McaDetailsViewModel? Mca { get; set; }

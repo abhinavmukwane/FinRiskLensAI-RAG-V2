@@ -14,8 +14,6 @@
 
     var uan = root.dataset.uan;
     var token = root.dataset.token;
-    var currentScore = parseFloat(root.dataset.score || '0');
-    var isScored = root.dataset.scored === 'true';
 
     var overlay = document.getElementById('lcOverlay');
     var dialog = document.getElementById('lcModal');
@@ -61,13 +59,11 @@
 
         var prev = pushes[channel];
         if (prev) {
-            var moved = Math.abs(currentScore - prev.scoreAtPush) >= 1;
+            // The receipt keeps the exact payload that went out, so a re-push is safe to
+            // audit: it records a second case built from what the sources say now.
             repushNote.style.display = '';
-            repushNote.innerHTML = moved
-                ? '<i class="bi bi-arrow-repeat"></i> Already raised as <strong>' + prev.caseReference + '</strong> on ' + prev.pushedAt
-                  + ' at score <strong>' + prev.scoreAtPush + '</strong>. The score is now <strong>' + Math.round(currentScore) + '</strong> — confirming raises a new case at the current score.'
-                : '<i class="bi bi-check2-circle"></i> Already raised as <strong>' + prev.caseReference + '</strong> on ' + prev.pushedAt
-                  + ' at the same score. Confirming records a second push.';
+            repushNote.innerHTML = '<i class="bi bi-arrow-repeat"></i> Already raised as <strong>' + prev.caseReference
+                + '</strong> on ' + prev.pushedAt + '. Confirming records a second push with the current facts.';
             confirmBtn.innerHTML = '<i class="bi bi-send"></i> Re-push to ' + channel;
         } else {
             repushNote.style.display = 'none';
@@ -75,7 +71,7 @@
         }
 
         previewLink.href = '/loan-case/preview?uan=' + encodeURIComponent(uan) + '&channel=' + channel;
-        confirmBtn.disabled = !isScored;
+        confirmBtn.disabled = false;
     }
     channelBtns.forEach(function (b) {
         b.addEventListener('click', function () { select(b.dataset.channel); });
@@ -88,18 +84,15 @@
         host.innerHTML = channels.map(function (ch) {
             var p = pushes[ch];
             if (!p) return '';
-            var stale = Math.abs(currentScore - p.scoreAtPush) >= 1;
-            var cls = p.state === 'Failed' ? 'failed' : (stale ? 'stale' : (p.state === 'Sent' ? 'sent' : 'simulated'));
-            var icon = p.state === 'Failed' ? 'bi-x-octagon' : (stale ? 'bi-exclamation-diamond' : 'bi-check2-circle');
+            var cls = p.state === 'Failed' ? 'failed' : (p.state === 'Sent' ? 'sent' : 'simulated');
+            var icon = p.state === 'Failed' ? 'bi-x-octagon' : 'bi-check2-circle';
 
             // Keep chips short — three of them sit side by side. The channel is the
             // headline; everything else lives in the tooltip and on the receipt.
-            var label = ch + (p.state === 'Simulated' ? '<span class="lc-chip-sub">sim</span>' : '')
-                           + (stale ? '<span class="lc-chip-sub">re-score</span>' : '');
+            var label = ch + (p.state === 'Simulated' ? '<span class="lc-chip-sub">sim</span>' : '');
 
             var tip = (p.state === 'Failed' ? 'Failed' : (p.state === 'Simulated' ? 'Recorded (simulated)' : 'Sent'))
                     + ' · ' + p.caseReference + ' · ' + p.pushedAt
-                    + ' · score ' + p.scoreAtPush + (stale ? ' (now ' + Math.round(currentScore) + ')' : '')
                     + (p.pushedBy ? ' · ' + p.pushedBy : '');
 
             return '<a class="lc-chip ' + cls + '" href="/loan-case/receipt/' + p.id + '" target="_blank" rel="noopener"'

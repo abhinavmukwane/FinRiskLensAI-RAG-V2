@@ -1,43 +1,32 @@
-﻿using Microsoft.EntityFrameworkCore;
+using FinRiskLensAI.Data.DI;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FinRiskLensAI.Data.DbContextEDMX
 {
+    /// <summary>
+    /// Used only by the EF tools (dotnet ef migrations …). Reads the same
+    /// Database:ConnectionStrings:PostgreSQL the app does, and configures the provider
+    /// through <see cref="PostgresSetup"/> so migrations match the running model.
+    /// <para>
+    /// Neon: point migrations at the direct endpoint (drop "-pooler" from the host) if
+    /// the pooled one ever misbehaves — override with the environment variable
+    /// Database__ConnectionStrings__PostgreSQL rather than editing the settings file.
+    /// </para>
+    /// </summary>
     public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
     {
         public ApplicationDbContext CreateDbContext(string[] args)
         {
             var configuration = BuildConfiguration();
 
-            var dbType = args.Length > 0 ? args[0] : configuration["Database:DbType"] ?? "SqlServer";
+            var connectionString = configuration["Database:ConnectionStrings:PostgreSQL"]
+                ?? throw new InvalidOperationException(
+                    "Database:ConnectionStrings:PostgreSQL not found in appsettings.Development.json");
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-
-            if (dbType.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
-            {
-                var pgConn = configuration["Database:ConnectionStrings:PostgreSQL"]
-                    ?? throw new InvalidOperationException(
-                        "Database:ConnectionStrings:PostgreSQL not found in appsettings.Development.json");
-
-                optionsBuilder.UseNpgsql(pgConn,
-                    npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "cre"));
-            }
-            else
-            {
-                var sqlConn = configuration["Database:ConnectionStrings:SqlServer"]
-                    ?? throw new InvalidOperationException(
-                        "Database:ConnectionStrings:SqlServer not found in appsettings.Development.json");
-
-                optionsBuilder.UseSqlServer(sqlConn,
-                    sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "cre"));
-            }
-
+            PostgresSetup.Configure(optionsBuilder, connectionString);
             return new ApplicationDbContext(optionsBuilder.Options);
         }
 
@@ -64,12 +53,12 @@ namespace FinRiskLensAI.Data.DbContextEDMX
             while (dir != null && dir.GetFiles("*.sln").Length == 0)
                 dir = dir.Parent;
 
-            if (dir != null)
-            {
-                var startupProjectPath = Path.Combine(dir.FullName, "FinRiskLensAI");
-                if (File.Exists(Path.Combine(startupProjectPath, "appsettings.Development.json")))
-                    return startupProjectPath;
-            }
+            // The startup project is whichever top-level folder carries the settings file.
+            // Found by content, not by name — the folder has been renamed once already.
+            var startupProject = dir?.GetDirectories()
+                .FirstOrDefault(d => File.Exists(Path.Combine(d.FullName, "appsettings.Development.json")));
+            if (startupProject != null)
+                return startupProject.FullName;
 
             return candidate;
         }

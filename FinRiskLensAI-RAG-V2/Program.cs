@@ -68,17 +68,12 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keysDir))
     .SetApplicationName("FinRiskLensAI");
 
-// Back the session with the SQL Server distributed cache instead of in-memory.
-// Otherwise an app-pool recycle (a heavy re-analyze can trigger one) or a web-farm
-// instance switch wipes the in-memory session, and the next request silently logs
-// the user out (redirected to Auth/CustLogin). SQL-backed session survives both.
-// Table: [FinRiskLensAI].[SessionCache] — see the create SQL in Doc/DB_SCRIPTS.md.
-builder.Services.AddDistributedSqlServerCache(o =>
-{
-    o.ConnectionString = builder.Configuration["Database:ConnectionStrings:SqlServer"];
-    o.SchemaName = "FinRiskLensAI";
-    o.TableName = "SessionCache";
-});
+// ponytail: in-memory session. V1 backed it with a SQL Server cache because the ML
+// warm-up recycled the IIS app pool and logged users out — that cause is gone with
+// the ML engine, and Cloud Run runs with --session-affinity and --min-instances=1.
+// Ceiling: a restart or a second instance loses sessions. Upgrade path: Memorystore
+// (Redis) via AddStackExchangeRedisCache — PostgreSQL has no first-party provider.
+builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
