@@ -3,6 +3,7 @@ using Autofac.Extensions.DependencyInjection;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.DI;
 using FinRiskLensAI.Data.DI;
+using FinRiskLensAI.Fraud.DI;
 using FinRiskLensAI.ML.DI;
 using FinRiskLensAI.Services.DI;
 using Microsoft.AspNetCore.DataProtection;
@@ -28,6 +29,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterModule(new DataModule());
     container.RegisterModule(new ServicesModule());
     container.RegisterModule(new MLModule());
+    container.RegisterModule(new FraudModule());
 
     // Settings POCOs bound from configuration (EmailService and friends take these directly)
     container.RegisterInstance(

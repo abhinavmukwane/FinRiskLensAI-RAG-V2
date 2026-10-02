@@ -16,7 +16,7 @@ namespace FinRiskLensAI.ML.DI
             builder.RegisterType<AaFeatureExtractor>().AsSelf().SingleInstance();
 
             // Blob storage — container client is created lazily on first use
-            builder.RegisterType<AzureBlobDataStore>().As<IMsmeDataStore>().SingleInstance();
+            builder.RegisterType<AzureBlobDataStore>().As<IMsmeDataStore>().As<ICaseDocumentStore>().SingleInstance();
 
             // Services by convention (matches the ServicesModule pattern)
             builder.RegisterAssemblyTypes(ThisAssembly)

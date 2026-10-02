@@ -1,5 +1,6 @@
 using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Admin;
+using FinRiskLensAI.Core.Models.Cases;
 using FinRiskLensAI.Core.Models.Common;
 using FinRiskLensAI.Core.Models.GST;
 using FinRiskLensAI.Core.Models.Knowledge;
@@ -38,6 +39,13 @@ namespace FinRiskLensAI.Data.DbContextEDMX
         public DbSet<KnowledgeChunk> KnowledgeChunks => Set<KnowledgeChunk>();
         public DbSet<ChunkEmbedding> ChunkEmbeddings => Set<ChunkEmbedding>();
         public DbSet<RagQueryLog> RagQueryLogs => Set<RagQueryLog>();
+
+        // Cases — Doc/10_FRAUD_LENS_BUILD.md §4
+        public DbSet<LoanApplication> LoanApplications => Set<LoanApplication>();
+        public DbSet<CaseDocument> CaseDocuments => Set<CaseDocument>();
+        public DbSet<StatementRow> StatementRows => Set<StatementRow>();
+        public DbSet<PageSummary> PageSummaries => Set<PageSummary>();
+        public DbSet<DocField> DocFields => Set<DocField>();
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

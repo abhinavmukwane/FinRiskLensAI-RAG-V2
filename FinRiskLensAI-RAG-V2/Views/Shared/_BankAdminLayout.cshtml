@@ -2,6 +2,7 @@
 @{
     var bankUser = Context.Session.GetCurrentBankUser();
     var action = (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
+    var controller = (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
     string Nav(string a) => action == a.ToLowerInvariant() ? "bp-nav-link active" : "bp-nav-link";
 }
 <!DOCTYPE html>
@@ -38,6 +39,9 @@
             </a>
             <a class="@Nav("Customers")" href="@Url.Action("Customers", "BankAdmin")">
                 <i class="bi bi-people"></i><span>Customers</span>
+            </a>
+            <a class="@(controller == "cases" ? "bp-nav-link active" : "bp-nav-link")" href="@Url.Action("Index", "Cases")">
+                <i class="bi bi-folder2-open"></i><span>Cases</span>
             </a>
         </nav>
 

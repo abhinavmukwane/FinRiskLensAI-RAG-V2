@@ -1,0 +1,118 @@
+@model FinRiskLensAI.Core.Models.Cases.CaseDetailViewModel
+@using FinRiskLensAI.Core.Models.Cases
+@{
+    var a = Model.Application;
+    ViewBag.Title = $"Case #{a.LoanApplicationID}";
+    Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
+
+    static string Size(long bytes) => bytes >= 1024 * 1024 ? $"{bytes / 1024d / 1024:0.0} MB" : $"{Math.Max(1, bytes / 1024)} KB";
+    static string Money(decimal? v) => v.HasValue ? "₹" + v.Value.ToString("N0", new System.Globalization.CultureInfo("en-IN")) : "—";
+}
+
+<div class="bp-crumb">
+    <a href="@Url.Action("Index", "Cases")"><i class="bi bi-arrow-left"></i> All cases</a>
+</div>
+
+<div class="bp-profile">
+    <div class="bp-profile-main">
+        <div class="bp-profile-avatar"><i class="bi bi-folder2-open"></i></div>
+        <div>
+            <h1>@a.ApplicantRef</h1>
+            <div class="bp-profile-meta">
+                <span><i class="bi bi-hash"></i>Case @a.LoanApplicationID</span>
+                <span><i class="bi bi-briefcase"></i>@a.ProductType.Label()</span>
+                @if (a.Uan != null)
+                {
+                    <span><i class="bi bi-patch-check"></i><a class="bp-link" href="@Url.Action("Customer", "BankAdmin", new { uan = a.Uan })">@a.Uan</a></span>
+                }
+                <span><i class="bi bi-clock"></i>@a.SubmittedAt.ToString("dd MMM yyyy HH:mm") UTC</span>
+                <span class="bp-case-status bp-case-@a.Status.ToString().ToLowerInvariant()">@a.Status</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bp-fact-grid">
+    <div class="bp-fact"><div class="k">Declared income / month</div><div class="v bp-fact-sm">@Money(a.DeclaredIncome)</div></div>
+    <div class="bp-fact"><div class="k">Declared EMIs / month</div><div class="v bp-fact-sm">@Money(a.DeclaredEmis)</div></div>
+    <div class="bp-fact"><div class="k">Declared employer</div><div class="v bp-fact-sm">@(a.DeclaredEmployer ?? "—")</div></div>
+    <div class="bp-fact"><div class="k">Documents</div><div class="v bp-fact-sm">@a.Documents.Count</div></div>
+</div>
+
+<div class="bp-card mt-3">
+    <div class="bp-card-label"><i class="bi bi-files"></i>Documents</div>
+    <div class="bp-table-wrap">
+        <table class="bp-table">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Pages</th>
+                    <th>Producer / creator</th>
+                    <th>Created / modified</th>
+                    <th>Fonts</th>
+                    <th>SHA-256</th>
+                    <th>Extraction</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in a.Documents)
+                {
+                    var hex = Convert.ToHexString(d.Sha256).ToLowerInvariant();
+                    var fonts = d.FontSet?.Split(',') ?? Array.Empty<string>();
+                    var isPdf = d.ContentType == "application/pdf";
+                    <tr>
+                        <td>
+                            <a class="bp-link bp-strong" target="_blank" rel="noopener"
+                               href="@Url.Action("Document", "Cases", new { id = a.LoanApplicationID, docId = d.CaseDocumentID })">
+                                <i class="bi @(isPdf ? "bi-file-earmark-pdf" : "bi-file-earmark-image")"></i> @d.FileName
+                            </a>
+                            <div class="bp-muted">@Size(d.SizeBytes) · @d.DocType</div>
+                            @if (Model.SharedWith.TryGetValue(d.CaseDocumentID, out var others))
+                            {
+                                <div class="bp-flag" title="A byte-identical file was uploaded in another application">
+                                    <i class="bi bi-link-45deg"></i>Same file in
+                                    @foreach (var o in others)
+                                    {
+                                        <a href="@Url.Action("Detail", "Cases", new { id = o })">#@o</a>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td>@(d.PageCount?.ToString() ?? "—")</td>
+                        <td>
+                            @if (!isPdf)
+                            {
+                                <span class="bp-muted">image</span>
+                            }
+                            else if (d.PageCount == null)
+                            {
+                                <span class="bp-muted" title="Password-protected or malformed: the PDF could not be opened">unreadable</span>
+                            }
+                            else
+                            {
+                                <div>@(d.PdfProducer ?? "—")</div>
+                                <div class="bp-muted">@(d.PdfCreator ?? "—")</div>
+                            }
+                        </td>
+                        <td>
+                            <div>@(d.PdfCreatedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            <div class="bp-muted">@(d.PdfModifiedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                        </td>
+                        <td title="@string.Join("\n", fonts)">@(fonts.Length == 0 ? "—" : fonts.Length.ToString())</td>
+                        <td class="bp-mono" title="@hex">@hex[..12]…</td>
+                        <td>
+                            @if (d.ExtractStatus == ExtractStatus.Pending)
+                            {
+                                <span class="bp-muted" title="Runs once the Gemini extractor is connected">Pending</span>
+                            }
+                            else
+                            {
+                                @d.ExtractStatus
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -547,10 +547,7 @@ FinRiskLensAI.Fraud/Rag/
 ├─ IVectorIndex.cs              search(vector, filter, k)  ← swap point for Vector Search
 ├─ PgVectorIndex.cs             single pgvector query, filters pushed to SQL
 ├─ KnowledgeIngestor.cs         acquire → parse → chunk → embed → index
-├─ Chunkers/
-│  ├─ IChunker.cs
-│  ├─ HeadingAwareChunker.cs    C1, C2
-│  └─ AtomicChunker.cs          C3, C4, C5
+├─ MarkdownChunker.cs          all five corpora — options per corpus (built, R2)
 ├─ EmbeddingClient.cs           Vertex AI, task types, batching, retry
 ├─ HybridRetriever.cs           dense + sparse + RRF + filters
 ├─ Reranker.cs                  Gemini Flash relevance scoring
@@ -558,6 +555,13 @@ FinRiskLensAI.Fraud/Rag/
 ├─ RagGroundingVerifier.cs      citation + quote verification
 └─ KnowledgeSearchTool.cs       the agent-facing tool wrapper
 ```
+
+**As built (R2):** one chunker, not three classes. Heading-aware packing and "one
+whole chunk per entry" are the same algorithm with different options — atomic is a
+budget of `int.MaxValue`, no overlap, and only `#`/`##` headings splitting entries — so
+`MarkdownChunker.For(corpus)` picks the options and there is no interface to implement.
+Tokens are estimated at four characters each; swap in the embedding model's count if
+budgets ever need to be exact.
 
 There is deliberately no `VectorMath.cs` — with pgvector the distance arithmetic
 lives in the database, so there is none left to write in C#.

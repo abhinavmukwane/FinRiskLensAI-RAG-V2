@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\FinRiskLensAI.ML\FinRiskLensAI.ML.csproj" />
+    <ProjectReference Include="..\..\FinRiskLensAI.Fraud\FinRiskLensAI.Fraud.csproj" />
   </ItemGroup>
 
   <ItemGroup>

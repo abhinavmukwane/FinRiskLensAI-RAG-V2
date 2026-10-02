@@ -103,7 +103,7 @@ namespace FinRiskLensAI.Core.Models.Knowledge
     public class RagQueryLog : AuditableEntity
     {
         public long RagQueryLogID { get; set; }
-        public int? ApplicationID { get; set; }
+        public int? LoanApplicationID { get; set; }
         /// <summary>User id, or "INVESTIGATOR_AGENT".</summary>
         public string Actor { get; set; } = string.Empty;
         public string Question { get; set; } = string.Empty;

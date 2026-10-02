@@ -398,6 +398,369 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         });
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.CaseDocument", b =>
+                {
+                    b.Property<int>("CaseDocumentID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("case_document_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CaseDocumentID"));
+
+                    b.Property<string>("ClaimedIssuer")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("claimed_issuer");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DocType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("doc_type");
+
+                    b.Property<string>("ExtractError")
+                        .HasColumnType("text")
+                        .HasColumnName("extract_error");
+
+                    b.Property<string>("ExtractStatus")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("extract_status");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("FontSet")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("font_set");
+
+                    b.Property<string>("LayoutText")
+                        .HasColumnType("text")
+                        .HasColumnName("layout_text");
+
+                    b.Property<int>("LoanApplicationID")
+                        .HasColumnType("integer")
+                        .HasColumnName("loan_application_id");
+
+                    b.Property<int?>("PageCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("page_count");
+
+                    b.Property<DateTime?>("PdfCreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("pdf_created_at");
+
+                    b.Property<string>("PdfCreator")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("pdf_creator");
+
+                    b.Property<DateTime?>("PdfModifiedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("pdf_modified_at");
+
+                    b.Property<string>("PdfProducer")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("pdf_producer");
+
+                    b.Property<byte[]>("Sha256")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("sha256");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("storage_path");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("CaseDocumentID")
+                        .HasName("pk_documents");
+
+                    b.HasIndex("LoanApplicationID")
+                        .HasDatabaseName("ix_documents_loan_application_id");
+
+                    b.HasIndex("Sha256")
+                        .HasDatabaseName("ix_documents_sha256");
+
+                    b.ToTable("documents", (string)null);
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.DocField", b =>
+                {
+                    b.Property<long>("DocFieldID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("doc_field_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("DocFieldID"));
+
+                    b.Property<string>("Box")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("box");
+
+                    b.Property<int>("CaseDocumentID")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_document_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("name");
+
+                    b.Property<decimal?>("NumValue")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("num_value");
+
+                    b.Property<int>("PageNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("page_no");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("value");
+
+                    b.HasKey("DocFieldID")
+                        .HasName("pk_doc_fields");
+
+                    b.HasIndex("CaseDocumentID", "Name")
+                        .HasDatabaseName("ix_doc_fields_case_document_id_name");
+
+                    b.ToTable("doc_fields", (string)null);
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.LoanApplication", b =>
+                {
+                    b.Property<int>("LoanApplicationID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("loan_application_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LoanApplicationID"));
+
+                    b.Property<string>("ApplicantRef")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("applicant_ref");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<decimal?>("DeclaredEmis")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("declared_emis");
+
+                    b.Property<string>("DeclaredEmployer")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("declared_employer");
+
+                    b.Property<decimal?>("DeclaredIncome")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("declared_income");
+
+                    b.Property<string>("ProductType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("product_type");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<string>("Uan")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("uan");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("LoanApplicationID")
+                        .HasName("pk_applications");
+
+                    b.HasIndex("SubmittedAt")
+                        .HasDatabaseName("ix_applications_submitted_at");
+
+                    b.HasIndex("Uan")
+                        .HasDatabaseName("ix_applications_uan");
+
+                    b.ToTable("applications", (string)null);
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.PageSummary", b =>
+                {
+                    b.Property<int>("CaseDocumentID")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_document_id");
+
+                    b.Property<int>("PageNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("page_no");
+
+                    b.Property<decimal?>("ClosingBalance")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("closing_balance");
+
+                    b.Property<decimal?>("OpeningBalance")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("opening_balance");
+
+                    b.Property<decimal?>("StatedTotalCredit")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("stated_total_credit");
+
+                    b.Property<decimal?>("StatedTotalDebit")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("stated_total_debit");
+
+                    b.HasKey("CaseDocumentID", "PageNo")
+                        .HasName("pk_page_summaries");
+
+                    b.ToTable("page_summaries", (string)null);
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.StatementRow", b =>
+                {
+                    b.Property<long>("StatementRowID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("statement_row_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("StatementRowID"));
+
+                    b.Property<decimal?>("Balance")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("balance");
+
+                    b.Property<string>("Box")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("box");
+
+                    b.Property<int>("CaseDocumentID")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_document_id");
+
+                    b.Property<string>("CounterpartyAcct")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("counterparty_acct");
+
+                    b.Property<string>("CounterpartyClass")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("counterparty_class");
+
+                    b.Property<string>("CounterpartyName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("counterparty_name");
+
+                    b.Property<decimal?>("Credit")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("credit");
+
+                    b.Property<decimal?>("Debit")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("debit");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("description");
+
+                    b.Property<int>("PageNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("page_no");
+
+                    b.Property<int>("RowNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_no");
+
+                    b.Property<DateOnly>("TxnDate")
+                        .HasColumnType("date")
+                        .HasColumnName("txn_date");
+
+                    b.HasKey("StatementRowID")
+                        .HasName("pk_statement_rows");
+
+                    b.HasIndex("CaseDocumentID", "RowNo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_statement_rows_case_document_id_row_no");
+
+                    b.ToTable("statement_rows", (string)null);
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.GST.GSTR2And3BResponceModel", b =>
                 {
                     b.Property<int>("Id")
@@ -705,10 +1068,6 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         .HasColumnType("text")
                         .HasColumnName("answer");
 
-                    b.Property<int?>("ApplicationID")
-                        .HasColumnType("integer")
-                        .HasColumnName("application_id");
-
                     b.Property<string>("Corpora")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -733,6 +1092,10 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                     b.Property<int>("LatencyMs")
                         .HasColumnType("integer")
                         .HasColumnName("latency_ms");
+
+                    b.Property<int?>("LoanApplicationID")
+                        .HasColumnType("integer")
+                        .HasColumnName("loan_application_id");
 
                     b.Property<string>("Question")
                         .IsRequired()
@@ -760,8 +1123,8 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                     b.HasKey("RagQueryLogID")
                         .HasName("pk_rag_query_log");
 
-                    b.HasIndex("ApplicationID")
-                        .HasDatabaseName("ix_rag_query_log_application_id");
+                    b.HasIndex("LoanApplicationID")
+                        .HasDatabaseName("ix_rag_query_log_loan_application_id");
 
                     b.ToTable("rag_query_log", (string)null);
                 });
@@ -1408,6 +1771,48 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                     b.ToTable("t_UserOtp", (string)null);
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.CaseDocument", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.LoanApplication", "LoanApplication")
+                        .WithMany("Documents")
+                        .HasForeignKey("LoanApplicationID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_documents_loan_applications_loan_application_id");
+
+                    b.Navigation("LoanApplication");
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.DocField", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.CaseDocument", null)
+                        .WithMany()
+                        .HasForeignKey("CaseDocumentID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_doc_fields_documents_case_document_id");
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.PageSummary", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.CaseDocument", null)
+                        .WithMany()
+                        .HasForeignKey("CaseDocumentID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_page_summaries_documents_case_document_id");
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.StatementRow", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.CaseDocument", null)
+                        .WithMany()
+                        .HasForeignKey("CaseDocumentID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_statement_rows_documents_case_document_id");
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Knowledge.ChunkEmbedding", b =>
                 {
                     b.HasOne("FinRiskLensAI.Core.Models.Knowledge.KnowledgeChunk", "KnowledgeChunk")
@@ -1484,6 +1889,11 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                     b.Navigation("MsmeEnquiry");
 
                     b.Navigation("UserRegistration");
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.LoanApplication", b =>
+                {
+                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Knowledge.KnowledgeChunk", b =>

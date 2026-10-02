@@ -2,6 +2,7 @@ using FinRiskLensAI.Core.Interfaces;
 using System.Text;
 using Azure.Core;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace FinRiskLensAI.ML.Storage
@@ -9,8 +10,9 @@ namespace FinRiskLensAI.ML.Storage
     /// <summary>
     /// Azure Blob Storage implementation. Each MSME gets a virtual folder named by its
     /// Udyam number inside one container; blobs are the raw source JSON files.
+    /// Uploaded case documents share the container under <c>cases/</c>.
     /// </summary>
-    public class AzureBlobDataStore : IMsmeDataStore
+    public class AzureBlobDataStore : IMsmeDataStore, ICaseDocumentStore
     {
         private readonly Lazy<BlobContainerClient> _container;
 
@@ -75,5 +77,21 @@ namespace FinRiskLensAI.ML.Storage
 
         public async Task<bool> ExistsAsync(string uan, string fileName, CancellationToken ct = default)
             => await _container.Value.GetBlobClient(BlobPath(uan, fileName)).ExistsAsync(ct);
+
+        public async Task PutAsync(string path, byte[] content, string contentType, CancellationToken ct = default)
+        {
+            var blob = _container.Value.GetBlobClient(path);
+            // Content-addressed: if the bytes are already there, they are these bytes.
+            if (await blob.ExistsAsync(ct)) return;
+            await blob.UploadAsync(new BinaryData(content),
+                new BlobUploadOptions { HttpHeaders = new BlobHttpHeaders { ContentType = contentType } }, ct);
+        }
+
+        public async Task<Stream?> OpenReadAsync(string path, CancellationToken ct = default)
+        {
+            var blob = _container.Value.GetBlobClient(path);
+            if (!await blob.ExistsAsync(ct)) return null;
+            return await blob.OpenReadAsync(cancellationToken: ct);
+        }
     }
 }

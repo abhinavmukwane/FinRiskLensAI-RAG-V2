@@ -309,6 +309,28 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | Main | Case schema + migration · upload screen · PdfPig metadata · `DocumentExtractor` (Flash, boxes) · `CasePipelineWorker` |
 | RAG | **R2** chunkers + unit tests · **R3** `EmbeddingClient` + ingest the typology corpus (smallest, cleanest) |
 
+**Status 2026-10-02 — everything that does not need Gemini is done.**
+
+| Item | Status |
+|---|---|
+| New project `FinRiskLensAI.Fraud` | ✅ in the solution, `FraudModule` registers `*Service` by convention |
+| Case schema + migration | ✅ `20261002102310_CaseSchema` on Neon — `applications`, `documents`, `statement_rows`, `page_summaries`, `doc_fields` (logged in `DB_SCRIPTS.md`) |
+| Upload screen | ✅ Bank portal → **Cases**: inbox, open-a-case form, case view, inline document viewer |
+| Ingest | ✅ type sniffed from the bytes (PDF/PNG/JPEG only), SHA-256, content-addressed storage `cases/{sha256}{ext}`, PdfPig metadata (producer, creator, dates, fonts, pages) |
+| Cross-case duplicate files | ✅ shown on the case view — the cheapest cross-application link, ahead of the network lens |
+| **R2** chunkers | ✅ `MarkdownChunker` — one splitter configured per corpus; 8 tests incl. no mid-clause split, tables whole, overlap by whole clauses |
+| `DocumentExtractor` · **R3** `EmbeddingClient` | ⏸ **blocked** on the GCP project — documents wait at `ExtractStatus = Pending` |
+| `CasePipelineWorker` | ⏸ deliberately not built yet: ingest runs inside the upload request, and extraction is the worker's only job. Lands with the extractor |
+
+Notes from the build:
+- **PdfPig's NuGet id is `PdfPig`.** `UglyToad.PdfPig` on nuget.org belongs to an
+  unrelated, unverified owner and ships odd versions — do not add it.
+- **Password-protected PDFs** (most Indian bank e-statements) still upload; their
+  metadata is empty and the case view says "unreadable". The extractor will need the
+  password path.
+- **Binary storage** is a second interface, `ICaseDocumentStore`, implemented by the
+  existing Azure store in the fork's own container. The GCS store implements both.
+
 ### Phase 3 — Deterministic findings + Case Report · Oct 7 – Oct 9
 | Lane | Work |
 |---|---|

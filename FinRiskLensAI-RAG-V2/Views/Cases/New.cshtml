@@ -1,0 +1,67 @@
+@model FinRiskLensAI.Core.Models.Cases.NewCaseRequest
+@using FinRiskLensAI.Core.Models.Cases
+@using FinRiskLensAI.Fraud.Cases
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewBag.Title = "New case";
+    Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
+}
+
+<div class="bp-crumb">
+    <a href="@Url.Action("Index", "Cases")"><i class="bi bi-arrow-left"></i> All cases</a>
+</div>
+
+<div class="bp-page-head">
+    <div>
+        <div class="bp-eyebrow">FraudLens</div>
+        <h1>Open a case</h1>
+    </div>
+</div>
+
+<form class="bp-card bp-case-form" method="post" enctype="multipart/form-data" asp-action="New">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="bp-alert"><i class="bi bi-exclamation-triangle-fill"></i>
+            @string.Join(" ", ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))
+        </div>
+    }
+
+    <div class="bp-form-grid">
+        <label>
+            <span>Application number *</span>
+            <input class="bp-select" asp-for="ApplicantRef" placeholder="e.g. SME-2026-004211" required maxlength="50" />
+        </label>
+        <label>
+            <span>Product</span>
+            <select class="bp-select" asp-for="ProductType" asp-items="Enum.GetValues<CaseProduct>().Select(p => new SelectListItem(p.Label(), p.ToString()))"></select>
+        </label>
+        <label>
+            <span>Udyam number</span>
+            <input class="bp-select" asp-for="Uan" placeholder="UDYAM-MH-25-0042817" />
+            <small>Links the case to the MSME's registry and AA data, which uploads are checked against.</small>
+        </label>
+        <label>
+            <span>Declared employer / business</span>
+            <input class="bp-select" asp-for="DeclaredEmployer" maxlength="200" />
+        </label>
+        <label>
+            <span>Declared monthly income (₹)</span>
+            <input class="bp-select" asp-for="DeclaredIncome" type="number" min="0" step="0.01" />
+        </label>
+        <label>
+            <span>Declared monthly EMIs (₹)</span>
+            <input class="bp-select" asp-for="DeclaredEmis" type="number" min="0" step="0.01" />
+        </label>
+    </div>
+
+    <label class="bp-file-drop">
+        <i class="bi bi-cloud-arrow-up"></i>
+        <span>Bank statements, salary slips, ITRs, KYC — PDF, PNG or JPEG</span>
+        <small>Up to @CaseService.MaxFiles files, @(CaseService.MaxFileBytes / 1024 / 1024) MB each</small>
+        <input type="file" name="files" multiple required accept="application/pdf,image/png,image/jpeg" />
+    </label>
+
+    <div class="bp-form-actions">
+        <button type="submit" class="bp-btn"><i class="bi bi-folder-plus"></i> Open case</button>
+    </div>
+</form>

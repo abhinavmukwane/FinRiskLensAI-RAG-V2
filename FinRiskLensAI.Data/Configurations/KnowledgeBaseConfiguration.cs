@@ -111,7 +111,7 @@ namespace FinRiskLensAI.Data.Configurations
             builder.Property(x => x.CreatedBy).HasMaxLength(100);
             builder.Property(x => x.UpdatedBy).HasMaxLength(100);
 
-            builder.HasIndex(x => x.ApplicationID);
+            builder.HasIndex(x => x.LoanApplicationID);
         }
     }
 }

@@ -1251,3 +1251,36 @@
     .lc-chips { justify-content: flex-start; }
     .lc-root .bp-btn { width: 100%; justify-content: center; }
 }
+
+/* ===================== Cases ===================== */
+.bp-case-status {
+    display: inline-block; font-size: .72rem; font-weight: 600;
+    border-radius: 6px; padding: 3px 8px;
+    color: #445; background: #eef1f4;
+}
+.bp-case-processing { color: #8a6d00; background: #fff6d6; }
+.bp-case-review     { color: #c2551a; background: #fff2ec; }
+.bp-case-clear      { color: #1d7a46; background: #e6f6ec; }
+.bp-case-hold       { color: #b42318; background: #fdecea; }
+
+.bp-case-form { max-width: 880px; }
+.bp-form-grid {
+    display: grid; gap: 14px 18px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.bp-form-grid label, .bp-file-drop { display: flex; flex-direction: column; gap: 6px; }
+.bp-form-grid label > span { font-size: .78rem; font-weight: 600; color: #4a5a66; }
+.bp-form-grid small, .bp-file-drop small { font-size: .72rem; color: #8796a1; }
+.bp-form-grid .bp-select { cursor: text; min-width: 0; width: 100%; }
+.bp-form-grid select.bp-select { cursor: pointer; }
+
+.bp-file-drop {
+    margin-top: 18px; padding: 18px;
+    align-items: center; text-align: center;
+    border: 1.5px dashed var(--brand-tint-border); border-radius: 12px;
+    background: var(--brand-tint-bg); font-size: .86rem; color: #4a5a66;
+}
+.bp-file-drop > i { font-size: 1.6rem; color: var(--brand-primary); }
+.bp-file-drop input { max-width: 100%; font-size: .8rem; }
+.bp-form-actions { margin-top: 18px; display: flex; justify-content: flex-end; }
+.bp-flag a { color: inherit; text-decoration: underline; margin-left: 2px; }
