@@ -31,6 +31,11 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterModule(new MLModule());
     container.RegisterModule(new FraudModule());
 
+    // Deterministic-check thresholds; defaults live on the class, overrides under "Fraud"
+    container.RegisterInstance(
+        builder.Configuration.GetSection("Fraud").Get<FinRiskLensAI.Fraud.Checks.FraudOptions>()
+        ?? new FinRiskLensAI.Fraud.Checks.FraudOptions());
+
     // Settings POCOs bound from configuration (EmailService and friends take these directly)
     container.RegisterInstance(
         builder.Configuration.GetSection("Smtp").Get<FinRiskLensAI.Core.Models.Common.SmtpSettings>()

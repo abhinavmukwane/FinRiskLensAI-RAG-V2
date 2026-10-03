@@ -3,6 +3,7 @@ using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IRepositories.Cases;
 using FinRiskLensAI.Core.Interfaces.IServices.Cases;
 using FinRiskLensAI.Core.Models.Cases;
+using FinRiskLensAI.Fraud.Checks;
 
 namespace FinRiskLensAI.Fraud.Cases
 {
@@ -18,11 +19,13 @@ namespace FinRiskLensAI.Fraud.Cases
 
         private readonly ICaseRepository _cases;
         private readonly ICaseDocumentStore _store;
+        private readonly FraudOptions _options;
 
-        public CaseService(ICaseRepository cases, ICaseDocumentStore store)
+        public CaseService(ICaseRepository cases, ICaseDocumentStore store, FraudOptions options)
         {
             _cases = cases;
             _store = store;
+            _options = options;
         }
 
         public async Task<CaseIntakeResult> CreateAsync(NewCaseRequest request, IReadOnlyList<CaseUpload> files,
@@ -86,6 +89,9 @@ namespace FinRiskLensAI.Fraud.Cases
             }
 
             var id = await _cases.AddAsync(application, ct);
+
+            // Metadata checks need nothing but the upload, so the case opens with them run
+            await RunChecksAsync(id, ct);
             return new(id, null);
         }
 
@@ -99,7 +105,8 @@ namespace FinRiskLensAI.Fraud.Cases
             return new CaseDetailViewModel
             {
                 Application = application,
-                SharedWith = await _cases.FindSharedFilesAsync(loanApplicationId, ct)
+                SharedWith = await _cases.FindSharedFilesAsync(loanApplicationId, ct),
+                Findings = await _cases.GetFindingsAsync(loanApplicationId, ct)
             };
         }
 
@@ -111,5 +118,21 @@ namespace FinRiskLensAI.Fraud.Cases
             var stream = await _store.OpenReadAsync(doc.StoragePath, ct);
             return stream == null ? null : new CaseFile(stream, doc.ContentType, doc.FileName);
         }
+
+        public async Task RunChecksAsync(int loanApplicationId, CancellationToken ct = default)
+        {
+            var application = await _cases.GetAsync(loanApplicationId, ct);
+            if (application == null) return;
+
+            var (rows, pages, fields) = await _cases.GetExtractedAsync(loanApplicationId, ct);
+            var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields), _options);
+            foreach (var f in findings) { f.CreatedBy = "DETERMINISTIC_CHECKS"; f.UpdatedBy = f.CreatedBy; }
+
+            await _cases.ReplaceDeterministicFindingsAsync(loanApplicationId, findings, ct);
+        }
+
+        public Task<bool> ReviewFindingAsync(int loanApplicationId, int findingId, ReviewStatus status, string reviewedBy,
+                                             string? note, CancellationToken ct = default)
+            => _cases.ReviewFindingAsync(loanApplicationId, findingId, status, reviewedBy, note, ct);
     }
 }

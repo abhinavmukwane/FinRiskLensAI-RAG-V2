@@ -568,6 +568,161 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                     b.ToTable("doc_fields", (string)null);
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.Evidence", b =>
+                {
+                    b.Property<long>("EvidenceID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("evidence_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("EvidenceID"));
+
+                    b.Property<string>("Box")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("box");
+
+                    b.Property<int?>("CaseDocumentID")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_document_id");
+
+                    b.Property<int>("FindingID")
+                        .HasColumnType("integer")
+                        .HasColumnName("finding_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("note");
+
+                    b.Property<int?>("PageNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("page_no");
+
+                    b.Property<long?>("RefId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ref_id");
+
+                    b.HasKey("EvidenceID")
+                        .HasName("pk_evidence");
+
+                    b.HasIndex("FindingID")
+                        .HasDatabaseName("ix_evidence_finding_id");
+
+                    b.ToTable("evidence", (string)null);
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.Finding", b =>
+                {
+                    b.Property<int>("FindingID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("finding_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FindingID"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DedupKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("dedup_key");
+
+                    b.Property<string>("DetectedBy")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("detected_by");
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("explanation");
+
+                    b.Property<int>("LoanApplicationID")
+                        .HasColumnType("integer")
+                        .HasColumnName("loan_application_id");
+
+                    b.Property<string>("RecommendedAction")
+                        .HasColumnType("text")
+                        .HasColumnName("recommended_action");
+
+                    b.Property<string>("ReviewNote")
+                        .HasColumnType("text")
+                        .HasColumnName("review_note");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("review_status");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("severity");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("FindingID")
+                        .HasName("pk_findings");
+
+                    b.HasIndex("LoanApplicationID", "DedupKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_findings_loan_application_id_dedup_key");
+
+                    b.ToTable("findings", (string)null);
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.LoanApplication", b =>
                 {
                     b.Property<int>("LoanApplicationID")
@@ -1793,6 +1948,26 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         .HasConstraintName("fk_doc_fields_documents_case_document_id");
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.Evidence", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.Finding", null)
+                        .WithMany("Evidence")
+                        .HasForeignKey("FindingID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_evidence_findings_finding_id");
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.Finding", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.LoanApplication", null)
+                        .WithMany()
+                        .HasForeignKey("LoanApplicationID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_findings_loan_applications_loan_application_id");
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.PageSummary", b =>
                 {
                     b.HasOne("FinRiskLensAI.Core.Models.Cases.CaseDocument", null)
@@ -1889,6 +2064,11 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                     b.Navigation("MsmeEnquiry");
 
                     b.Navigation("UserRegistration");
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.Finding", b =>
+                {
+                    b.Navigation("Evidence");
                 });
 
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.LoanApplication", b =>

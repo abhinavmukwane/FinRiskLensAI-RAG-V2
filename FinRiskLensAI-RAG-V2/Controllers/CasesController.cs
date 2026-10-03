@@ -78,6 +78,26 @@ namespace FinRiskLensAI.Controllers
             return model == null ? NotFound() : View(model);
         }
 
+        [HttpPost("{id:int}/checks")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RunChecks(int id, CancellationToken ct)
+        {
+            await _cases.RunChecksAsync(id, ct);
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+
+        /// <summary>Confirm, dismiss, or reopen a finding. The note travels with it into case memory later.</summary>
+        [HttpPost("{id:int}/findings/{findingId:int}/review")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Review(int id, int findingId, ReviewStatus status, string? note, CancellationToken ct)
+        {
+            if (!Enum.IsDefined(status) || note?.Length > 2000) return BadRequest();
+
+            var user = HttpContext.Session.GetCurrentBankUser()!;
+            var found = await _cases.ReviewFindingAsync(id, findingId, status, user.UserId, note, ct);
+            return found ? Redirect(Url.Action(nameof(Detail), new { id }) + $"#finding-{findingId}") : NotFound();
+        }
+
         /// <summary>The stored file, inline — the evidence viewer's source.</summary>
         [HttpGet("{id:int}/documents/{docId:int}")]
         public async Task<IActionResult> Document(int id, int docId, CancellationToken ct)

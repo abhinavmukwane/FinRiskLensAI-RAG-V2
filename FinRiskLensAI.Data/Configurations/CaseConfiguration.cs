@@ -98,6 +98,49 @@ namespace FinRiskLensAI.Data.Configurations
         }
     }
 
+    public class FindingConfiguration : IEntityTypeConfiguration<Finding>
+    {
+        public void Configure(EntityTypeBuilder<Finding> builder)
+        {
+            builder.ToTable("findings");
+            builder.HasKey(x => x.FindingID);
+
+            builder.Property(x => x.Type).HasMaxLength(40).IsRequired();
+            builder.Property(x => x.Category).HasConversion<string>().HasMaxLength(25);
+            builder.Property(x => x.Severity).HasConversion<string>().HasMaxLength(10);
+            builder.Property(x => x.Title).HasMaxLength(300).IsRequired();
+            builder.Property(x => x.Explanation).IsRequired();
+            builder.Property(x => x.DetectedBy).HasConversion<string>().HasMaxLength(15);
+            builder.Property(x => x.DedupKey).HasMaxLength(200).IsRequired();
+            builder.Property(x => x.ReviewStatus).HasConversion<string>().HasMaxLength(12);
+            builder.Property(x => x.ReviewedBy).HasMaxLength(100);
+            builder.Property(x => x.CreatedBy).HasMaxLength(100);
+            builder.Property(x => x.UpdatedBy).HasMaxLength(100);
+
+            builder.HasOne<LoanApplication>().WithMany()
+                   .HasForeignKey(x => x.LoanApplicationID).OnDelete(DeleteBehavior.Restrict);
+
+            // One finding per (application, what it is about) — re-runs replace, never duplicate
+            builder.HasIndex(x => new { x.LoanApplicationID, x.DedupKey }).IsUnique();
+        }
+    }
+
+    public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
+    {
+        public void Configure(EntityTypeBuilder<Evidence> builder)
+        {
+            builder.ToTable("evidence");
+            builder.HasKey(x => x.EvidenceID);
+
+            builder.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            builder.Property(x => x.Box).HasMaxLength(40);
+            builder.Property(x => x.Note).HasMaxLength(400);
+
+            builder.HasOne<Finding>().WithMany(f => f.Evidence)
+                   .HasForeignKey(x => x.FindingID).OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
     public class DocFieldConfiguration : IEntityTypeConfiguration<DocField>
     {
         public void Configure(EntityTypeBuilder<DocField> builder)

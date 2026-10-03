@@ -74,3 +74,6 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 /FinRiskLensAI/web.config
+
+# ASP.NET Data Protection key ring - secret key material, generated per machine
+**/App_Data/DataProtectionKeys/

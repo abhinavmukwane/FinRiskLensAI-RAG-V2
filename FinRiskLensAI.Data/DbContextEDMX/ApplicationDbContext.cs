@@ -46,6 +46,8 @@ namespace FinRiskLensAI.Data.DbContextEDMX
         public DbSet<StatementRow> StatementRows => Set<StatementRow>();
         public DbSet<PageSummary> PageSummaries => Set<PageSummary>();
         public DbSet<DocField> DocFields => Set<DocField>();
+        public DbSet<Finding> Findings => Set<Finding>();
+        public DbSet<Evidence> Evidence => Set<Evidence>();
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

@@ -11,5 +11,11 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Cases
         Task<IReadOnlyList<CaseListItem>> ListAsync(CancellationToken ct = default);
         Task<CaseDetailViewModel?> GetAsync(int loanApplicationId, CancellationToken ct = default);
         Task<CaseFile?> OpenDocumentAsync(int loanApplicationId, int caseDocumentId, CancellationToken ct = default);
+
+        /// <summary>Runs the deterministic checks over whatever has been extracted so far. Safe to repeat.</summary>
+        Task RunChecksAsync(int loanApplicationId, CancellationToken ct = default);
+
+        Task<bool> ReviewFindingAsync(int loanApplicationId, int findingId, ReviewStatus status, string reviewedBy,
+                                      string? note, CancellationToken ct = default);
     }
 }

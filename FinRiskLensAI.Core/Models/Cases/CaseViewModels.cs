@@ -38,6 +38,8 @@ namespace FinRiskLensAI.Core.Models.Cases
         public LoanApplication Application { get; set; } = new();
         /// <summary>Document id → other applications holding a byte-identical file.</summary>
         public IReadOnlyDictionary<int, IReadOnlyList<int>> SharedWith { get; set; } = new Dictionary<int, IReadOnlyList<int>>();
+        /// <summary>Most severe first; reviewed findings after open ones.</summary>
+        public IReadOnlyList<Finding> Findings { get; set; } = Array.Empty<Finding>();
     }
 
     public sealed record CaseFile(Stream Content, string ContentType, string FileName);

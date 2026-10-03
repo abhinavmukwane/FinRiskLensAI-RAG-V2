@@ -1284,3 +1284,49 @@
 .bp-file-drop input { max-width: 100%; font-size: .8rem; }
 .bp-form-actions { margin-top: 18px; display: flex; justify-content: flex-end; }
 .bp-flag a { color: inherit; text-decoration: underline; margin-left: 2px; }
+
+/* ===================== Findings ===================== */
+.bp-btn-sm { padding: 6px 11px; font-size: .78rem; border-radius: 8px; }
+.bp-findings-head { justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.bp-findings-head > span { display: flex; align-items: center; gap: 8px; }
+.bp-findings-head .bp-muted { font-weight: 500; text-transform: none; letter-spacing: 0; }
+.bp-findings-note { margin-bottom: 14px; }
+
+.bp-finding {
+    border: 1px solid var(--brand-tint-border);
+    border-left: 4px solid #8796a1;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 12px;
+}
+.bp-sev-high   { border-left-color: #b42318; }
+.bp-sev-medium { border-left-color: #c2551a; }
+.bp-sev-low    { border-left-color: #8a6d00; }
+.bp-finding-reviewed { opacity: .72; }
+
+.bp-finding-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+    font-size: .72rem; color: #6b7c88;
+}
+.bp-sev {
+    font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    border-radius: 5px; padding: 2px 7px; color: #fff; background: #8796a1;
+}
+.bp-sev-high .bp-sev   { background: #b42318; }
+.bp-sev-medium .bp-sev { background: #c2551a; }
+.bp-sev-low .bp-sev    { background: #8a6d00; }
+
+.bp-finding h3 { font-size: .98rem; font-weight: 700; margin: 8px 0 6px; color: #24303a; }
+.bp-finding p { font-size: .86rem; line-height: 1.55; color: #3d4b55; margin: 0 0 8px; }
+.bp-finding-action { color: #24303a !important; font-weight: 500; }
+
+.bp-evidence { list-style: none; padding: 0; margin: 8px 0; font-size: .8rem; }
+.bp-evidence li { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 4px 0; border-top: 1px dashed var(--brand-tint-border); }
+
+.bp-review-chip { font-weight: 600; border-radius: 5px; padding: 2px 7px; }
+.bp-review-confirmed { color: #b42318; background: #fdecea; }
+.bp-review-dismissed { color: #1d7a46; background: #e6f6ec; }
+.bp-review-note { font-style: italic; }
+
+.bp-review-form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.bp-review-form .bp-select { flex: 1 1 240px; min-width: 0; padding: 6px 10px; font-size: .8rem; cursor: text; }

@@ -340,6 +340,32 @@ Notes from the build:
 > **End of Phase 3 is the insurance line:** a demoable product with zero AI risk.
 > If everything after this fails, there is still something to show.
 
+**Status 2026-10-03 — main lane done; it fires on real data once the extractor fills the rows.**
+
+| Item | Status |
+|---|---|
+| `findings` + `evidence` tables | ✅ `20261003170922_Findings` on Neon, logged in `DB_SCRIPTS.md` |
+| Deterministic checks | ✅ eight, in `Fraud/Checks/DeterministicChecks.cs`: balance continuity, page carry-over, stated totals, slip arithmetic, round-tripping, window dressing, pass-through, PDF metadata. 13 tests, one hand-made statement per check plus a clean one that must raise nothing |
+| Case Report UI | ✅ findings on the case view, most severe first — explanation in rupees, next step, every evidence row linking to its page in the document |
+| Review | ✅ confirm / dismiss / reopen with a note. Re-runs replace open findings and never resurrect a reviewed one |
+| When checks run | ✅ on upload (metadata needs nothing else) and from **Re-run checks**; the extractor will call the same entry point |
+| PDF.js box highlighting | ⏸ needs the boxes the extractor writes; evidence opens the browser's own viewer at the page (`#page=N`) until then |
+| **R4** dense retrieval · **R5** sparse arm + RRF | ⏸ R4 needs query embeddings (GCP). R5 can be built against chunks stored without vectors — next in the RAG lane |
+
+Decisions made while building:
+- **C#, not SQL.** The checks run over one case's rows in memory rather than as hand-written
+  SQL. A case is a few thousand rows at most, so there is nothing to gain from the database,
+  and every check is a pure function with a unit test that needs no database. The SQL
+  dialect notes in §6 no longer apply to the checks.
+- **One finding per document per check,** with every offending row as evidence (capped at
+  25). A statement with forty broken balances is one problem, not forty cards.
+- **Metadata flags consumer editors, not unknown producers.** A denylist (Word, Photoshop,
+  iLovePDF, Canva…) in `FraudOptions.ConsumerEditors`. An allowlist of bank generators
+  would flag every salary slip and ITR, which are not bank-generated.
+- **Verified end to end** on Neon with hand-made rows standing in for the extractor: all
+  three planted problems found, a dismissal survived a re-run, an unsigned review post was
+  refused.
+
 ### Phase 4 — Investigator + grounding · Oct 10 – Oct 12
 | Lane | Work |
 |---|---|
