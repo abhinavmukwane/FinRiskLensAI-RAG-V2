@@ -35,6 +35,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterInstance(
         builder.Configuration.GetSection("Fraud").Get<FinRiskLensAI.Fraud.Checks.FraudOptions>()
         ?? new FinRiskLensAI.Fraud.Checks.FraudOptions());
+    container.RegisterInstance(
+        builder.Configuration.GetSection("Rag").Get<FinRiskLensAI.Core.Models.Knowledge.RagOptions>()
+        ?? new FinRiskLensAI.Core.Models.Knowledge.RagOptions());
 
     // Settings POCOs bound from configuration (EmailService and friends take these directly)
     container.RegisterInstance(

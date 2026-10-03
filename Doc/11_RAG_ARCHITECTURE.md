@@ -320,6 +320,27 @@ The generated column means the index maintains itself on insert and update — n
 to rebuild after ingestion. `websearch_to_tsquery` accepts quoted phrases and `-`
 exclusions, which is what an underwriter types without being taught a syntax.
 
+> **As built (R5, 2026-10-03)** — `KnowledgeRepository.SparseSearchAsync`. Two changes
+> from the sketch above, both found by running real questions against the sample corpus:
+>
+> - **Any term may match.** `websearch_to_tsquery` ANDs every term, so "what is the
+>   maximum FOIR for income above 2 lakh" matched nothing — no clause contains all of
+>   those words. The query's ANDs are turned into ORs and the GIN index finds every
+>   chunk containing any of them.
+> - **Ranked by term rarity, not `ts_rank_cd`.** `ts_rank_cd` has no IDF, so with OR
+>   semantics common words win: "applicant pays betting apps" returned window dressing
+>   and fabricated slips, because they mention *applicant* and *account* more, and never
+>   the gambling clause. Ranking is now the summed BM25-style IDF,
+>   `ln(1 + (N − df + 0.5)/(df + 0.5))`, of the query terms each chunk contains, with
+>   document frequencies from `ts_stat` over current chunks. The gambling typology and
+>   policy §4.2 now come back in the top three. `ts_stat` scans the corpus per query —
+>   fine at thousands of chunks; a lexeme→df table refreshed on ingest is the upgrade.
+>
+> Measured with `tools/FinRiskLensAI.RagCli` over `Doc/knowledge/`: "FOIR" and "44AB"
+> return their clauses at rank 1, as do round-tripping, edited statements and undeclared
+> EMIs asked in plain words. Single-word rarity still decides close calls in a small
+> corpus — exactly the gap the dense arm closes.
+
 **Fusion — Reciprocal Rank Fusion.** Simple, parameter-light, and it does not
 require the two arms' scores to be comparable:
 
@@ -548,6 +569,8 @@ FinRiskLensAI.Fraud/Rag/
 ├─ PgVectorIndex.cs             single pgvector query, filters pushed to SQL
 ├─ KnowledgeIngestor.cs         acquire → parse → chunk → embed → index
 ├─ MarkdownChunker.cs          all five corpora — options per corpus (built, R2)
+├─ KnowledgeService.cs         ingest (chunk + version) and hybrid search (built, R5 — sparse arm)
+├─ Rrf.cs                      reciprocal rank fusion (built, R5)
 ├─ EmbeddingClient.cs           Vertex AI, task types, batching, retry
 ├─ HybridRetriever.cs           dense + sparse + RRF + filters
 ├─ Reranker.cs                  Gemini Flash relevance scoring

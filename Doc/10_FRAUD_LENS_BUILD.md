@@ -350,7 +350,8 @@ Notes from the build:
 | Review | ✅ confirm / dismiss / reopen with a note. Re-runs replace open findings and never resurrect a reviewed one |
 | When checks run | ✅ on upload (metadata needs nothing else) and from **Re-run checks**; the extractor will call the same entry point |
 | PDF.js box highlighting | ⏸ needs the boxes the extractor writes; evidence opens the browser's own viewer at the page (`#page=N`) until then |
-| **R4** dense retrieval · **R5** sparse arm + RRF | ⏸ R4 needs query embeddings (GCP). R5 can be built against chunks stored without vectors — next in the RAG lane |
+| **R5** sparse arm + RRF | ✅ keyword arm with IDF ranking, RRF fusion (3 tests), versioned ingest; harness `tools/FinRiskLensAI.RagCli`; sample corpora in `Doc/knowledge/` ingested on Neon. "FOIR" and "44AB" hit their clauses at rank 1 |
+| **R4** dense retrieval | ⏸ needs query embeddings (GCP). The dense ranking joins the existing `Rrf.Fuse` call |
 
 Decisions made while building:
 - **C#, not SQL.** The checks run over one case's rows in memory rather than as hand-written
