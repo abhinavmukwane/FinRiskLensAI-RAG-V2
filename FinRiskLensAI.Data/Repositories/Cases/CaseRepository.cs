@@ -78,6 +78,59 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                            .ToList();
         }
 
+        public async Task SaveExtractionAsync(int caseDocumentId, ExtractedDocument extracted, string actor,
+                                              CancellationToken ct = default)
+        {
+            await using var tx = await _context.Database.BeginTransactionAsync(ct);
+
+            await _context.StatementRows.Where(r => r.CaseDocumentID == caseDocumentId).ExecuteDeleteAsync(ct);
+            await _context.PageSummaries.Where(p => p.CaseDocumentID == caseDocumentId).ExecuteDeleteAsync(ct);
+            await _context.DocFields.Where(f => f.CaseDocumentID == caseDocumentId).ExecuteDeleteAsync(ct);
+
+            int rowNo = 0;
+            foreach (var page in extracted.Pages.OrderBy(p => p.PageNo))
+            {
+                _context.PageSummaries.Add(new PageSummary
+                {
+                    CaseDocumentID = caseDocumentId, PageNo = page.PageNo,
+                    OpeningBalance = page.OpeningBalance, ClosingBalance = page.ClosingBalance,
+                    StatedTotalDebit = page.StatedTotalDebit, StatedTotalCredit = page.StatedTotalCredit
+                });
+                foreach (var r in page.Rows)
+                {
+                    _context.StatementRows.Add(new StatementRow
+                    {
+                        CaseDocumentID = caseDocumentId, PageNo = page.PageNo, RowNo = ++rowNo,
+                        TxnDate = r.Date, Description = Clip(r.Description, 400)!, Debit = r.Debit, Credit = r.Credit,
+                        Balance = r.Balance, CounterpartyName = Clip(r.CounterpartyName, 200),
+                        CounterpartyAcct = Clip(r.CounterpartyAccount, 50), Box = Clip(r.Box, 40)
+                    });
+                }
+            }
+            foreach (var f in extracted.Fields)
+            {
+                _context.DocFields.Add(new DocField
+                {
+                    CaseDocumentID = caseDocumentId, Name = Clip(f.Name, 50)!, Value = Clip(f.Value, 400)!,
+                    NumValue = f.NumValue, PageNo = f.PageNo, Box = Clip(f.Box, 40)
+                });
+            }
+
+            var doc = await _context.CaseDocuments.FirstAsync(d => d.CaseDocumentID == caseDocumentId, ct);
+            doc.DocType = extracted.DocType;
+            doc.ClaimedIssuer = Clip(extracted.ClaimedIssuer, 200);
+            doc.LayoutText = extracted.LayoutText;
+            doc.ExtractStatus = ExtractStatus.Done;
+            doc.ExtractError = null;
+            doc.UpdatedBy = actor;
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+        }
+
+        // Model output is untrusted input: fit it to the columns rather than fail the save
+        private static string? Clip(string? s, int max) => s == null || s.Length <= max ? s : s[..max];
+
         public async Task ReplaceDeterministicFindingsAsync(int loanApplicationId, IReadOnlyList<Finding> fresh,
                                                             CancellationToken ct = default)
         {

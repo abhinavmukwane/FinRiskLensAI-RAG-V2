@@ -320,6 +320,7 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | Cross-case duplicate files | ✅ shown on the case view — the cheapest cross-application link, ahead of the network lens |
 | **R2** chunkers | ✅ `MarkdownChunker` — one splitter configured per corpus; 8 tests incl. no mid-clause split, tables whole, overlap by whole clauses |
 | `DocumentExtractor` · **R3** `EmbeddingClient` | ⏸ **blocked** on the GCP project — documents wait at `ExtractStatus = Pending` |
+| Extractor output contract | ✅ `ExtractedDocument` (pages → rows, fields) and `ICaseService.ApplyExtractionAsync` — replaces a document's rows, pages and fields and marks it Done. The Gemini extractor only has to produce this shape; the demo generator already does |
 | `CasePipelineWorker` | ⏸ deliberately not built yet: ingest runs inside the upload request, and extraction is the worker's only job. Lands with the extractor |
 
 Notes from the build:
@@ -387,6 +388,28 @@ Decisions made while building:
 - Demo data generator run: 20 genuine · 4 tampered · 12 ring · 3 edge cases
 - Knowledge corpus seeded (synthetic policy, typology, regulatory extracts)
 - 3-minute video · deck PDF · **submit two days early**
+
+**Status 2026-10-03 — generator built ahead of schedule** (`tools/FinRiskLensAI.DemoData`):
+
+| Item | Status |
+|---|---|
+| Synthetic PDFs (QuestPDF) | ✅ multi-page statements and salary slips from two fictional banks and a fictional employer; every name contains "Demo" and every page carries a SYNTHETIC footer |
+| Truth files | ✅ each document's `ExtractedDocument` as JSON — what an exact extractor reads off it. Drives the demo now; becomes the extractor's eval set once Gemini is connected |
+| Cases | ✅ 10 so far: 4 genuine, 3 tampered (inflated receipt, spliced page, fabricated slip), 3 behavioural (round-tripping, window dressing, pass-through) |
+| Expected vs actual | ✅ `DemoScenarioTests` (10 cases, in memory) and the `seed` command (real intake → truth applied as extraction → checks) both pass: genuine cases raise nothing, the others raise exactly their expected findings |
+| Seeded on Neon | ✅ cases #4–#13 (`DEMO-*`); `seed` skips cases that already exist |
+| Ring cases (12) · edge cases (3) | ⏸ ring cases need the network lens (Phase 5) to have anything to find; edge cases next — QuestPDF can encrypt, so a password-protected statement is cheap |
+
+```bash
+dotnet run --project tools/FinRiskLensAI.DemoData -- generate <dir>
+```
+
+```bash
+dotnet run --project tools/FinRiskLensAI.DemoData -- seed
+```
+
+`seed` refuses to run unless `AzureBlob:Container` is the fork's own container — V1's
+`msme-data` holds live data under IDBI evaluation.
 - **R10** reranker + tuning against the eval set — only if time allows
 
 ---

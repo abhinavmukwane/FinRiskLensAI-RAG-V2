@@ -119,6 +119,14 @@ namespace FinRiskLensAI.Fraud.Cases
             return stream == null ? null : new CaseFile(stream, doc.ContentType, doc.FileName);
         }
 
+        public async Task<bool> ApplyExtractionAsync(int loanApplicationId, int caseDocumentId, ExtractedDocument extracted,
+                                                     string actor, CancellationToken ct = default)
+        {
+            if (await _cases.GetDocumentAsync(loanApplicationId, caseDocumentId, ct) == null) return false;
+            await _cases.SaveExtractionAsync(caseDocumentId, extracted, actor, ct);
+            return true;
+        }
+
         public async Task RunChecksAsync(int loanApplicationId, CancellationToken ct = default)
         {
             var application = await _cases.GetAsync(loanApplicationId, ct);

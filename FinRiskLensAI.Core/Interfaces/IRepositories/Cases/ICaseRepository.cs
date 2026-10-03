@@ -20,6 +20,12 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Cases
         Task<IReadOnlyList<Finding>> GetFindingsAsync(int loanApplicationId, CancellationToken ct = default);
 
         /// <summary>
+        /// Replaces everything previously extracted for the document with <paramref name="extracted"/>
+        /// and marks it Done. Rows are numbered in reading order across pages.
+        /// </summary>
+        Task SaveExtractionAsync(int caseDocumentId, ExtractedDocument extracted, string actor, CancellationToken ct = default);
+
+        /// <summary>
         /// Replaces the application's open deterministic findings with <paramref name="fresh"/>.
         /// Reviewed findings are never touched, and a fresh finding with the same key as a
         /// reviewed one is dropped — a re-run must not resurrect what an investigator dismissed.

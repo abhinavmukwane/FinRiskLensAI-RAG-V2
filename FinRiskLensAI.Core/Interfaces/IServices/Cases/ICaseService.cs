@@ -12,6 +12,14 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Cases
         Task<CaseDetailViewModel?> GetAsync(int loanApplicationId, CancellationToken ct = default);
         Task<CaseFile?> OpenDocumentAsync(int loanApplicationId, int caseDocumentId, CancellationToken ct = default);
 
+        /// <summary>
+        /// Stores the extractor's output for one document of the application. False when the
+        /// document does not belong to it. Does not run the checks — call <see cref="RunChecksAsync"/>
+        /// once the case's documents are in.
+        /// </summary>
+        Task<bool> ApplyExtractionAsync(int loanApplicationId, int caseDocumentId, ExtractedDocument extracted,
+                                        string actor, CancellationToken ct = default);
+
         /// <summary>Runs the deterministic checks over whatever has been extracted so far. Safe to repeat.</summary>
         Task RunChecksAsync(int loanApplicationId, CancellationToken ct = default);
 

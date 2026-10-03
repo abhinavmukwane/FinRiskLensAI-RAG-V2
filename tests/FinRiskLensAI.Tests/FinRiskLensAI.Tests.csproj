@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\FinRiskLensAI.ML\FinRiskLensAI.ML.csproj" />
     <ProjectReference Include="..\..\FinRiskLensAI.Fraud\FinRiskLensAI.Fraud.csproj" />
+    <ProjectReference Include="..\..\tools\FinRiskLensAI.DemoData\FinRiskLensAI.DemoData.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -30,7 +30,8 @@ namespace FinRiskLensAI.Data.DbContextEDMX
             return new ApplicationDbContext(optionsBuilder.Options);
         }
 
-        private static IConfigurationRoot BuildConfiguration()
+        /// <summary>The app's own configuration (settings files + environment) — also used by the tools/ harnesses.</summary>
+        public static IConfigurationRoot BuildConfiguration()
         {
             var basePath = ResolveStartupProjectPath();
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
