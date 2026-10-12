@@ -1,20 +1,20 @@
 ﻿/* =====================================================================
    FinRiskLens AI — brand theme tokens (switchable)
 
-   Theme 1 (default) — IDBI Bank's own site palette:
+   Theme 1 — IDBI Bank's own site palette:
        Dark Green   #00836C   primary
        Light Green  #4FA9A7   secondary
        Orange       #F37021   accent / action buttons
        Yellow       #FFAA0A   secondary accent
-   Theme 2 — classic maroon & gold (the original FinRiskLens palette).
+   Theme 2 (default) — classic maroon & gold (the original FinRiskLens palette).
 
    The active theme is the data-theme attribute on <html>, set by
-   /js/theme.js (persisted in localStorage, key "frl-theme").
+   /js/theme.js (persisted in localStorage, key "frl-theme"). Bare :root
+   — no attribute yet, or scripts blocked — falls back to Theme 2.
    All page/component CSS must reference these --brand-* variables
    instead of hardcoded brand hexes.
    ===================================================================== */
 
-:root,
 :root[data-theme="theme1"] {
     /* The four brand colours, verbatim from IDBI. Everything below is
        derived from them — shades step toward black, tints toward white —
@@ -87,6 +87,7 @@
     --brand-ink: #172724;
 }
 
+:root,
 :root[data-theme="theme2"] {
     --brand-primary: #8B1538;
     --brand-primary-strong: #7A1230;
