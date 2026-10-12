@@ -9,10 +9,23 @@ it by hand when a migration cannot be run.
 `ApplicationDbContext.SaveChangesAsync`.
 
 **Database: PostgreSQL** (since 2026-09-30 — the RAG-V2 fork moved off SQL Server;
-reasoning in `10_FRAUD_LENS_BUILD.md` §5). Development runs on **Neon**; the submission
-target is Cloud SQL for PostgreSQL, a connection-string change. The connection string
-lives in the git-ignored `appsettings.Development.json`
-(`Database:ConnectionStrings:PostgreSQL`) and is deliberately not written down here.
+reasoning in `10_FRAUD_LENS_BUILD.md` §5).
+
+| | Where | Connection string lives in |
+|---|---|---|
+| **Production** | **Cloud SQL for PostgreSQL 16** — instance `finrisklens-db`, `asia-south1` (Mumbai), `db-g1-small`, encrypted connections only, daily backups, deletion protection. Cloud Run reaches it through the Cloud SQL connector socket | Secret Manager `finrisklens-settings` |
+| **Development** | Neon | The git-ignored `appsettings.Development.json` |
+
+Neither string is written down here. Production was seeded on 2026-10-12 by applying all
+migrations to a fresh database and copying every table from Neon (24 tables, row counts
+compared, identity sequences reset).
+
+**Applying a migration to production:** add your IPv4 address to the instance's authorised
+networks for the duration (`gcloud sql instances patch finrisklens-db --authorized-networks <ip>/32`),
+connect with `SSL Mode=VerifyCA` against the instance's server CA, run
+`dotnet ef database update` with the production string in
+`Database__ConnectionStrings__PostgreSQL`, then clear the network again
+(`--clear-authorized-networks`).
 
 **Schema:** application tables live in `public`. The EF migrations history table is
 pinned at `cre."__EFMigrationsHistory"` (set in `PostgresSetup`).

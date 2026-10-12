@@ -304,7 +304,7 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | `GcsDocumentStore` · `GeminiClient` | ✅ 2026-10-12 — case documents in Cloud Storage (Mumbai), the 15 earlier files copied across; Vertex AI over REST with Application Default Credentials |
 | `GcsMsmeDataStore` | ✅ 2026-10-12 — the verification sources (Udyam, GST, ITR, AA payloads) in `gs://finrisklensai-sources`, Mumbai: 91 files copied and each compared on read-back. Customer 360, loan-case payloads and the Investigator's facts tool read from it. Azure store, package and settings removed; the Azure container was left untouched |
 | Cloud Run deploy | ✅ 2026-10-12 — **https://finrisklensai.cloud.run** (also https://finrisklens-389451907343.asia-south1.run.app), Mumbai. Built from source by Google Cloud buildpacks (no Dockerfile). See "Deploying" below |
-| Cloud SQL for PostgreSQL | ⏸ Neon stands in for development; switching is a connection-string change |
+| Cloud SQL for PostgreSQL | ✅ 2026-10-12 — production database `finrisklens-db`, PostgreSQL 16 + pgvector 0.8.5, Mumbai. Schema from the migrations, data copied from Neon with row counts compared; both retrieval arms verified on it. Neon stays the development database |
 
 ### Deploying
 
@@ -312,13 +312,14 @@ One command from the repository root — Cloud Build runs the .NET buildpack on 
 project and Cloud Run starts it:
 
 ```bash
-gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --set-secrets /secrets/appsettings.secrets.json=finrisklens-settings:latest
+gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --set-secrets /secrets/appsettings.secrets.json=finrisklens-settings:latest --add-cloudsql-instances finrisklensai:asia-south1:finrisklens-db
 ```
 
 | Setting | Why |
 |---|---|
 | `--min-instances 1 --max-instances 1 --session-affinity` | Sessions and the case queue are in memory: exactly one warm instance |
 | `--no-cpu-throttling` | Extraction runs after the upload request returns; a throttled CPU would stall it. Costs more than request-only CPU — scale down after judging |
+| `--add-cloudsql-instances` | Mounts Cloud SQL's socket at `/cloudsql/<connection>`; the service account's `cloudsql.client` role authorises it. No network path to the database is opened |
 | `GOOGLE_BUILDABLE` | The solution has several projects; this names the web app |
 | `ASPNETCORE_HTTP_PORTS=8080` | The buildpack image does not set a port; Kestrel's default (5000) fails Cloud Run's health check |
 | `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | TLS ends at Google's front end: trust `X-Forwarded-Proto/-For` so HTTPS-only cookies work and client IPs are real |

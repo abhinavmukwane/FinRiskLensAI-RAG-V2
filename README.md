@@ -141,10 +141,9 @@ everything.
   application's data before the run; the model cannot ask its way into another case.
 - **A human decides.** Every finding is confirmed or dismissed by an officer, with a note.
   A re-run never resurrects a dismissed finding.
-- **Data location.** Document files, extraction and embeddings run in Mumbai
-  (`asia-south1`); only Pro reasoning over already-extracted facts uses Gemini's global
-  endpoint. During the build the database is PostgreSQL on Neon in Singapore — moving it to
-  Cloud SQL in Mumbai is a connection-string change, planned before production use.
+- **Data location.** Document files, the database, extraction and embeddings are all in
+  Mumbai (`asia-south1`). Only Pro reasoning over already-extracted facts uses Gemini's
+  global endpoint, because Pro is not served from Mumbai.
 - **Synthetic data only.** No real applicant's document is in the demo.
 
 ---
@@ -159,6 +158,7 @@ everything.
 | **Vertex AI — gemini-embedding-001** (`asia-south1`) | 768-dimension embeddings for policy and typology |
 | **Cloud Run** (`asia-south1`) | The application, built from source by Google Cloud buildpacks |
 | **Cloud Storage** (`asia-south1`) | Uploaded case documents; registry and Account Aggregator source data |
+| **Cloud SQL for PostgreSQL** (`asia-south1`) | Application data, findings, and the knowledge base — `pgvector` HNSW and full-text search in one database |
 | **Secret Manager** | Production settings, mounted as a file; Mumbai-only replication |
 | **Cloud Build · Artifact Registry** | Source-to-container builds |
 | **Cloud Logging** | Application logs |
@@ -205,7 +205,7 @@ Bootstrap 5, Chart.js · xUnit.
 | Udyam / GST / ITR / MCA responses | Cached and synthetic, in the documented API shapes |
 | Account Aggregator | Consent journey against the Finvu sandbox |
 | LOS / ULI / ONDC push | Payloads built and recorded as `Simulated`; setting an endpoint makes it a real POST |
-| Database | PostgreSQL + `pgvector` on Neon (Singapore) during the build; Cloud SQL is next |
+| Database | **Cloud SQL for PostgreSQL 16** with `pgvector`, Mumbai, in production; Neon for development |
 
 ---
 
