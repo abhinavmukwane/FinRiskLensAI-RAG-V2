@@ -21,7 +21,9 @@ namespace FinRiskLensAI.Fraud.Pipeline
     }
 
     /// <summary>
-    /// Upload → ② extract (Gemini, page by page) → ④ deterministic checks → Review.
+    /// Upload → ② extract (Gemini, page by page) → ④ deterministic checks → ⑤⑥ Investigator +
+    /// grounding → Review. A case queued again with nothing left to extract is re-checked and
+    /// re-investigated — that is the "Run investigation" button.
     /// One application at a time; its documents are read in parallel. On start it re-queues
     /// anything a restart interrupted, so a document never sits at Pending for good.
     /// </summary>
@@ -81,8 +83,8 @@ namespace FinRiskLensAI.Fraud.Pipeline
             var extractor = scope.ServiceProvider.GetRequiredService<DocumentExtractor>();
 
             var application = await repo.GetAsync(id, ct);
-            var pending = application?.Documents.Where(d => d.ExtractStatus == ExtractStatus.Pending).ToList();
-            if (pending == null || pending.Count == 0) return;
+            if (application == null) return;
+            var pending = application.Documents.Where(d => d.ExtractStatus == ExtractStatus.Pending).ToList();
 
             await repo.SetStatusAsync(id, CaseStatus.Processing, ct);
             var started = DateTime.UtcNow;
@@ -115,6 +117,13 @@ namespace FinRiskLensAI.Fraud.Pipeline
             }
 
             await cases.RunChecksAsync(id, ct);
+
+            // The AI pass is additive: if it fails, the deterministic findings still stand
+            try { await scope.ServiceProvider.GetRequiredService<Investigator>().InvestigateAsync(id, ct); }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _log.LogError(ex, "Investigator failed for case {CaseId}", id);
+            }
             await repo.SetStatusAsync(id, CaseStatus.Review, ct);
             _log.LogInformation("Case {CaseId}: {Count} document(s) through the pipeline in {Seconds:0}s",
                 id, pending.Count, (DateTime.UtcNow - started).TotalSeconds);

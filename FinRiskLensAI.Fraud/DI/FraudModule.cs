@@ -26,6 +26,7 @@ namespace FinRiskLensAI.Fraud.DI
             builder.RegisterInstance(gemini);
             builder.RegisterType<GeminiClient>().AsSelf().SingleInstance();
             builder.RegisterType<DocumentExtractor>().AsSelf().SingleInstance();
+            builder.RegisterType<Investigator>().AsSelf().InstancePerLifetimeScope();
 
             builder.RegisterType<CaseQueue>().AsSelf().SingleInstance();
 

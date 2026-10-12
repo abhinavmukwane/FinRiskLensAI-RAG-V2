@@ -48,6 +48,7 @@ namespace FinRiskLensAI.Data.DbContextEDMX
         public DbSet<DocField> DocFields => Set<DocField>();
         public DbSet<Finding> Findings => Set<Finding>();
         public DbSet<Evidence> Evidence => Set<Evidence>();
+        public DbSet<AiDropLog> AiDropLogs => Set<AiDropLog>();
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

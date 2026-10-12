@@ -39,8 +39,11 @@ namespace FinRiskLensAI.Fraud.Ai
     /// </summary>
     public class GeminiClient
     {
-        private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(5) };
+        // Deadlines are per attempt (below), so the client itself never times out
+        private static readonly HttpClient Http = new() { Timeout = Timeout.InfiniteTimeSpan };
         private const int MaxAttempts = 4;
+        // A call that has not answered in two minutes is treated like a 503: back off and try again
+        private static readonly TimeSpan AttemptTimeout = TimeSpan.FromMinutes(2);
 
         private readonly GeminiOptions _options;
         private readonly ILogger<GeminiClient> _log;
@@ -106,6 +109,16 @@ namespace FinRiskLensAI.Fraud.Ai
         }
 
         /// <summary>
+        /// A raw generateContent call for callers that build the whole request — the Investigator's
+        /// function-calling loop. Returns the response root.
+        /// </summary>
+        public async Task<JsonElement> GenerateRawAsync(string model, string location, JsonObject body, CancellationToken ct = default)
+        {
+            using var response = await PostAsync(Endpoint(model, location, "generateContent"), body, ct);
+            return response.RootElement.Clone();
+        }
+
+        /// <summary>
         /// Embeds each text at <see cref="GeminiOptions.EmbeddingDimensions"/>, normalised to unit
         /// length — truncated Gemini embeddings are not, and pgvector's cosine and inner-product
         /// orderings only agree on unit vectors. Task type matters: RETRIEVAL_DOCUMENT for chunks,
@@ -168,8 +181,25 @@ namespace FinRiskLensAI.Fraud.Ai
                 if (!string.IsNullOrEmpty(credential.QuotaProject))
                     request.Headers.Add("x-goog-user-project", credential.QuotaProject);
 
-                using var response = await Http.SendAsync(request, ct);
-                var text = await response.Content.ReadAsStringAsync(ct);
+                using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                deadline.CancelAfter(AttemptTimeout);
+                HttpResponseMessage response;
+                string text;
+                try
+                {
+                    response = await Http.SendAsync(request, deadline.Token);
+                    text = await response.Content.ReadAsStringAsync(deadline.Token);
+                }
+                catch (Exception ex) when (!ct.IsCancellationRequested && ex is OperationCanceledException or HttpRequestException)
+                {
+                    // Timed out or the connection dropped — transient, unless it keeps happening
+                    if (attempt >= MaxAttempts)
+                        throw new GeminiException($"Vertex AI did not answer after {MaxAttempts} attempts ({ex.GetType().Name}).");
+                    _log.LogWarning("Vertex AI {Error} on attempt {Attempt}; retrying", ex.GetType().Name, attempt);
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), ct);
+                    continue;
+                }
+                using var _ = response;
                 if (response.IsSuccessStatusCode) return JsonDocument.Parse(text);
 
                 var transient = response.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.InternalServerError

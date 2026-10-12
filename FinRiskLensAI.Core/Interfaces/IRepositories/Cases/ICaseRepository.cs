@@ -26,12 +26,19 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Cases
         Task SaveExtractionAsync(int caseDocumentId, ExtractedDocument extracted, string actor, CancellationToken ct = default);
 
         /// <summary>
-        /// Replaces the application's open deterministic findings with <paramref name="fresh"/>.
+        /// Replaces the application's open findings from <paramref name="source"/> with <paramref name="fresh"/>.
         /// Reviewed findings are never touched, and a fresh finding with the same key as a
         /// reviewed one is dropped — a re-run must not resurrect what an investigator dismissed.
         /// Moves a New application to Review when anything is left unreviewed.
         /// </summary>
-        Task ReplaceDeterministicFindingsAsync(int loanApplicationId, IReadOnlyList<Finding> fresh, CancellationToken ct = default);
+        Task ReplaceFindingsAsync(int loanApplicationId, FindingSource source, IReadOnlyList<Finding> fresh, CancellationToken ct = default);
+
+        /// <summary>Records an investigation run: its rejected claims and when and by which model it ran.</summary>
+        Task RecordInvestigationAsync(int loanApplicationId, DateTime at, string model, IReadOnlyList<AiDropLog> drops,
+                                      CancellationToken ct = default);
+
+        /// <summary>The claims the grounding verifier rejected in the application's most recent investigation.</summary>
+        Task<IReadOnlyList<AiDropLog>> GetLatestDropsAsync(int loanApplicationId, CancellationToken ct = default);
 
         Task SetStatusAsync(int loanApplicationId, CaseStatus status, CancellationToken ct = default);
 

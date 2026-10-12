@@ -398,6 +398,49 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         });
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.AiDropLog", b =>
+                {
+                    b.Property<long>("AiDropLogID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("ai_drop_log_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("AiDropLogID"));
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("at");
+
+                    b.Property<int>("LoanApplicationID")
+                        .HasColumnType("integer")
+                        .HasColumnName("loan_application_id");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("model");
+
+                    b.Property<string>("RawFinding")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("raw_finding");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("AiDropLogID")
+                        .HasName("pk_ai_drop_log");
+
+                    b.HasIndex("LoanApplicationID", "At")
+                        .HasDatabaseName("ix_ai_drop_log_loan_application_id_at");
+
+                    b.ToTable("ai_drop_log", (string)null);
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.CaseDocument", b =>
                 {
                     b.Property<int>("CaseDocumentID")
@@ -761,6 +804,15 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         .HasPrecision(14, 2)
                         .HasColumnType("numeric(14,2)")
                         .HasColumnName("declared_income");
+
+                    b.Property<DateTime?>("InvestigatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("investigated_at");
+
+                    b.Property<string>("InvestigatedBy")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("investigated_by");
 
                     b.Property<string>("ProductType")
                         .IsRequired()
@@ -1924,6 +1976,16 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         .HasDatabaseName("ix_t_user_otp_user_registration_id");
 
                     b.ToTable("t_UserOtp", (string)null);
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.AiDropLog", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.LoanApplication", null)
+                        .WithMany()
+                        .HasForeignKey("LoanApplicationID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ai_drop_log_loan_applications_loan_application_id");
                 });
 
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.CaseDocument", b =>

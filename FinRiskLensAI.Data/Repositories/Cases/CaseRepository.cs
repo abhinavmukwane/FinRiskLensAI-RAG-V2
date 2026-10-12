@@ -131,13 +131,13 @@ namespace FinRiskLensAI.Data.Repositories.Cases
         // Model output is untrusted input: fit it to the columns rather than fail the save
         private static string? Clip(string? s, int max) => s == null || s.Length <= max ? s : s[..max];
 
-        public async Task ReplaceDeterministicFindingsAsync(int loanApplicationId, IReadOnlyList<Finding> fresh,
-                                                            CancellationToken ct = default)
+        public async Task ReplaceFindingsAsync(int loanApplicationId, FindingSource source, IReadOnlyList<Finding> fresh,
+                                               CancellationToken ct = default)
         {
             await using var tx = await _context.Database.BeginTransactionAsync(ct);
 
             var existing = await _context.Findings
-                .Where(f => f.LoanApplicationID == loanApplicationId && f.DetectedBy == FindingSource.Deterministic)
+                .Where(f => f.LoanApplicationID == loanApplicationId && f.DetectedBy == source)
                 .ToListAsync(ct);
             var reviewedKeys = existing.Where(f => f.ReviewStatus != ReviewStatus.Open).Select(f => f.DedupKey).ToHashSet();
 
@@ -157,6 +157,27 @@ namespace FinRiskLensAI.Data.Repositories.Cases
 
             await _context.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
+        }
+
+        public async Task RecordInvestigationAsync(int loanApplicationId, DateTime at, string model, IReadOnlyList<AiDropLog> drops,
+                                                   CancellationToken ct = default)
+        {
+            _context.AiDropLogs.AddRange(drops);
+            await _context.SaveChangesAsync(ct);
+            await _context.LoanApplications.Where(a => a.LoanApplicationID == loanApplicationId)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.InvestigatedAt, at)
+                                          .SetProperty(a => a.InvestigatedBy, model), ct);
+        }
+
+        public async Task<IReadOnlyList<AiDropLog>> GetLatestDropsAsync(int loanApplicationId, CancellationToken ct = default)
+        {
+            // The run's own timestamp, not the newest drop: a clean run must not show the last run's rejects
+            var at = await _context.LoanApplications.Where(a => a.LoanApplicationID == loanApplicationId)
+                                   .Select(a => a.InvestigatedAt).FirstOrDefaultAsync(ct);
+            if (at == null) return Array.Empty<AiDropLog>();
+            return await _context.AiDropLogs.AsNoTracking()
+                                 .Where(d => d.LoanApplicationID == loanApplicationId && d.At == at)
+                                 .OrderBy(d => d.AiDropLogID).ToListAsync(ct);
         }
 
         public Task SetStatusAsync(int loanApplicationId, CaseStatus status, CancellationToken ct = default)

@@ -599,6 +599,9 @@ FinRiskLensAI.Fraud/Rag/
 ├─ KnowledgeService.cs         ingest (chunk + version) and hybrid search (built, R5 — sparse arm)
 ├─ Rrf.cs                      reciprocal rank fusion (built, R5)
 ├─ Reranker.cs                 Flash relevance scoring of the fused top 20 (built, R10)
+   (R7/R8 as built live in Fraud/Ai/: GroundingVerifier.cs checks the Investigator's
+    citations against the chunks search_policy actually returned; InvestigatorTools.cs
+    is the agent-facing knowledge tool)
 ├─ EmbeddingClient.cs           Vertex AI, task types, batching, retry
 ├─ HybridRetriever.cs           dense + sparse + RRF + filters
 ├─ Reranker.cs                  Gemini Flash relevance scoring

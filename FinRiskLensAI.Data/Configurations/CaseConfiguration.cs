@@ -21,6 +21,7 @@ namespace FinRiskLensAI.Data.Configurations
             builder.Property(x => x.DeclaredEmployer).HasMaxLength(200);
             builder.Property(x => x.DeclaredEmis).HasPrecision(14, 2);
             builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(15);
+            builder.Property(x => x.InvestigatedBy).HasMaxLength(60);
             builder.Property(x => x.CreatedBy).HasMaxLength(100);
             builder.Property(x => x.UpdatedBy).HasMaxLength(100);
 
@@ -138,6 +139,23 @@ namespace FinRiskLensAI.Data.Configurations
 
             builder.HasOne<Finding>().WithMany(f => f.Evidence)
                    .HasForeignKey(x => x.FindingID).OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class AiDropLogConfiguration : IEntityTypeConfiguration<AiDropLog>
+    {
+        public void Configure(EntityTypeBuilder<AiDropLog> builder)
+        {
+            builder.ToTable("ai_drop_log");
+            builder.HasKey(x => x.AiDropLogID);
+
+            builder.Property(x => x.RawFinding).HasColumnType("jsonb").IsRequired();
+            builder.Property(x => x.Reason).HasMaxLength(400).IsRequired();
+            builder.Property(x => x.Model).HasMaxLength(60).IsRequired();
+
+            builder.HasOne<LoanApplication>().WithMany()
+                   .HasForeignKey(x => x.LoanApplicationID).OnDelete(DeleteBehavior.Restrict);
+            builder.HasIndex(x => new { x.LoanApplicationID, x.At });
         }
     }
 

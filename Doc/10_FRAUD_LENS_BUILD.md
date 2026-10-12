@@ -424,6 +424,31 @@ Decisions made while building:
 | Main | `Investigator` + tools (scoped server-side) · `GroundingVerifier` + `AiDropLog` · `CounterpartyClassifier` |
 | RAG | **R6** `RagAnswerer` + citation schema + refusal · **R7** `RagGroundingVerifier` + `RagQueryLog` · **R8** `KnowledgeSearchTool` wired into the Investigator |
 
+**Status 2026-10-12 — built and measured.**
+
+| Item | Status |
+|---|---|
+| `Investigator` | ✅ `gemini-3.1-pro-preview` (falls back to `gemini-2.5-pro`), function calling, 8-turn cap — the last turn may only call `submit_findings`. Runs in the pipeline after the deterministic checks, and from **Run investigation** on the case page |
+| Tools, scoped server-side | ✅ `get_case_overview` · `get_statement_rows` · `get_counterparty_summary` · `get_document_fields` · `get_verification_facts` (GST / ITR / AA for the linked Udyam number) · `search_policy` · `submit_findings`. Every tool is bound to one application's data loaded before the run |
+| `GroundingVerifier` + `AiDropLog` | ✅ drops a claim whose type is not in the AI catalogue, that cites a row or field outside the case, or that quotes a rupee amount matching no cited value, cited total, per-counterparty total, declared figure or verification fact. Uncited policy is stripped. 9 tests. Rejected claims are shown on the case page, not hidden |
+| **R8** knowledge tool | ✅ `search_policy` is the hybrid search with rerank; citations become `Policy` evidence showing the clause breadcrumb |
+| `CounterpartyClassifier` | ✂ not needed: the counterparty summary plus the model's own reading classified lenders, betting and crypto correctly |
+| **R6/R7** standalone answerer | ⏸ next — the Investigator already exercises retrieval, citation and verification |
+
+**Measured** (`DemoData investigate`, all 12 demo cases, live):
+
+| | |
+|---|---|
+| Expected AI findings found | **5/5** — undeclared EMIs and loan stacking (A01), gambling/crypto and a NACH bounce (A02), slip net pay vs salary actually credited (T03) |
+| Raised on genuine cases | **0** — including a mutual-fund NACH the model correctly did not call an EMI |
+| Repeats of deterministic findings | 0 |
+| Time per case | 12–43 s |
+| Claims dropped by grounding | 0 in the final run. The first run dropped one: a correct per-lender EMI total the verifier did not yet allow — fixed by accepting per-counterparty totals of cited rows, with a test |
+
+Found while building: a single Vertex call can hang past any sensible deadline. Each
+attempt now has a two-minute deadline and timeouts retry like a 503, so the Pro → 2.5 Pro
+fallback can actually fire.
+
 > **R8 is where the two lanes meet.** The agent stops saying "gambling exposure
 > detected" and starts saying "7.2% of monthly credits went to betting merchants,
 > exceeding your 5% threshold requiring senior credit approval [Credit Policy §4.2]".

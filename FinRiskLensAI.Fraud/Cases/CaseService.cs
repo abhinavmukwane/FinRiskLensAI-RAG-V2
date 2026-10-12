@@ -106,7 +106,8 @@ namespace FinRiskLensAI.Fraud.Cases
             {
                 Application = application,
                 SharedWith = await _cases.FindSharedFilesAsync(loanApplicationId, ct),
-                Findings = await _cases.GetFindingsAsync(loanApplicationId, ct)
+                Findings = await _cases.GetFindingsAsync(loanApplicationId, ct),
+                RejectedClaims = await _cases.GetLatestDropsAsync(loanApplicationId, ct)
             };
         }
 
@@ -136,7 +137,14 @@ namespace FinRiskLensAI.Fraud.Cases
             var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields), _options);
             foreach (var f in findings) { f.CreatedBy = "DETERMINISTIC_CHECKS"; f.UpdatedBy = f.CreatedBy; }
 
-            await _cases.ReplaceDeterministicFindingsAsync(loanApplicationId, findings, ct);
+            await _cases.ReplaceFindingsAsync(loanApplicationId, FindingSource.Deterministic, findings, ct);
+        }
+
+        public async Task<bool> MarkProcessingAsync(int loanApplicationId, CancellationToken ct = default)
+        {
+            if (await _cases.GetAsync(loanApplicationId, ct) == null) return false;
+            await _cases.SetStatusAsync(loanApplicationId, CaseStatus.Processing, ct);
+            return true;
         }
 
         public Task<bool> ReviewFindingAsync(int loanApplicationId, int findingId, ReviewStatus status, string reviewedBy,

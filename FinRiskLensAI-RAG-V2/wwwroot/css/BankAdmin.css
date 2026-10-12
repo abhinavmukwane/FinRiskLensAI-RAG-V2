@@ -1329,4 +1329,13 @@
 .bp-review-note { font-style: italic; }
 
 .bp-review-form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+/* Investigator */
+.bp-findings-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bp-investigated { font-size: .76rem; margin: -2px 0 10px; }
+.bp-policy { color: #3b4a8a; font-weight: 500; }
+.bp-rejected { margin-top: 14px; font-size: .8rem; border-top: 1px dashed var(--brand-tint-border); padding-top: 10px; }
+.bp-rejected summary { cursor: pointer; color: #6b7c88; font-weight: 600; }
+.bp-rejected ul { margin: 6px 0 0; padding-left: 18px; }
+.bp-rejected li { margin: 3px 0; }
 .bp-review-form .bp-select { flex: 1 1 240px; min-width: 0; padding: 6px 10px; font-size: .8rem; cursor: text; }

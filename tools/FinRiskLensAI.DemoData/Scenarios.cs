@@ -5,9 +5,15 @@ namespace FinRiskLensAI.DemoData
     /// <summary>One synthetic document: the bytes to upload and what an exact extractor would read off them.</summary>
     public sealed record DemoDoc(string FileName, byte[] Pdf, ExtractedDocument Truth);
 
-    /// <summary>One synthetic application, with the finding types the checks should raise on it.</summary>
+    /// <summary>
+    /// One synthetic application, with the finding types the deterministic checks should raise
+    /// (<see cref="Expected"/>) and the ones the Investigator should (<see cref="ExpectedAi"/>).
+    /// </summary>
     public sealed record DemoCase(string Ref, CaseProduct Product, string? Uan, decimal? DeclaredIncome, string? Employer,
-                                  decimal? DeclaredEmis, string Story, string[] Expected, List<DemoDoc> Docs);
+                                  decimal? DeclaredEmis, string Story, string[] Expected, List<DemoDoc> Docs)
+    {
+        public string[] ExpectedAi { get; init; } = Array.Empty<string>();
+    }
 
     /// <summary>
     /// Synthetic applicants for the demo and the extractor eval set (Doc/10_FRAUD_LENS_BUILD.md, Phase 6).
@@ -39,8 +45,11 @@ namespace FinRiskLensAI.DemoData
                           tamper: Tamper.InflateCredit));
             cases.Add(Sme("DEMO-T02", seed: 22, "Om Sai Logistics", null, Banks.Narmada,
                           "Page 3 was replaced with a page from a healthier month.", tamper: Tamper.SplicePage));
+            // The slip's inflated net pay also disagrees with the salary actually credited — a cross-document
+            // finding only the Investigator can make
             cases.Add(Salaried("DEMO-T03", seed: 23, "Rohit Kulkarni", Banks.Kaveri, gross: 68_000, tamperSlip: true,
-                               "Net pay on the slip was typed in higher than gross less deductions."));
+                               "Net pay on the slip was typed in higher than gross less deductions.")
+                      with { ExpectedAi = new[] { "INCOME_MISMATCH" } });
 
             // ── Behaviour the documents are honest about ────────────────────────────
             cases.Add(Sme("DEMO-B01", seed: 31, "Vighnaharta Enterprises", null, Banks.Kaveri,
@@ -50,10 +59,18 @@ namespace FinRiskLensAI.DemoData
             cases.Add(Sme("DEMO-B03", seed: 33, "Sunrise Trading Co", null, Banks.Kaveri,
                           "Mule-like account: every receipt is forwarded the same day.", tamper: Tamper.PassThrough));
 
+            // ── Only judgement finds these: the arithmetic is clean ─────────────────
+            cases.Add(Sme("DEMO-A01", seed: 41, "Ganga Fabrication Works", null, Banks.Narmada,
+                          "Monthly NACH EMIs to two lenders the application never declared, and two fresh loans 48 days apart.",
+                          tamper: Tamper.HiddenLoans) with { ExpectedAi = new[] { "LOAN_STACKING", "UNDECLARED_EMI" } });
+            cases.Add(Salaried("DEMO-A02", seed: 42, "Vikram Shetty", Banks.Narmada, gross: 120_000, tamperSlip: false,
+                               "Weekly betting and a monthly crypto purchase; the declared EMI's NACH bounced once.",
+                               vices: true) with { ExpectedAi = new[] { "BOUNCES", "GAMBLING_CRYPTO_EXPOSURE" } });
+
             return cases;
         }
 
-        private enum Tamper { InflateCredit, SplicePage, RoundTrip, WindowDress, PassThrough }
+        private enum Tamper { InflateCredit, SplicePage, RoundTrip, WindowDress, PassThrough, HiddenLoans }
 
         // ── SME current account ─────────────────────────────────────────────────────
 
@@ -102,6 +119,16 @@ namespace FinRiskLensAI.DemoData
                     txns.Add(Txn.Out(day.AddDays(2), "RTGS DR SHREE GANESH TRADERS", amt - 5_000, "Shree Ganesh Traders", "XX4471"));
                 }
             }
+            if (tamper == Tamper.HiddenLoans)
+            {
+                // An older loan's EMI runs all period; a second loan lands on 3 Jul and a third on 20 Aug
+                for (var m = From; m <= To; m = m.AddMonths(1))
+                    txns.Add(Txn.Out(m.AddDays(4), "NACH DR SWIFT DEMO FINANCE EMI", 18_500, "Swift Demo Finance", "XX5512"));
+                txns.Add(Txn.In(new DateOnly(2026, 7, 3), "LOAN DISB KREDITPAL DEMO NBFC", 300_000, "KreditPal Demo NBFC", "XX8830"));
+                txns.Add(Txn.Out(new DateOnly(2026, 8, 12), "NACH DR KREDITPAL DEMO NBFC EMI", 12_200, "KreditPal Demo NBFC", "XX8830"));
+                txns.Add(Txn.Out(new DateOnly(2026, 9, 12), "NACH DR KREDITPAL DEMO NBFC EMI", 12_200, "KreditPal Demo NBFC", "XX8830"));
+                txns.Add(Txn.In(new DateOnly(2026, 8, 20), "LOAN DISB QUICKCASH DEMO LENDING", 200_000, "QuickCash Demo Lending", "XX4409"));
+            }
             if (tamper == Tamper.WindowDress)
             {
                 txns.Add(Txn.In(new DateOnly(2026, 9, 18), "RTGS CR NIRMAL CAPITAL SERVICES", 2_500_000, "Nirmal Capital Services", "XX6620"));
@@ -140,7 +167,9 @@ namespace FinRiskLensAI.DemoData
             var pdf = Render.Statement(bank, business, MaskedAccount(rnd), doc, producer.Producer, producer.Creator, created, modified);
             var receipts = txns.Where(t => t.Credit > 0).Sum(t => t.Credit!.Value) / 4;
 
-            return new DemoCase(reference, CaseProduct.SmeLoan, uan, Round(receipts), business, Round(rnd.Next(0, 40_000)),
+            // Hidden-loan applicants declare no EMIs — that is the lie
+            var declaredEmis = tamper == Tamper.HiddenLoans ? 0 : Round(rnd.Next(0, 40_000));
+            return new DemoCase(reference, CaseProduct.SmeLoan, uan, Round(receipts), business, declaredEmis,
                                 story, Expected(tamper), new List<DemoDoc> { new(file, pdf, doc) });
         }
 
@@ -156,7 +185,8 @@ namespace FinRiskLensAI.DemoData
 
         // ── Salaried applicant: statement + latest salary slip ──────────────────────
 
-        private static DemoCase Salaried(string reference, int seed, string name, Bank bank, decimal gross, bool tamperSlip, string story)
+        private static DemoCase Salaried(string reference, int seed, string name, Bank bank, decimal gross, bool tamperSlip,
+                                         string story, bool vices = false)
         {
             var rnd = new Random(seed);
             const string employer = "Orbitron Demo Software Pvt Ltd";
@@ -173,6 +203,14 @@ namespace FinRiskLensAI.DemoData
                 if (d.Day == 5) txns.Add(Txn.Out(d, "NACH DR SIP MUTUAL FUND", 10_000, null, null));
                 if (d.Day == 10) txns.Add(Txn.Out(d, "CARD BILL PAYMENT", Round(rnd.Next(8_000, 20_000)), null, null));
                 if (rnd.Next(3) == 0) txns.Add(Txn.Out(d, "UPI DR GROCERY", Round(rnd.Next(150, 2_500), 10), null, null));
+                if (!vices) continue;
+                if (d.DayOfWeek == DayOfWeek.Saturday)
+                    txns.Add(Txn.Out(d, "UPI DR DEMOBET SPORTS BETTING", Round(rnd.Next(1_500, 4_000)), "DemoBet Sports", "demobet@upi"));
+                if (d.Day == 15) txns.Add(Txn.Out(d, "IMPS DR COINDEMO CRYPTO EXCHANGE", 10_000, "CoinDemo Exchange", "XX6071"));
+                // The declared EMI — paid by NACH, except in August when it bounced and was presented again
+                if (d.Day == 7 && d.Month != 8) txns.Add(Txn.Out(d, "NACH DR SWIFT DEMO FINANCE EMI", 9_800, "Swift Demo Finance", "XX5512"));
+                if (d == new DateOnly(2026, 8, 8)) txns.Add(Txn.Out(d, "NACH RTN CHG SWIFT DEMO FINANCE INSUFFICIENT FUNDS", 590, null, null));
+                if (d == new DateOnly(2026, 8, 9)) txns.Add(Txn.Out(d, "NACH DR SWIFT DEMO FINANCE EMI REPRESENTED", 9_800, "Swift Demo Finance", "XX5512"));
             }
 
             var statement = Statement(bank, name, Round(rnd.Next(40_000, 90_000)), txns);
@@ -204,7 +242,7 @@ namespace FinRiskLensAI.DemoData
                                       new DateTime(2026, 9, 30, 18, 0, 0),
                                       tamperSlip ? new DateTime(2026, 10, 2, 11, 30, 0) : new DateTime(2026, 9, 30, 18, 0, 0));
 
-            return new DemoCase(reference, CaseProduct.PersonalLoan, null, tamperSlip ? printedNet : net, employer, 0, story,
+            return new DemoCase(reference, CaseProduct.PersonalLoan, null, tamperSlip ? printedNet : net, employer, vices ? 9_800 : 0, story,
                                 tamperSlip ? new[] { "SLIP_ARITHMETIC_ERROR", "METADATA_ANOMALY" } : Array.Empty<string>(),
                                 new List<DemoDoc>
                                 {

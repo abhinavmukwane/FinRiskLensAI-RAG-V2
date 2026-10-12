@@ -13,7 +13,8 @@ namespace FinRiskLensAI.Core.Models.Cases
 
     public enum ReviewStatus { Open, Confirmed, Dismissed }
 
-    public enum EvidenceKind { Row, Field, Page, Doc, App }
+    /// <summary>Policy: a knowledge-base clause the finding cites (RefId = chunk id, Note = its breadcrumb).</summary>
+    public enum EvidenceKind { Row, Field, Page, Doc, App, Policy }
 
     public class Finding : AuditableEntity
     {
@@ -56,5 +57,19 @@ namespace FinRiskLensAI.Core.Models.Cases
         /// <summary>"ymin,xmin,ymax,xmax", 0–1000, copied from the row or field.</summary>
         public string? Box { get; set; }
         public string? Note { get; set; }
+    }
+
+    /// <summary>
+    /// An AI finding the grounding verifier rejected, and why. Kept rather than discarded:
+    /// it is the audit trail that shows the model is checked, and the eval set for prompt work.
+    /// </summary>
+    public class AiDropLog
+    {
+        public long AiDropLogID { get; set; }
+        public int LoanApplicationID { get; set; }
+        public string RawFinding { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
+        public DateTime At { get; set; } = DateTime.UtcNow;
     }
 }

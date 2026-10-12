@@ -90,6 +90,19 @@ namespace FinRiskLensAI.Controllers
             return RedirectToAction(nameof(Detail), new { id });
         }
 
+        /// <summary>
+        /// Re-runs the checks and the Investigator in the background. The case shows Processing,
+        /// and the page refreshes itself until the pipeline sets it back to Review.
+        /// </summary>
+        [HttpPost("{id:int}/investigate")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Investigate(int id, CancellationToken ct)
+        {
+            if (!await _cases.MarkProcessingAsync(id, ct)) return NotFound();
+            _queue.Enqueue(id);
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+
         /// <summary>Confirm, dismiss, or reopen a finding. The note travels with it into case memory later.</summary>
         [HttpPost("{id:int}/findings/{findingId:int}/review")]
         [ValidateAntiForgeryToken]

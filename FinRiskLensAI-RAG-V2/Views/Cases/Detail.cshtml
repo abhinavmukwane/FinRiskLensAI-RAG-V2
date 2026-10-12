@@ -43,10 +43,24 @@
     var docsById = a.Documents.ToDictionary(d => d.CaseDocumentID);
     var open = Model.Findings.Count(f => f.ReviewStatus == ReviewStatus.Open);
     var pendingExtraction = a.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending);
+    var working = pendingExtraction || a.Status == CaseStatus.Processing;
+
+    // The rejected claim's own title, for the "rejected by grounding" list
+    static string ClaimTitle(string raw)
+    {
+        try
+        {
+            using var j = System.Text.Json.JsonDocument.Parse(raw);
+            var t = j.RootElement.TryGetProperty("title", out var x) ? x.GetString() : null;
+            var type = j.RootElement.TryGetProperty("type", out var y) ? y.GetString() : null;
+            return $"{type}: {t}";
+        }
+        catch (System.Text.Json.JsonException) { return "(unreadable claim)"; }
+    }
 }
 @section Styles {
-    @* Polls while Gemini reads the documents; stops by itself once nothing is pending *@
-    @if (pendingExtraction)
+    @* Polls while Gemini reads or investigates; stops by itself once the pipeline is done *@
+    @if (working)
     {
         <meta http-equiv="refresh" content="6" />
     }
@@ -56,10 +70,22 @@
         <span><i class="bi bi-flag"></i>Findings
             <span class="bp-muted">@open open · @(Model.Findings.Count - open) reviewed</span>
         </span>
-        <form method="post" asp-action="RunChecks" asp-route-id="@a.LoanApplicationID">
-            <button type="submit" class="bp-btn bp-btn-ghost bp-btn-sm"><i class="bi bi-arrow-repeat"></i> Re-run checks</button>
-        </form>
+        <span class="bp-findings-actions">
+            <form method="post" asp-action="RunChecks" asp-route-id="@a.LoanApplicationID">
+                <button type="submit" class="bp-btn bp-btn-ghost bp-btn-sm"><i class="bi bi-arrow-repeat"></i> Re-run checks</button>
+            </form>
+            <form method="post" asp-action="Investigate" asp-route-id="@a.LoanApplicationID">
+                <button type="submit" class="bp-btn bp-btn-sm" @(working ? "disabled" : "")><i class="bi bi-robot"></i> Run investigation</button>
+            </form>
+        </span>
     </div>
+    @if (a.InvestigatedAt != null)
+    {
+        <div class="bp-muted bp-investigated">
+            <i class="bi bi-robot"></i> Investigated @a.InvestigatedAt.Value.ToString("dd MMM yyyy HH:mm") UTC by @a.InvestigatedBy —
+            every AI finding below passed grounding verification against this case's own rows and fields.
+        </div>
+    }
 
     @if (pendingExtraction)
     {
@@ -67,6 +93,13 @@
             <i class="bi bi-hourglass-split"></i>
             Gemini is reading the documents. Content checks — balances, totals, round-tripping, window
             dressing — run as soon as it finishes; this page refreshes until then. File checks have run.
+        </div>
+    }
+    else if (working)
+    {
+        <div class="bp-alert bp-alert-warn bp-findings-note">
+            <i class="bi bi-hourglass-split"></i>
+            The Investigator is working through this case. This page refreshes until it finishes.
         </div>
     }
 
@@ -103,6 +136,11 @@
                     {
                         var doc = e.CaseDocumentID is int did && docsById.TryGetValue(did, out var dd) ? dd : null;
                         <li>
+                            @if (e.Kind == EvidenceKind.Policy)
+                            {
+                                <span class="bp-policy"><i class="bi bi-journal-text"></i> @e.Note</span>
+                                continue;
+                            }
                             @if (doc != null)
                             {
                                 <a class="bp-link" target="_blank" rel="noopener"
@@ -136,6 +174,26 @@
                 }
             </form>
         </article>
+    }
+
+    @if (Model.RejectedClaims.Count > 0)
+    {
+        <details class="bp-rejected">
+            <summary>
+                <i class="bi bi-shield-x"></i>
+                @Model.RejectedClaims.Count AI claim@(Model.RejectedClaims.Count == 1 ? "" : "s") rejected by grounding verification
+            </summary>
+            <p class="bp-muted">
+                Proposed by the Investigator and discarded before anyone could act on them, because they could not
+                be traced to this case's data. Shown for transparency; they are not findings.
+            </p>
+            <ul>
+                @foreach (var d in Model.RejectedClaims)
+                {
+                    <li><span class="bp-strong">@ClaimTitle(d.RawFinding)</span> <span class="bp-muted">— @d.Reason</span></li>
+                }
+            </ul>
+        </details>
     }
 </div>
 

@@ -41,6 +41,9 @@ namespace FinRiskLensAI.Core.Models.Cases
         public decimal? DeclaredEmis { get; set; }
         public DateTime SubmittedAt { get; set; }
         public CaseStatus Status { get; set; } = CaseStatus.New;
+        /// <summary>Last Investigator run; its rejected claims carry the same timestamp.</summary>
+        public DateTime? InvestigatedAt { get; set; }
+        public string? InvestigatedBy { get; set; }
 
         public List<CaseDocument> Documents { get; set; } = new();
     }

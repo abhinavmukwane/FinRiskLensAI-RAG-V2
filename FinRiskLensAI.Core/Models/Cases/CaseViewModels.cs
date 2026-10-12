@@ -40,6 +40,8 @@ namespace FinRiskLensAI.Core.Models.Cases
         public IReadOnlyDictionary<int, IReadOnlyList<int>> SharedWith { get; set; } = new Dictionary<int, IReadOnlyList<int>>();
         /// <summary>Most severe first; reviewed findings after open ones.</summary>
         public IReadOnlyList<Finding> Findings { get; set; } = Array.Empty<Finding>();
+        /// <summary>AI claims the grounding verifier rejected in the latest investigation — shown, not hidden.</summary>
+        public IReadOnlyList<AiDropLog> RejectedClaims { get; set; } = Array.Empty<AiDropLog>();
     }
 
     public sealed record CaseFile(Stream Content, string ContentType, string FileName);
