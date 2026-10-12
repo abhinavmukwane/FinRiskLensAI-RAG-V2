@@ -228,6 +228,13 @@ is worse than useless because the model reads the wrong row.
 
 ---
 
+> **As built (R3, 2026-10-12):** `gemini-embedding-001` at 768 dimensions, served in
+> `asia-south1`, so knowledge and case text is embedded in India. Truncated Gemini
+> embeddings are not unit length, so `GeminiClient.EmbedAsync` normalises them — pgvector's
+> cosine and inner-product orderings only agree on unit vectors. The model takes one input
+> per request; four run in parallel, plenty at hundreds of chunks. `gemini-embedding-2`
+> appears in the model catalogue but is not callable in this project.
+
 ## 8. Vector storage
 
 **Cloud SQL for PostgreSQL with the `pgvector` extension.** One database holds the
@@ -372,6 +379,26 @@ Reranking is skipped when the fused top result clears `Rag:SkipRerankAbove` (def
 0.85 normalised), which covers the common case cheaply.
 
 ---
+
+> **As built (R10, 2026-10-12, ahead of plan)** — `Rag/Reranker.cs`, `gemini-3.8-flash`,
+> thinking level LOW. Built early because hybrid fusion got one test question wrong:
+> "someone parks a big sum briefly to look richer before applying" — the vector arm ranked
+> window dressing #1, but the keyword arm matched stray words ("look", "sum") in other
+> entries, and RRF rewards chunks found by both arms. Reranked, every test question
+> returns its clause at #1 with relevance 1.00:
+>
+> | Question | #1 after rerank | keyword / vector rank |
+> |---|---|---|
+> | someone parks a big sum briefly to look richer before applying | T-02 window dressing | – / 1 |
+> | applicant pays betting apps from the account | T-09 gambling (§4.2 at #2) | 2 / 1 |
+> | money keeps flowing straight through the account to other people | T-05 mule account | 3 / 1 |
+> | how much of my income can go to repaying loans | §3.1 FOIR | 2 / 1 |
+> | FOIR · 44AB | §3.1 · §5.3 | 1 / 1 |
+> | salary credited then sent back to the employer | T-01 round-tripping | 1 / 1 |
+> | what is the capital of France *(control)* | — every candidate scored **0.00** | |
+>
+> The control is the point: relevance is what R6 refuses on, rather than answering from
+> whatever happened to rank first.
 
 ## 11. Generation and citation contract
 
@@ -571,6 +598,7 @@ FinRiskLensAI.Fraud/Rag/
 ├─ MarkdownChunker.cs          all five corpora — options per corpus (built, R2)
 ├─ KnowledgeService.cs         ingest (chunk + version) and hybrid search (built, R5 — sparse arm)
 ├─ Rrf.cs                      reciprocal rank fusion (built, R5)
+├─ Reranker.cs                 Flash relevance scoring of the fused top 20 (built, R10)
 ├─ EmbeddingClient.cs           Vertex AI, task types, batching, retry
 ├─ HybridRetriever.cs           dense + sparse + RRF + filters
 ├─ Reranker.cs                  Gemini Flash relevance scoring

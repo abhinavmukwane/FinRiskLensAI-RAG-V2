@@ -3,19 +3,25 @@ using FinRiskLensAI.Core.Models.Cases;
 using FinRiskLensAI.Data.DbContextEDMX;
 using FinRiskLensAI.Data.Repositories.Cases;
 using FinRiskLensAI.DemoData;
+using FinRiskLensAI.Fraud.Ai;
 using FinRiskLensAI.Fraud.Cases;
 using FinRiskLensAI.Fraud.Checks;
 using FinRiskLensAI.ML.Storage;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // Demo data — Doc/10_FRAUD_LENS_BUILD.md, Phase 6. Run from the repository root.
 //
 //   generate <dir>   synthetic PDFs + <file>.truth.json (what an exact extractor reads) + cases.json
 //   seed             the same cases through real intake → truth applied as extraction → checks run,
 //                    then expected vs actual findings per case. Exit code 1 on any mismatch.
+//   copy-to-gcs      one-off: every stored case document from the Azure container into Gcs:CasesBucket
+//   eval [ref…]      live Gemini extraction of every demo document scored against its truth, then
+//                    the checks run on what Gemini read — the end-to-end number.
 
-if (args.Length == 0 || args[0] is not ("generate" or "seed") || (args[0] == "generate" && args.Length < 2))
+if (args.Length == 0 || args[0] is not ("generate" or "seed" or "eval" or "copy-to-gcs") || (args[0] == "generate" && args.Length < 2))
 {
-    Console.Error.WriteLine("usage: generate <dir> | seed");
+    Console.Error.WriteLine("usage: generate <dir> | seed | eval [ref…] | copy-to-gcs");
     return 2;
 }
 
@@ -48,8 +54,87 @@ if (args[0] == "generate")
     return diffs == 0 ? 0 : 1;
 }
 
-// ── seed ──────────────────────────────────────────────────────────────────────────
 var config = ApplicationDbContextFactory.BuildConfiguration();
+
+if (args[0] == "copy-to-gcs")
+{
+    var bucket = config["Gcs:CasesBucket"];
+    if (string.IsNullOrWhiteSpace(bucket)) { Console.Error.WriteLine("Gcs:CasesBucket is not configured."); return 2; }
+
+    await using var source = new ApplicationDbContextFactory().CreateDbContext(Array.Empty<string>());
+    var azure = new AzureBlobDataStore(config);
+    var gcs = new FinRiskLensAI.Fraud.Storage.GcsDocumentStore(bucket);
+    var files = source.CaseDocuments.Select(d => new { d.StoragePath, d.ContentType }).Distinct().ToList();
+    int copied = 0, missing = 0;
+    foreach (var f in files)
+    {
+        await using var stream = await azure.OpenReadAsync(f.StoragePath);
+        if (stream == null) { missing++; Console.WriteLine($"  missing in Azure: {f.StoragePath}"); continue; }
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer);
+        await gcs.PutAsync(f.StoragePath, buffer.ToArray(), f.ContentType);
+        copied++;
+    }
+    Console.WriteLine($"{copied} file(s) in gs://{bucket}, {missing} missing");
+    return missing == 0 ? 0 : 1;
+}
+
+if (args[0] == "eval")
+{
+    var gemini = new GeminiClient(Gemini(config), NullLogger<GeminiClient>.Instance);
+    var extractor = new DocumentExtractor(gemini);
+    var only = args.Skip(1).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var selected = cases.Where(c => only.Count == 0 || only.Contains(c.Ref)).ToList();
+    Console.WriteLine($"extracting {selected.Sum(c => c.Docs.Count)} documents with {gemini.Options.ExtractModel} @ {gemini.Options.ExtractLocation}…");
+
+    using var gate = new SemaphoreSlim(4);
+    var results = new System.Collections.Concurrent.ConcurrentDictionary<string, (ExtractedDocument? Doc, string? Error, TimeSpan Took)>();
+    await Task.WhenAll(selected.SelectMany(c => c.Docs).Select(async d =>
+    {
+        await gate.WaitAsync();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        try { results[d.FileName] = (await extractor.ExtractAsync(d.Pdf, "application/pdf"), null, sw.Elapsed); }
+        catch (Exception ex) { results[d.FileName] = (null, ex.Message, sw.Elapsed); }
+        finally { gate.Release(); }
+    }));
+
+    int truthRows = 0, exactRows = 0, pageOk = 0, pageAll = 0, fieldOk = 0, fieldAll = 0, typeOk = 0, docs = 0, casesOk = 0;
+    foreach (var c in selected)
+    {
+        foreach (var d in c.Docs)
+        {
+            var (got, error, took) = results[d.FileName];
+            if (got == null) { Console.WriteLine($"  {d.FileName,-44} FAILED after {took.TotalSeconds:0}s: {error}"); continue; }
+            var s = ExtractionEval.Compare(d.FileName, d.Truth, got);
+            docs++; typeOk += s.TypeOk ? 1 : 0;
+            truthRows += s.TruthRows; exactRows += s.RowsExact; pageOk += s.PageValuesOk; pageAll += s.PageValues;
+            fieldOk += s.FieldsOk; fieldAll += s.Fields;
+            Console.WriteLine($"  {d.FileName,-44} {took.TotalSeconds,4:0}s  type {(s.TypeOk ? "ok" : got.DocType.ToString())}" +
+                              (s.TruthRows > 0 ? $"  rows {s.RowsExact}/{s.TruthRows} exact ({s.GotRows} read)  page values {s.PageValuesOk}/{s.PageValues}" : "") +
+                              (s.Fields > 0 ? $"  fields {s.FieldsOk}/{s.Fields}" : ""));
+        }
+
+        var extractedDocs = c.Docs.Where(d => results[d.FileName].Doc != null).ToDictionary(d => d.FileName, d => results[d.FileName].Doc!);
+        if (extractedDocs.Count < c.Docs.Count) continue;
+        var actual = DryRun.FindingTypes(c, new FraudOptions(), extractedDocs);
+        var ok = actual.SequenceEqual(c.Expected.OrderBy(t => t));
+        if (ok) casesOk++;
+        Console.WriteLine($"{c.Ref,-9} findings from Gemini's reading: {(ok ? "match" : "DIFFER")}  " +
+                          $"{(actual.Length == 0 ? "none" : string.Join(", ", actual))}" +
+                          (ok ? "" : $"   expected {(c.Expected.Length == 0 ? "none" : string.Join(", ", c.Expected.OrderBy(t => t)))}"));
+    }
+
+    static string Pct(int a, int b) => b == 0 ? "n/a" : $"{100.0 * a / b:0.0}% ({a}/{b})";
+    Console.WriteLine();
+    Console.WriteLine($"doc type       {Pct(typeOk, docs)}");
+    Console.WriteLine($"rows exact     {Pct(exactRows, truthRows)}");
+    Console.WriteLine($"page values    {Pct(pageOk, pageAll)}");
+    Console.WriteLine($"slip fields    {Pct(fieldOk, fieldAll)}");
+    Console.WriteLine($"cases whose findings match: {casesOk}/{selected.Count}");
+    return casesOk == selected.Count ? 0 : 1;
+}
+
+// ── seed ──────────────────────────────────────────────────────────────────────────
 var container = config["AzureBlob:Container"];
 // V1's container holds live data under IDBI evaluation — this tool must never write there
 if (string.IsNullOrWhiteSpace(container) || container == "msme-data")
@@ -60,7 +145,11 @@ if (string.IsNullOrWhiteSpace(container) || container == "msme-data")
 
 await using var db = new ApplicationDbContextFactory().CreateDbContext(Array.Empty<string>());
 var repo = new CaseRepository(db);
-var service = new CaseService(repo, new AzureBlobDataStore(config), new FraudOptions());
+// Same store choice as the app: Cloud Storage when a bucket is configured
+var casesBucket = config["Gcs:CasesBucket"];
+FinRiskLensAI.Core.Interfaces.ICaseDocumentStore store = string.IsNullOrWhiteSpace(casesBucket)
+    ? new AzureBlobDataStore(config) : new FinRiskLensAI.Fraud.Storage.GcsDocumentStore(casesBucket);
+var service = new CaseService(repo, store, new FraudOptions());
 var existing = (await repo.ListAsync()).Select(c => c.ApplicantRef).ToHashSet();
 
 int mismatches = 0;
@@ -100,3 +189,10 @@ foreach (var c in cases)
 }
 Console.WriteLine(mismatches == 0 ? "all cases match their expected findings" : $"{mismatches} case(s) differ from expectation");
 return mismatches == 0 ? 0 : 1;
+
+static GeminiOptions Gemini(IConfiguration config)
+{
+    var o = config.GetSection("Gemini").Get<GeminiOptions>() ?? new GeminiOptions();
+    o.ProjectId = config["Gcp:ProjectId"] ?? o.ProjectId;
+    return o;
+}

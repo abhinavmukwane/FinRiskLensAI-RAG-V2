@@ -2,6 +2,7 @@ using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Interfaces.IServices.Cases;
 using FinRiskLensAI.Core.Models.Cases;
 using FinRiskLensAI.Fraud.Cases;
+using FinRiskLensAI.Fraud.Pipeline;
 using FinRiskLensAI.Utility;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,11 +20,13 @@ namespace FinRiskLensAI.Controllers
         private const long MaxRequestBytes = (long)CaseService.MaxFiles * CaseService.MaxFileBytes + 1024 * 1024;
 
         private readonly ICaseService _cases;
+        private readonly CaseQueue _queue;
         private readonly ILogger<CasesController> _logger;
 
-        public CasesController(ICaseService cases, ILogger<CasesController> logger)
+        public CasesController(ICaseService cases, CaseQueue queue, ILogger<CasesController> logger)
         {
             _cases = cases;
+            _queue = queue;
             _logger = logger;
         }
 
@@ -68,6 +71,7 @@ namespace FinRiskLensAI.Controllers
 
             _logger.LogInformation("Case {CaseId} created by {User} from {Count} uploaded file(s)",
                 result.LoanApplicationID, user.UserId, uploads.Count);
+            _queue.Enqueue(result.LoanApplicationID!.Value);
             return RedirectToAction(nameof(Detail), new { id = result.LoanApplicationID });
         }
 

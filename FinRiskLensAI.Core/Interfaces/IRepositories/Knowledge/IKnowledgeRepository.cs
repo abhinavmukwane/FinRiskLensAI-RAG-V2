@@ -23,6 +23,18 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Knowledge
         Task<IReadOnlyList<long>> SparseSearchAsync(string query, IReadOnlyCollection<KnowledgeCorpus> corpora, int k,
                                                    CancellationToken ct = default);
 
+        /// <summary>
+        /// Dense arm: cosine distance through the HNSW index, vectors of <paramref name="modelId"/>
+        /// only — a mixed-model index is a correctness bug (§7). Same filters as the keyword arm.
+        /// </summary>
+        Task<IReadOnlyList<long>> DenseSearchAsync(float[] query, string modelId, IReadOnlyCollection<KnowledgeCorpus> corpora,
+                                                  int k, CancellationToken ct = default);
+
+        /// <summary>Current chunks with no vector under <paramref name="modelId"/> yet, as the text to embed.</summary>
+        Task<IReadOnlyList<(long ChunkId, string Text)>> GetUnembeddedAsync(string modelId, int limit, CancellationToken ct = default);
+
+        Task AddEmbeddingsAsync(IReadOnlyList<ChunkEmbedding> embeddings, CancellationToken ct = default);
+
         Task<IReadOnlyList<KnowledgeHit>> GetHitsAsync(IReadOnlyCollection<long> chunkIds, CancellationToken ct = default);
     }
 }

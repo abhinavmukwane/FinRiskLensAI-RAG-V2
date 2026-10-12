@@ -296,7 +296,8 @@ namespace FinRiskLensAI.DemoData
         /// The case through the checks with no database: metadata read back from the
         /// generated PDF, truth mapped to rows the way <c>CaseRepository.SaveExtractionAsync</c> does.
         /// </summary>
-        public static string[] FindingTypes(DemoCase c, FraudOptions options)
+        public static string[] FindingTypes(DemoCase c, FraudOptions options,
+                                            IReadOnlyDictionary<string, ExtractedDocument>? extracted = null)
         {
             var app = new LoanApplication { LoanApplicationID = 1, SubmittedAt = DateTime.UtcNow };
             var rows = new List<StatementRow>();
@@ -312,12 +313,14 @@ namespace FinRiskLensAI.DemoData
                 app.Documents.Add(new CaseDocument
                 {
                     CaseDocumentID = docId, LoanApplicationID = 1, FileName = d.FileName, ContentType = "application/pdf",
-                    DocType = d.Truth.DocType, PageCount = meta.PageCount, PdfProducer = meta.Producer, PdfCreator = meta.Creator,
+                    DocType = (extracted?.GetValueOrDefault(d.FileName) ?? d.Truth).DocType, PageCount = meta.PageCount, PdfProducer = meta.Producer, PdfCreator = meta.Creator,
                     PdfCreatedAt = meta.CreatedAt, PdfModifiedAt = meta.ModifiedAt, FontSet = meta.FontSet
                 });
 
                 int rowNo = 0;
-                foreach (var p in d.Truth.Pages)
+                // The extraction under test when given, else the truth the document was drawn from
+                var source = extracted?.GetValueOrDefault(d.FileName) ?? d.Truth;
+                foreach (var p in source.Pages)
                 {
                     pages.Add(new PageSummary
                     {
@@ -331,7 +334,7 @@ namespace FinRiskLensAI.DemoData
                         CounterpartyName = r.CounterpartyName, CounterpartyAcct = r.CounterpartyAccount
                     }));
                 }
-                fields.AddRange(d.Truth.Fields.Select(f => new DocField
+                fields.AddRange(source.Fields.Select(f => new DocField
                 {
                     DocFieldID = ++fieldId, CaseDocumentID = docId, Name = f.Name, Value = f.Value, NumValue = f.NumValue, PageNo = f.PageNo
                 }));

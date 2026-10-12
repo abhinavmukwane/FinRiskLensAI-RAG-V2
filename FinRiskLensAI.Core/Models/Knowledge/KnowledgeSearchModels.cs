@@ -16,6 +16,8 @@ namespace FinRiskLensAI.Core.Models.Knowledge
         public int? SparseRank { get; init; }
         /// <summary>1-based rank in the vector arm, null if that arm did not return it.</summary>
         public int? DenseRank { get; init; }
+        /// <summary>Reranker's 0–1 judgement of how well this answers the question; null when not reranked.</summary>
+        public double? Relevance { get; init; }
     }
 
     /// <summary>Outcome of an ingest: a new version, or a no-op because the same bytes are already current.</summary>
@@ -28,5 +30,8 @@ namespace FinRiskLensAI.Core.Models.Knowledge
         public int DenseTopK { get; set; } = 20;
         public int RrfK { get; set; } = 60;
         public int FinalTopK { get; set; } = 5;
+        /// <summary>Fused candidates the reranker judges before the final cut.</summary>
+        public int RerankCandidates { get; set; } = 20;
+        public bool Rerank { get; set; } = true;
     }
 }

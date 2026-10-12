@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 using FinRiskLensAI.Core.Interfaces.IRepositories.Knowledge;
 using FinRiskLensAI.Core.Models.Knowledge;
 using FinRiskLensAI.Data.DbContextEDMX;
@@ -78,15 +79,20 @@ namespace FinRiskLensAI.Data.Repositories.Knowledge
                 LIMIT @k
                 """;
 
+            return await QueryIdsAsync(sql, ct,
+                ("query", query), ("corpora", corpora.Select(c => c.ToString()).ToArray()), ("k", k));
+        }
+
+        /// <summary>Raw SQL on the context's connection, so the snake_case convention never remaps result columns.</summary>
+        private async Task<IReadOnlyList<long>> QueryIdsAsync(string sql, CancellationToken ct, params (string Name, object Value)[] parameters)
+        {
             var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
             var opened = conn.State != ConnectionState.Open;
             if (opened) await conn.OpenAsync(ct);
             try
             {
                 await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("query", query);
-                cmd.Parameters.AddWithValue("corpora", corpora.Select(c => c.ToString()).ToArray());
-                cmd.Parameters.AddWithValue("k", k);
+                foreach (var (name, value) in parameters) cmd.Parameters.AddWithValue(name, value);
 
                 var ids = new List<long>();
                 await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -97,6 +103,50 @@ namespace FinRiskLensAI.Data.Repositories.Knowledge
             {
                 if (opened) await conn.CloseAsync();
             }
+        }
+
+        public async Task<IReadOnlyList<long>> DenseSearchAsync(float[] query, string modelId,
+                                                               IReadOnlyCollection<KnowledgeCorpus> corpora, int k,
+                                                               CancellationToken ct = default)
+        {
+            const string sql = """
+                SELECT c.knowledge_chunk_id
+                FROM chunk_embeddings e
+                JOIN knowledge_chunks c ON c.knowledge_chunk_id = e.knowledge_chunk_id
+                JOIN knowledge_docs d   ON d.knowledge_doc_id = c.knowledge_doc_id
+                WHERE e.model_id = @model
+                  AND c.is_current AND d.is_current
+                  AND d.corpus = ANY(@corpora)
+                  AND (d.effective_from IS NULL OR d.effective_from <= current_date)
+                  AND (d.effective_to   IS NULL OR d.effective_to   >= current_date)
+                ORDER BY e.embedding <=> @query::vector
+                LIMIT @k
+                """;
+
+            // The vector goes over as pgvector's text form and is cast in SQL — no type plugin
+            // needed on a raw command.
+            var literal = "[" + string.Join(",", query.Select(v => v.ToString("R", CultureInfo.InvariantCulture))) + "]";
+            return await QueryIdsAsync(sql, ct,
+                ("model", modelId), ("corpora", corpora.Select(c => c.ToString()).ToArray()), ("query", literal), ("k", k));
+        }
+
+        public async Task<IReadOnlyList<(long ChunkId, string Text)>> GetUnembeddedAsync(string modelId, int limit,
+                                                                                       CancellationToken ct = default)
+        {
+            var rows = await _context.KnowledgeChunks.AsNoTracking()
+                .Where(c => c.IsCurrent && !c.Embeddings.Any(e => e.ModelId == modelId))
+                .OrderBy(c => c.KnowledgeChunkID)
+                .Take(limit)
+                .Select(c => new { c.KnowledgeChunkID, c.Breadcrumb, c.ChunkText })
+                .ToListAsync(ct);
+            // Same text the chunker embeds: breadcrumb first (§6, contextual prefixing)
+            return rows.Select(r => (r.KnowledgeChunkID, (r.Breadcrumb ?? "") + "\n\n" + r.ChunkText)).ToList();
+        }
+
+        public async Task AddEmbeddingsAsync(IReadOnlyList<ChunkEmbedding> embeddings, CancellationToken ct = default)
+        {
+            _context.ChunkEmbeddings.AddRange(embeddings);
+            await _context.SaveChangesAsync(ct);
         }
 
         public async Task<IReadOnlyList<KnowledgeHit>> GetHitsAsync(IReadOnlyCollection<long> chunkIds, CancellationToken ct = default)

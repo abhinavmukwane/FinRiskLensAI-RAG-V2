@@ -300,7 +300,9 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | Sessions | ✅ in-memory (ceiling documented in `Program.cs`) |
 | App runs against PostgreSQL | ✅ bank login, dashboard, customer list, Customer 360, all three payload previews — no server or console errors |
 | Fork isolated from V1's live blob data | ✅ own container `msme-data-rag-v2` |
-| `GcsDocumentStore` · `GeminiClient` · Cloud Run deploy | ⏸ **blocked** — needs the GCP project, region and credentials |
+| GCP project | ✅ 2026-10-12 — `finrisklensai`; Vertex AI, Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Cloud SQL Admin enabled; service account `finrisk-run` with least-privilege roles; private buckets `finrisklensai-cases` and `finrisklensai-knowledge` in `asia-south1` |
+| `GcsDocumentStore` · `GeminiClient` | ✅ 2026-10-12 — case documents in Cloud Storage (Mumbai), the 15 earlier files copied across; Vertex AI over REST with Application Default Credentials |
+| Cloud Run deploy | ⏸ next |
 | Cloud SQL for PostgreSQL | ⏸ Neon stands in for development; switching is a connection-string change |
 
 ### Phase 2 — Case ingest + extraction · Oct 3 – Oct 6
@@ -319,9 +321,26 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | Ingest | ✅ type sniffed from the bytes (PDF/PNG/JPEG only), SHA-256, content-addressed storage `cases/{sha256}{ext}`, PdfPig metadata (producer, creator, dates, fonts, pages) |
 | Cross-case duplicate files | ✅ shown on the case view — the cheapest cross-application link, ahead of the network lens |
 | **R2** chunkers | ✅ `MarkdownChunker` — one splitter configured per corpus; 8 tests incl. no mid-clause split, tables whole, overlap by whole clauses |
-| `DocumentExtractor` · **R3** `EmbeddingClient` | ⏸ **blocked** on the GCP project — documents wait at `ExtractStatus = Pending` |
+| `DocumentExtractor` | ✅ 2026-10-12 — `gemini-3.5-flash` in **Mumbai**, page by page in parallel. Measured against the demo truth (below) |
+| **R3** embeddings | ✅ 2026-10-12 — `gemini-embedding-001`, 768 dims, normalised, in Mumbai; new chunks embedded on ingest, `RagCli embed` backfills |
 | Extractor output contract | ✅ `ExtractedDocument` (pages → rows, fields) and `ICaseService.ApplyExtractionAsync` — replaces a document's rows, pages and fields and marks it Done. The Gemini extractor only has to produce this shape; the demo generator already does |
-| `CasePipelineWorker` | ⏸ deliberately not built yet: ingest runs inside the upload request, and extraction is the worker's only job. Lands with the extractor |
+| `CasePipelineWorker` | ✅ 2026-10-12 — upload → extract → checks → Review off the request thread; re-queues anything a restart interrupted; a document Gemini cannot read is marked Failed with the reason, the rest carry on. Live: a two-document case in 13 s |
+
+**Extraction measured, not assumed** (`DemoData eval`: live Gemini against the generator's truth files, 12 documents, 895 rows):
+
+| | One call per document | **Page by page, in parallel** |
+|---|---|---|
+| Rows exact (date, debit, credit, balance all right) | 88.8% | **100% (895/895)** |
+| Page balances and totals | 100% | **100% (172/172)** |
+| Slip fields | 100% | **100% (16/16)** |
+| Cases whose findings match expectation | 7/10 | **10/10** |
+| Time per statement | 30–72 s; one gave up after 215 s | **10–25 s** |
+
+The single-call failures are the instructive part: Gemini dropped 45 of 84 rows from one
+genuine statement, which broke its arithmetic and produced **false tamper findings on an
+honest applicant**, and an 8-page statement ran out of output tokens. Splitting into pages
+— the reference design's own advice — removed both. Gemini also kept a fabricated slip's
+wrong net pay as printed rather than "correcting" it, which is what lets the check fire.
 
 Notes from the build:
 - **PdfPig's NuGet id is `PdfPig`.** `UglyToad.PdfPig` on nuget.org belongs to an
@@ -352,7 +371,8 @@ Notes from the build:
 | When checks run | ✅ on upload (metadata needs nothing else) and from **Re-run checks**; the extractor will call the same entry point |
 | PDF.js box highlighting | ⏸ needs the boxes the extractor writes; evidence opens the browser's own viewer at the page (`#page=N`) until then |
 | **R5** sparse arm + RRF | ✅ keyword arm with IDF ranking, RRF fusion (3 tests), versioned ingest; harness `tools/FinRiskLensAI.RagCli`; sample corpora in `Doc/knowledge/` ingested on Neon. "FOIR" and "44AB" hit their clauses at rank 1 |
-| **R4** dense retrieval | ⏸ needs query embeddings (GCP). The dense ranking joins the existing `Rrf.Fuse` call |
+| **R4** dense retrieval | ✅ 2026-10-12 — pgvector cosine through HNSW, filtered to the current embedding model; fused with the keyword arm by RRF |
+| **R10** reranker | ✅ built early — Flash scores the fused top 20. Fixed the one query hybrid fusion got wrong, and scores off-topic questions 0.00 (the refusal signal R6 needs). See `11_RAG_ARCHITECTURE.md` §10 |
 
 Decisions made while building:
 - **C#, not SQL.** The checks run over one case's rows in memory rather than as hand-written

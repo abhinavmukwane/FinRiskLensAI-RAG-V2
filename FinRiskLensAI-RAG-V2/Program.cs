@@ -29,7 +29,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterModule(new DataModule());
     container.RegisterModule(new ServicesModule());
     container.RegisterModule(new MLModule());
-    container.RegisterModule(new FraudModule());
+    container.RegisterModule(new FraudModule(builder.Configuration));
 
     // Deterministic-check thresholds; defaults live on the class, overrides under "Fraud"
     container.RegisterInstance(
@@ -77,6 +77,9 @@ Directory.CreateDirectory(keysDir);
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keysDir))
     .SetApplicationName("FinRiskLensAI");
+
+// Case pipeline: upload → Gemini extraction → deterministic checks, off the request thread
+builder.Services.AddHostedService<FinRiskLensAI.Fraud.Pipeline.CasePipelineWorker>();
 
 // ponytail: in-memory session. V1 backed it with a SQL Server cache because the ML
 // warm-up recycled the IIS app pool and logged users out — that cause is gone with

@@ -44,6 +44,13 @@
     var open = Model.Findings.Count(f => f.ReviewStatus == ReviewStatus.Open);
     var pendingExtraction = a.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending);
 }
+@section Styles {
+    @* Polls while Gemini reads the documents; stops by itself once nothing is pending *@
+    @if (pendingExtraction)
+    {
+        <meta http-equiv="refresh" content="6" />
+    }
+}
 <div class="bp-card mt-3">
     <div class="bp-card-label bp-findings-head">
         <span><i class="bi bi-flag"></i>Findings
@@ -58,8 +65,8 @@
     {
         <div class="bp-alert bp-alert-warn bp-findings-note">
             <i class="bi bi-hourglass-split"></i>
-            Content checks — balances, totals, round-tripping, window dressing — run once documents are extracted.
-            File checks have run.
+            Gemini is reading the documents. Content checks — balances, totals, round-tripping, window
+            dressing — run as soon as it finishes; this page refreshes until then. File checks have run.
         </div>
     }
 
@@ -196,11 +203,15 @@
                         <td>
                             @if (d.ExtractStatus == ExtractStatus.Pending)
                             {
-                                <span class="bp-muted" title="Runs once the Gemini extractor is connected">Pending</span>
+                                <span class="bp-muted"><i class="bi bi-hourglass-split"></i> Reading…</span>
+                            }
+                            else if (d.ExtractStatus == ExtractStatus.Failed)
+                            {
+                                <span class="bp-flag" title="@d.ExtractError"><i class="bi bi-exclamation-triangle"></i> Failed</span>
                             }
                             else
                             {
-                                @d.ExtractStatus
+                                <span title="Read by Gemini">@d.ExtractStatus</span>
                             }
                         </td>
                     </tr>

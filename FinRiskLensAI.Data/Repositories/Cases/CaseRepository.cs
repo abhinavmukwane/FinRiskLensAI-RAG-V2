@@ -159,6 +159,21 @@ namespace FinRiskLensAI.Data.Repositories.Cases
             await tx.CommitAsync(ct);
         }
 
+        public Task SetStatusAsync(int loanApplicationId, CaseStatus status, CancellationToken ct = default)
+            => _context.LoanApplications.Where(a => a.LoanApplicationID == loanApplicationId)
+                   .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, status)
+                                             .SetProperty(a => a.UpdatedAt, DateTime.UtcNow), ct);
+
+        public Task MarkExtractionFailedAsync(int caseDocumentId, string error, CancellationToken ct = default)
+            => _context.CaseDocuments.Where(d => d.CaseDocumentID == caseDocumentId)
+                   .ExecuteUpdateAsync(s => s.SetProperty(d => d.ExtractStatus, ExtractStatus.Failed)
+                                             .SetProperty(d => d.ExtractError, Clip(error, 2000))
+                                             .SetProperty(d => d.UpdatedAt, DateTime.UtcNow), ct);
+
+        public async Task<IReadOnlyList<int>> GetAwaitingExtractionAsync(CancellationToken ct = default)
+            => await _context.CaseDocuments.Where(d => d.ExtractStatus == ExtractStatus.Pending)
+                   .Select(d => d.LoanApplicationID).Distinct().ToListAsync(ct);
+
         public async Task<bool> ReviewFindingAsync(int loanApplicationId, int findingId, ReviewStatus status,
                                                    string reviewedBy, string? note, CancellationToken ct = default)
         {

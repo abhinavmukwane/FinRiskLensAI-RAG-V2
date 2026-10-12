@@ -33,6 +33,13 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Cases
         /// </summary>
         Task ReplaceDeterministicFindingsAsync(int loanApplicationId, IReadOnlyList<Finding> fresh, CancellationToken ct = default);
 
+        Task SetStatusAsync(int loanApplicationId, CaseStatus status, CancellationToken ct = default);
+
+        Task MarkExtractionFailedAsync(int caseDocumentId, string error, CancellationToken ct = default);
+
+        /// <summary>Applications with at least one document still at Pending — what a restart left behind.</summary>
+        Task<IReadOnlyList<int>> GetAwaitingExtractionAsync(CancellationToken ct = default);
+
         Task<bool> ReviewFindingAsync(int loanApplicationId, int findingId, ReviewStatus status, string reviewedBy,
                                       string? note, CancellationToken ct = default);
     }
