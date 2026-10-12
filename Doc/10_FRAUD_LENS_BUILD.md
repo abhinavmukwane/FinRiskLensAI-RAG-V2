@@ -302,7 +302,7 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | Fork isolated from V1's live blob data | ✅ own container `msme-data-rag-v2` |
 | GCP project | ✅ 2026-10-12 — `finrisklensai`; Vertex AI, Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Cloud SQL Admin enabled; service account `finrisk-run` with least-privilege roles; private buckets `finrisklensai-cases` and `finrisklensai-knowledge` in `asia-south1` |
 | `GcsDocumentStore` · `GeminiClient` | ✅ 2026-10-12 — case documents in Cloud Storage (Mumbai), the 15 earlier files copied across; Vertex AI over REST with Application Default Credentials |
-| Cloud Run deploy | ✅ 2026-10-12 — **https://finrisklens-389451907343.asia-south1.run.app**, Mumbai. Built from source by Google Cloud buildpacks (no Dockerfile). See "Deploying" below |
+| Cloud Run deploy | ✅ 2026-10-12 — **https://finrisklensai.cloud.run** (also https://finrisklens-389451907343.asia-south1.run.app), Mumbai. Built from source by Google Cloud buildpacks (no Dockerfile). See "Deploying" below |
 | Cloud SQL for PostgreSQL | ⏸ Neon stands in for development; switching is a connection-string change |
 
 ### Deploying
