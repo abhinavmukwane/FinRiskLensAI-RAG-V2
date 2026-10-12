@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="8.4.0" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.22.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 

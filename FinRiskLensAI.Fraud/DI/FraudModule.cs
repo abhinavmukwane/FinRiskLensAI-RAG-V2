@@ -11,6 +11,9 @@ namespace FinRiskLensAI.Fraud.DI
     {
         private readonly IConfiguration _configuration;
 
+        private string Bucket(string key) => _configuration[key] is { Length: > 0 } b
+            ? b : throw new InvalidOperationException($"{key} is not configured.");
+
         public FraudModule(IConfiguration configuration) => _configuration = configuration;
 
         protected override void Load(ContainerBuilder builder)
@@ -30,12 +33,11 @@ namespace FinRiskLensAI.Fraud.DI
 
             builder.RegisterType<CaseQueue>().AsSelf().SingleInstance();
 
-            // Case documents in Cloud Storage when a bucket is configured. Registered after the
-            // ML module, so this replaces its Azure registration for ICaseDocumentStore only —
-            // the MSME source data (IMsmeDataStore) stays where it is.
-            var bucket = _configuration["Gcs:CasesBucket"];
-            if (!string.IsNullOrWhiteSpace(bucket))
-                builder.Register(_ => new GcsDocumentStore(bucket)).As<ICaseDocumentStore>().SingleInstance();
+            // Both stores live in Cloud Storage (Mumbai): uploaded case documents, and the
+            // verification sources each MSME's checks run against. Without a bucket the app
+            // fails on first use with the setting to fix, rather than falling back somewhere else.
+            builder.Register(_ => new GcsDocumentStore(Bucket("Gcs:CasesBucket"))).As<ICaseDocumentStore>().SingleInstance();
+            builder.Register(_ => new GcsMsmeDataStore(Bucket("Gcs:SourcesBucket"))).As<IMsmeDataStore>().SingleInstance();
         }
     }
 }

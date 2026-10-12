@@ -73,8 +73,8 @@ Core/Models/Scoring/
 
 **Packages dropped:** `Microsoft.ML`, `Microsoft.ML.LightGbm`, `Microsoft.ML.TimeSeries`,
 `Microsoft.Extensions.Hosting.Abstractions`, `Microsoft.EntityFrameworkCore.SqlServer`,
-`Microsoft.Extensions.Caching.SqlServer`. `Azure.Storage.Blobs` goes when the GCS store
-lands — it still backs every source-data read until then.
+`Microsoft.Extensions.Caching.SqlServer`, `Azure.Storage.Blobs` (removed 2026-10-12, once
+both stores were on Cloud Storage — the app has no Azure dependency left).
 
 **`Npgsql.EntityFrameworkCore.PostgreSQL` is already referenced** and stops being
 dead weight — it becomes the provider. Add `Pgvector.EntityFrameworkCore` alongside
@@ -302,6 +302,7 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | Fork isolated from V1's live blob data | ✅ own container `msme-data-rag-v2` |
 | GCP project | ✅ 2026-10-12 — `finrisklensai`; Vertex AI, Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Cloud SQL Admin enabled; service account `finrisk-run` with least-privilege roles; private buckets `finrisklensai-cases` and `finrisklensai-knowledge` in `asia-south1` |
 | `GcsDocumentStore` · `GeminiClient` | ✅ 2026-10-12 — case documents in Cloud Storage (Mumbai), the 15 earlier files copied across; Vertex AI over REST with Application Default Credentials |
+| `GcsMsmeDataStore` | ✅ 2026-10-12 — the verification sources (Udyam, GST, ITR, AA payloads) in `gs://finrisklensai-sources`, Mumbai: 91 files copied and each compared on read-back. Customer 360, loan-case payloads and the Investigator's facts tool read from it. Azure store, package and settings removed; the Azure container was left untouched |
 | Cloud Run deploy | ✅ 2026-10-12 — **https://finrisklensai.cloud.run** (also https://finrisklens-389451907343.asia-south1.run.app), Mumbai. Built from source by Google Cloud buildpacks (no Dockerfile). See "Deploying" below |
 | Cloud SQL for PostgreSQL | ⏸ Neon stands in for development; switching is a connection-string change |
 

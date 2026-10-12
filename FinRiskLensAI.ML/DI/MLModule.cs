@@ -1,7 +1,5 @@
-using FinRiskLensAI.Core.Interfaces;
 using Autofac;
 using FinRiskLensAI.ML.Features;
-using FinRiskLensAI.ML.Storage;
 
 namespace FinRiskLensAI.ML.DI
 {
@@ -15,8 +13,7 @@ namespace FinRiskLensAI.ML.DI
             builder.RegisterType<GstFeatureExtractor>().AsSelf().SingleInstance();
             builder.RegisterType<AaFeatureExtractor>().AsSelf().SingleInstance();
 
-            // Blob storage — container client is created lazily on first use
-            builder.RegisterType<AzureBlobDataStore>().As<IMsmeDataStore>().As<ICaseDocumentStore>().SingleInstance();
+            // Storage is registered by the Fraud module: Cloud Storage for both stores
 
             // Services by convention (matches the ServicesModule pattern)
             builder.RegisterAssemblyTypes(ThisAssembly)

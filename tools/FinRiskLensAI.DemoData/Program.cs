@@ -6,7 +6,6 @@ using FinRiskLensAI.DemoData;
 using FinRiskLensAI.Fraud.Ai;
 using FinRiskLensAI.Fraud.Cases;
 using FinRiskLensAI.Fraud.Checks;
-using FinRiskLensAI.ML.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -17,13 +16,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 //                    then expected vs actual findings per case. Exit code 1 on any mismatch.
 //   investigate [ref…]  the live Investigator on seeded cases, scored against each case's ExpectedAi;
 //                    genuine cases expect nothing, so anything raised there is a false positive
-//   copy-to-gcs      one-off: every stored case document from the Azure container into Gcs:CasesBucket
 //   eval [ref…]      live Gemini extraction of every demo document scored against its truth, then
 //                    the checks run on what Gemini read — the end-to-end number.
 
-if (args.Length == 0 || args[0] is not ("generate" or "seed" or "eval" or "copy-to-gcs" or "investigate") || (args[0] == "generate" && args.Length < 2))
+if (args.Length == 0 || args[0] is not ("generate" or "seed" or "eval" or "investigate") || (args[0] == "generate" && args.Length < 2))
 {
-    Console.Error.WriteLine("usage: generate <dir> | seed | eval [ref…] | investigate [ref…] | copy-to-gcs");
+    Console.Error.WriteLine("usage: generate <dir> | seed | eval [ref…] | investigate [ref…]");
     return 2;
 }
 
@@ -103,29 +101,6 @@ if (args[0] == "investigate")
     return misses == 0 && falsePositives == 0 ? 0 : 1;
 }
 
-if (args[0] == "copy-to-gcs")
-{
-    var bucket = config["Gcs:CasesBucket"];
-    if (string.IsNullOrWhiteSpace(bucket)) { Console.Error.WriteLine("Gcs:CasesBucket is not configured."); return 2; }
-
-    await using var source = new ApplicationDbContextFactory().CreateDbContext(Array.Empty<string>());
-    var azure = new AzureBlobDataStore(config);
-    var gcs = new FinRiskLensAI.Fraud.Storage.GcsDocumentStore(bucket);
-    var files = source.CaseDocuments.Select(d => new { d.StoragePath, d.ContentType }).Distinct().ToList();
-    int copied = 0, missing = 0;
-    foreach (var f in files)
-    {
-        await using var stream = await azure.OpenReadAsync(f.StoragePath);
-        if (stream == null) { missing++; Console.WriteLine($"  missing in Azure: {f.StoragePath}"); continue; }
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer);
-        await gcs.PutAsync(f.StoragePath, buffer.ToArray(), f.ContentType);
-        copied++;
-    }
-    Console.WriteLine($"{copied} file(s) in gs://{bucket}, {missing} missing");
-    return missing == 0 ? 0 : 1;
-}
-
 if (args[0] == "eval")
 {
     var gemini = new GeminiClient(Gemini(config), NullLogger<GeminiClient>.Instance);
@@ -182,21 +157,16 @@ if (args[0] == "eval")
 }
 
 // ── seed ──────────────────────────────────────────────────────────────────────────
-var container = config["AzureBlob:Container"];
-// V1's container holds live data under IDBI evaluation — this tool must never write there
-if (string.IsNullOrWhiteSpace(container) || container == "msme-data")
+var casesBucket = config["Gcs:CasesBucket"];
+if (string.IsNullOrWhiteSpace(casesBucket))
 {
-    Console.Error.WriteLine($"Refusing to seed into blob container '{container}'. Set AzureBlob:Container to the fork's own container.");
+    Console.Error.WriteLine("Gcs:CasesBucket is not configured.");
     return 2;
 }
 
 await using var db = new ApplicationDbContextFactory().CreateDbContext(Array.Empty<string>());
 var repo = new CaseRepository(db);
-// Same store choice as the app: Cloud Storage when a bucket is configured
-var casesBucket = config["Gcs:CasesBucket"];
-FinRiskLensAI.Core.Interfaces.ICaseDocumentStore store = string.IsNullOrWhiteSpace(casesBucket)
-    ? new AzureBlobDataStore(config) : new FinRiskLensAI.Fraud.Storage.GcsDocumentStore(casesBucket);
-var service = new CaseService(repo, store, new FraudOptions());
+var service = new CaseService(repo, new FinRiskLensAI.Fraud.Storage.GcsDocumentStore(casesBucket), new FraudOptions());
 var existing = (await repo.ListAsync()).Select(c => c.ApplicantRef).ToHashSet();
 
 int mismatches = 0;

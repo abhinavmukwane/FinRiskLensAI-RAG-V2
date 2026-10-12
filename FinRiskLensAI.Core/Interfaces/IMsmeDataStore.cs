@@ -2,7 +2,7 @@ namespace FinRiskLensAI.Core.Interfaces
 {
     /// <summary>
     /// Storage abstraction for the per-MSME data folder (folder name = Udyam number).
-    /// Backed by Azure Blob Storage; swappable for local-disk in tests.
+    /// Cloud Storage (GcsMsmeDataStore), bucket Gcs:SourcesBucket; swappable for local-disk in tests.
     /// </summary>
     public interface IMsmeDataStore
     {
