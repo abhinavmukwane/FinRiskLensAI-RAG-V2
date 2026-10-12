@@ -302,8 +302,38 @@ R7** and is developed against a CLI harness while the case pipeline is built.
 | Fork isolated from V1's live blob data | ✅ own container `msme-data-rag-v2` |
 | GCP project | ✅ 2026-10-12 — `finrisklensai`; Vertex AI, Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Cloud SQL Admin enabled; service account `finrisk-run` with least-privilege roles; private buckets `finrisklensai-cases` and `finrisklensai-knowledge` in `asia-south1` |
 | `GcsDocumentStore` · `GeminiClient` | ✅ 2026-10-12 — case documents in Cloud Storage (Mumbai), the 15 earlier files copied across; Vertex AI over REST with Application Default Credentials |
-| Cloud Run deploy | ⏸ next |
+| Cloud Run deploy | ✅ 2026-10-12 — **https://finrisklens-389451907343.asia-south1.run.app**, Mumbai. Built from source by Google Cloud buildpacks (no Dockerfile). See "Deploying" below |
 | Cloud SQL for PostgreSQL | ⏸ Neon stands in for development; switching is a connection-string change |
+
+### Deploying
+
+One command from the repository root — Cloud Build runs the .NET buildpack on the web
+project and Cloud Run starts it:
+
+```bash
+gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --set-secrets /secrets/appsettings.secrets.json=finrisklens-settings:latest
+```
+
+| Setting | Why |
+|---|---|
+| `--min-instances 1 --max-instances 1 --session-affinity` | Sessions and the case queue are in memory: exactly one warm instance |
+| `--no-cpu-throttling` | Extraction runs after the upload request returns; a throttled CPU would stall it. Costs more than request-only CPU — scale down after judging |
+| `GOOGLE_BUILDABLE` | The solution has several projects; this names the web app |
+| `ASPNETCORE_HTTP_PORTS=8080` | The buildpack image does not set a port; Kestrel's default (5000) fails Cloud Run's health check |
+| `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | TLS ends at Google's front end: trust `X-Forwarded-Proto/-For` so HTTPS-only cookies work and client IPs are real |
+| `DataProtection__KeysPath=/tmp/dp-keys` | The app folder is read-only on Cloud Run. Keys are per-instance, so a new revision signs everyone out once |
+| `/secrets/appsettings.secrets.json` | Secret `finrisklens-settings` (Mumbai-only replication): database, Azure Blob, SMTP, Finvu, Groq, JWT, Signzy, loan-case keys and `MsmeData:IngestKey`, built from the needed sections of the local development settings. `Program.cs` loads the file when present |
+
+Found on the first deploy:
+- **Cloud Build needs `roles/cloudbuild.builds.builder` on the default compute service
+  account** in new projects, or it cannot read its own uploaded source.
+- **Linux paths are case-sensitive.** Eight views referenced scripts and stylesheets in the
+  wrong case (the bank login script among them) — fine on Windows, 404 on Cloud Run. Fixed.
+- **The MSME data ingest API had no authorisation.** On a public URL anyone could plant
+  registry or bank data for any Udyam number — the data uploads are verified against. It
+  now requires `X-Ingest-Key`; with no key configured it is closed.
+- **Logs go to the console only** in the base settings; Cloud Run sends them to Cloud
+  Logging. A file sink would grow inside the instance's in-memory filesystem.
 
 ### Phase 2 — Case ingest + extraction · Oct 3 – Oct 6
 | Lane | Work |

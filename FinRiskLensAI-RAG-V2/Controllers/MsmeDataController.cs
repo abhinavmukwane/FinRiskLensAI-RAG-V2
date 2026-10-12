@@ -1,6 +1,9 @@
+using System.Security.Cryptography;
+using System.Text;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Models.Storage;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace FinRiskLensAI.Controllers
 {
@@ -9,22 +12,48 @@ namespace FinRiskLensAI.Controllers
     /// time into the MSME's folder (named by Udyam number), so no single request ever
     /// carries the full data set. Facts are built from the folder on demand by
     /// IBlobAnalysisService.GetFactsAsync — deliberately not exposed here, because this
-    /// controller has no authorization and the facts include bank and tax figures.
+    /// controller has no user session and the facts include bank and tax figures.
+    /// <para>
+    /// Callers are upstream integrations, not people: every request must carry the shared
+    /// key in <c>X-Ingest-Key</c> (config <c>MsmeData:IngestKey</c>). With no key configured
+    /// the API is closed. Without this, anyone on the public URL could plant registry or bank
+    /// data for any Udyam number — and those files are what uploads are verified against.
+    /// </para>
     /// </summary>
     [ApiController]
     [Route("api/msme-data/{uan}")]
-    public class MsmeDataController : ControllerBase
+    public class MsmeDataController : ControllerBase, IActionFilter
     {
         private readonly IBlobAnalysisService _analysis;
         private readonly IMsmeDataStore _store;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<MsmeDataController> _logger;
 
-        public MsmeDataController(IBlobAnalysisService analysis, IMsmeDataStore store, ILogger<MsmeDataController> logger)
+        public MsmeDataController(IBlobAnalysisService analysis, IMsmeDataStore store, IConfiguration configuration,
+                                  ILogger<MsmeDataController> logger)
         {
             _analysis = analysis;
             _store = store;
+            _configuration = configuration;
             _logger = logger;
         }
+
+        [NonAction]
+        public void OnActionExecuting(ActionExecutingContext context)
+        {
+            var expected = _configuration["MsmeData:IngestKey"];
+            var given = Request.Headers["X-Ingest-Key"].ToString();
+            if (string.IsNullOrEmpty(expected) ||
+                !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(given)))
+            {
+                _logger.LogWarning("Rejected MSME data request without a valid ingest key from {Ip}",
+                    HttpContext.Connection.RemoteIpAddress);
+                context.Result = Unauthorized();
+            }
+        }
+
+        [NonAction]
+        public void OnActionExecuted(ActionExecutedContext context) { }
 
         /// <summary>Declare which files this MSME's folder should end up containing.</summary>
         [HttpPut("manifest")]

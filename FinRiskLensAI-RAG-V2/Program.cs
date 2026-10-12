@@ -12,6 +12,10 @@ using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cloud Run: secrets arrive as one JSON file mounted from Secret Manager. Absent locally,
+// where appsettings.Development.json plays the same part.
+builder.Configuration.AddJsonFile("/secrets/appsettings.secrets.json", optional: true, reloadOnChange: false);
+
 // Don't advertise the web server. Kestrel writes this header itself, below the
 // middleware pipeline, so it can only be suppressed here.
 builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
@@ -72,7 +76,9 @@ builder.Services.AddScoped<FinRiskLensAI.Common.CustomerProfileBuilder>();
 // Persist DataProtection keys so session cookies survive app restarts / pool
 // recycles — otherwise ephemeral keys regenerate and everyone is silently logged
 // out (this bit us: the heavy first re-analyze can recycle the app pool).
-var keysDir = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
+// On Cloud Run the app folder is read-only, so DataProtection:KeysPath points at /tmp there.
+var keysDir = builder.Configuration["DataProtection:KeysPath"]
+              ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
 Directory.CreateDirectory(keysDir);
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keysDir))

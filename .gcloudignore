@@ -1,0 +1,14 @@
+# Upload filter for `gcloud run deploy --source .` (buildpacks build the web project from this)
+# Never in an image: local secrets, key rings, build output
+**/appsettings.Development.json
+**/App_Data/DataProtectionKeys/
+**/bin/
+**/obj/
+**/logs/
+.git/
+.vs/
+.claude/
+# Not needed to run the web app
+Doc/
+tests/
+tools/
