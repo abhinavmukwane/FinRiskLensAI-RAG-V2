@@ -323,7 +323,7 @@ gcloud run deploy finrisklens --source . --region asia-south1 --project finriskl
 | `ASPNETCORE_HTTP_PORTS=8080` | The buildpack image does not set a port; Kestrel's default (5000) fails Cloud Run's health check |
 | `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | TLS ends at Google's front end: trust `X-Forwarded-Proto/-For` so HTTPS-only cookies work and client IPs are real |
 | `DataProtection__KeysPath=/tmp/dp-keys` | The app folder is read-only on Cloud Run. Keys are per-instance, so a new revision signs everyone out once |
-| `/secrets/appsettings.secrets.json` | Secret `finrisklens-settings` (Mumbai-only replication): database, Azure Blob, SMTP, Finvu, Groq, JWT, Signzy, loan-case keys and `MsmeData:IngestKey`, built from the needed sections of the local development settings. `Program.cs` loads the file when present |
+| `/secrets/appsettings.secrets.json` | Secret `finrisklens-settings` (Mumbai-only replication): database, encryption key, SMTP, Finvu, Groq, Signzy, loan-case keys and `MsmeData:IngestKey`, built from the needed sections of the local development settings. Version 2 since 2026-10-12 (Azure and JWT sections dropped); version 1, which held the Azure key, is disabled. `Program.cs` loads the file when present |
 
 Found on the first deploy:
 - **Cloud Build needs `roles/cloudbuild.builds.builder` on the default compute service
