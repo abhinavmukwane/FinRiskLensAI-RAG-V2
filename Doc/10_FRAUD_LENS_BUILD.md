@@ -312,7 +312,7 @@ One command from the repository root — Cloud Build runs the .NET buildpack on 
 project and Cloud Run starts it:
 
 ```bash
-gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --clear-secrets --add-cloudsql-instances finrisklensai:asia-south1:finrisklens-db
+gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --add-cloudsql-instances finrisklensai:asia-south1:finrisklens-db
 ```
 
 | Setting | Why |
@@ -325,7 +325,7 @@ gcloud run deploy finrisklens --source . --region asia-south1 --project finriskl
 | `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | TLS ends at Google's front end: trust `X-Forwarded-Proto/-For` so HTTPS-only cookies work and client IPs are real |
 | `DataProtection__KeysPath=/tmp/dp-keys` | The app folder is read-only on Cloud Run. Keys are per-instance, so a new revision signs everyone out once |
 | `appsettings.Production.json` | Production secrets — Cloud SQL connection, encryption key, SMTP, Finvu, Groq, Signzy, loan-case keys, `MsmeData:IngestKey`. **Git-ignored, never committed**; it sits next to `appsettings.json` on the machine that deploys, `gcloud run deploy --source` uploads it (`.gcloudignore` deliberately leaves it in), and ASP.NET loads it in Production. Edit it, redeploy, done. Secret Manager is no longer used (2026-10-13) |
-| `--clear-secrets` | Removes the Secret Manager mount earlier revisions carried; harmless when there is none |
+| *(no secret flags)* | The Secret Manager mount earlier revisions carried was removed on 2026-10-13 with `gcloud run services update finrisklens --remove-secrets /secrets/appsettings.secrets.json` — `--clear-secrets` on a deploy does **not** remove a volume mount. A redeploy keeps the service's existing settings, so it stays gone |
 
 Found on the first deploy:
 - **Cloud Build needs `roles/cloudbuild.builds.builder` on the default compute service
