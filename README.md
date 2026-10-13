@@ -159,7 +159,6 @@ everything.
 | **Cloud Run** (`asia-south1`) | The application, built from source by Google Cloud buildpacks |
 | **Cloud Storage** (`asia-south1`) | Uploaded case documents; registry and Account Aggregator source data |
 | **Cloud SQL for PostgreSQL** (`asia-south1`) | Application data, findings, and the knowledge base — `pgvector` HNSW and full-text search in one database |
-| **Secret Manager** | Production settings, mounted as a file; Mumbai-only replication |
 | **Cloud Build · Artifact Registry** | Source-to-container builds |
 | **Cloud Logging** | Application logs |
 
@@ -251,7 +250,9 @@ dotnet run --project tools/FinRiskLensAI.RagCli -- ingest Policy Doc/knowledge/c
 ```
 
 Deploying to Cloud Run is one command, with every setting explained, in
-[`Doc/10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) under *Deploying*.
+[`Doc/10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) under *Deploying*. Production
+secrets go in `FinRiskLensAI-RAG-V2/appsettings.Production.json` — git-ignored like the
+development file, and uploaded with the source when you deploy.
 
 ### Tools
 

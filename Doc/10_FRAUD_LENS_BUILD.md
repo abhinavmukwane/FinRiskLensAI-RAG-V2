@@ -312,7 +312,7 @@ One command from the repository root — Cloud Build runs the .NET buildpack on 
 project and Cloud Run starts it:
 
 ```bash
-gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --set-secrets /secrets/appsettings.secrets.json=finrisklens-settings:latest --add-cloudsql-instances finrisklensai:asia-south1:finrisklens-db
+gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --clear-secrets --add-cloudsql-instances finrisklensai:asia-south1:finrisklens-db
 ```
 
 | Setting | Why |
@@ -324,7 +324,8 @@ gcloud run deploy finrisklens --source . --region asia-south1 --project finriskl
 | `ASPNETCORE_HTTP_PORTS=8080` | The buildpack image does not set a port; Kestrel's default (5000) fails Cloud Run's health check |
 | `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | TLS ends at Google's front end: trust `X-Forwarded-Proto/-For` so HTTPS-only cookies work and client IPs are real |
 | `DataProtection__KeysPath=/tmp/dp-keys` | The app folder is read-only on Cloud Run. Keys are per-instance, so a new revision signs everyone out once |
-| `/secrets/appsettings.secrets.json` | Secret `finrisklens-settings` (Mumbai-only replication): database, encryption key, SMTP, Finvu, Groq, Signzy, loan-case keys and `MsmeData:IngestKey`, built from the needed sections of the local development settings. Version 2 since 2026-10-12 (Azure and JWT sections dropped); version 1, which held the Azure key, is disabled. `Program.cs` loads the file when present |
+| `appsettings.Production.json` | Production secrets — Cloud SQL connection, encryption key, SMTP, Finvu, Groq, Signzy, loan-case keys, `MsmeData:IngestKey`. **Git-ignored, never committed**; it sits next to `appsettings.json` on the machine that deploys, `gcloud run deploy --source` uploads it (`.gcloudignore` deliberately leaves it in), and ASP.NET loads it in Production. Edit it, redeploy, done. Secret Manager is no longer used (2026-10-13) |
+| `--clear-secrets` | Removes the Secret Manager mount earlier revisions carried; harmless when there is none |
 
 Found on the first deploy:
 - **Cloud Build needs `roles/cloudbuild.builds.builder` on the default compute service

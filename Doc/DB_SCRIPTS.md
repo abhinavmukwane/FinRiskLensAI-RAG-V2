@@ -13,7 +13,7 @@ reasoning in `10_FRAUD_LENS_BUILD.md` §5).
 
 | | Where | Connection string lives in |
 |---|---|---|
-| **Production** | **Cloud SQL for PostgreSQL 16** — instance `finrisklens-db`, `asia-south1` (Mumbai), `db-g1-small`, encrypted connections only, daily backups, deletion protection. Cloud Run reaches it through the Cloud SQL connector socket | Secret Manager `finrisklens-settings` |
+| **Production** | **Cloud SQL for PostgreSQL 16** — instance `finrisklens-db`, `asia-south1` (Mumbai), `db-g1-small`, encrypted connections only, daily backups, deletion protection. Cloud Run reaches it through the Cloud SQL connector socket | The git-ignored `appsettings.Production.json`, uploaded at deploy |
 | **Development** | Neon | The git-ignored `appsettings.Development.json` |
 
 Neither string is written down here. Production was seeded on 2026-10-12 by applying all

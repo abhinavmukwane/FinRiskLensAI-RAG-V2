@@ -12,9 +12,9 @@ using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Cloud Run: secrets arrive as one JSON file mounted from Secret Manager. Absent locally,
-// where appsettings.Development.json plays the same part.
-builder.Configuration.AddJsonFile("/secrets/appsettings.secrets.json", optional: true, reloadOnChange: false);
+// Secrets live in git-ignored appsettings.{Environment}.json files, which ASP.NET loads
+// on its own: appsettings.Development.json locally, appsettings.Production.json on Cloud Run
+// (uploaded with the source by gcloud run deploy). Neither is ever committed.
 
 // Don't advertise the web server. Kestrel writes this header itself, below the
 // middleware pipeline, so it can only be suppressed here.

@@ -1,6 +1,7 @@
 # Upload filter for `gcloud run deploy --source .` (buildpacks build the web project from this)
 # Never in an image: local secrets, key rings, build output
 **/appsettings.Development.json
+# appsettings.Production.json is deliberately NOT listed: it carries production secrets into the build.
 **/App_Data/DataProtectionKeys/
 **/bin/
 **/obj/

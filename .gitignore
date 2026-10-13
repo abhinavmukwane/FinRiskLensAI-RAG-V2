@@ -54,6 +54,8 @@ ScaffoldingReadMe.txt
 .env
 
 appsettings.Development.json
+# Production secrets: kept locally, uploaded with the source by gcloud run deploy, never committed
+appsettings.Production.json
 appsettings.*.local.json
 *.pfx
 
