@@ -4,8 +4,8 @@
 application — bank statements, salary slips, ITRs — and returns fraud findings that each
 name what is wrong and point at the exact row, field or page that shows it.
 
-A tampered statement whose running balance stops adding up, a salary slip whose net pay
-was typed in, money that goes straight back to its payer, EMIs to lenders the applicant
+A tampered statement whose running balance stops adding up, a careful forgery that
+disagrees with the bank's own record, a salary slip whose net pay was typed in, money that goes straight back to its payer, EMIs to lenders the applicant
 never declared — found, explained in rupees, and linked to the evidence, before a credit
 officer relies on the documents.
 
@@ -42,10 +42,11 @@ fictional and every page is stamped *SYNTHETIC DOCUMENT*.
 
 | Case | What it is | What FinRiskLens finds |
 |---|---|---|
-| DEMO-G01 … G04 | Four genuine applicants — three businesses, one salaried | Nothing. False alarms on honest applicants are the costliest error |
+| DEMO-G01 … G05 | Five genuine applicants — four businesses, one salaried. G05 has Account Aggregator linked, and some of its bank postings clear a day after the statement date | Nothing. False alarms on honest applicants are the costliest error |
 | DEMO-T01 | A receipt inflated tenfold in Word; balances and footer left alone | Balance break, page totals mismatch, file edited in Word |
 | DEMO-T02 | Page 3 swapped in from a healthier quarter | Page carry-over break, balance break, file merged in iLovePDF |
 | DEMO-T03 | Salary slip with net pay typed higher, made in Canva | Slip arithmetic error, file history — and the AI notices the slip disagrees with the salary actually credited |
+| DEMO-T04 | A careful forgery: two receipts tripled and four loan EMIs deleted, then every balance and page total recomputed and the bank's own PDF producer kept | Every arithmetic and metadata check passes. The bank's own record, fetched through Account Aggregator, does not: two amounts changed, four EMIs missing, ₹3.66 lakh more in credits and ₹1.30 lakh less in debits than the bank recorded |
 | DEMO-B01 | Large receipts sent back to the payer within two days | Round-tripping |
 | DEMO-B02 | ₹25 lakh parked for six days just before applying | Window dressing |
 | DEMO-B03 | Every receipt forwarded the same day | Pass-through (mule-like account) |
@@ -65,8 +66,9 @@ fictional and every page is stamped *SYNTHETIC DOCUMENT*.
    ② EXTRACT      Gemini 3.5 Flash, Mumbai — page by page in parallel; numbers copied as printed,
    │              never corrected, because tampered arithmetic is the evidence
    ▼
-   ③ CHECK        eight deterministic checks in C#: balance continuity, page carry-over, stated
-   │              totals, slip arithmetic, round-tripping, window dressing, pass-through, metadata
+   ③ CHECK        nine deterministic checks in C#: balance continuity, page carry-over, stated
+   │              totals, slip arithmetic, round-tripping, window dressing, pass-through, metadata —
+   │              and the statement against the bank's own record, fetched through Account Aggregator
    ▼
    ④ INVESTIGATE  Gemini 3.1 Pro agent with tools scoped to this one application: statement rows,
    │              counterparty summary, document fields, GST / ITR / Account Aggregator facts,
@@ -98,21 +100,30 @@ Every number below comes from a command in this repository, run against live Gem
 demo cases. The demo generator writes each document's ground truth alongside it, so
 extraction is scored row by row.
 
-**Extraction** — `DemoData eval`, 12 documents, 895 statement rows
+**Extraction** — `DemoData eval`, 17 documents, 1,298 statement rows, two consecutive runs
+(2026-10-14)
 
 | | |
 |---|---|
-| Rows exact (date, debit, credit and balance all right) | **100% (895/895)** |
-| Page balances and printed totals | **100% (172/172)** |
-| Salary-slip fields | **100% (16/16)** |
-| Cases whose findings match expectation | **10/10** |
-| Time per statement | 10–25 s |
+| Rows exact (date, debit, credit and balance all right) | **99.8% and 100%** (1,296 and 1,298 of 1,298) |
+| Page balances and printed totals | **100% (244/244)** |
+| Fields — salary slips and statement account numbers | **100% (38/38)** |
+| Cases whose findings match expectation | **14/14**, both runs |
+| Time per statement | 10–60 s |
 
 Reading a whole statement in one call first scored 88.8%: Gemini dropped 45 rows from a
 *genuine* statement, which broke its arithmetic and produced false tamper findings on an
-honest applicant. Splitting into pages read in parallel fixed it.
+honest applicant. Splitting into pages read in parallel fixed it, and scored 895/895.
 
-**Investigator** — `DemoData investigate`, all 12 cases
+Two days later the same prompt scored 95.6%. Gemini had started reading `09-08-2026` as
+8 September, giving up on a page partway through, and dropping a digit from a page total —
+three false findings on honest cases. We only knew because the eval runs against ground
+truth. Two fixes brought it back: the extractor is told that Indian documents print the day
+first, and a page whose own arithmetic does not add up is read a second time with more
+thinking. A tampered page fails both reads and is kept exactly as printed; the second read
+is never told what failed, so the model is never invited to make the numbers add up.
+
+**Investigator** — `DemoData investigate`, the first 12 cases (the two added since raise nothing either)
 
 | | |
 |---|---|
@@ -266,8 +277,8 @@ development file, and uploaded with the source when you deploy.
 
 ### Tests
 
-52 xUnit tests: the eight deterministic checks (one hand-made statement each, plus a clean
-one that must raise nothing), the grounding verifier, the chunker, reciprocal rank fusion,
+56 xUnit tests: the nine deterministic checks (one hand-made statement each, plus a clean
+one that must raise nothing), the extractor's re-read rule, the grounding verifier, the chunker, reciprocal rank fusion,
 PDF inspection, and every demo case run through the checks in memory.
 
 ```bash

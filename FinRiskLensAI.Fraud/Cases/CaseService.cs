@@ -1,8 +1,11 @@
 using System.Security.Cryptography;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IRepositories.Cases;
+using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
 using FinRiskLensAI.Core.Interfaces.IServices.Cases;
+using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Cases;
+using FinRiskLensAI.Core.Models.Storage;
 using FinRiskLensAI.Fraud.Checks;
 
 namespace FinRiskLensAI.Fraud.Cases
@@ -20,12 +23,18 @@ namespace FinRiskLensAI.Fraud.Cases
         private readonly ICaseRepository _cases;
         private readonly ICaseDocumentStore _store;
         private readonly FraudOptions _options;
+        private readonly IMsmeDataStore? _sources;
+        private readonly IAaStatementAnalysisService? _aa;
 
-        public CaseService(ICaseRepository cases, ICaseDocumentStore store, FraudOptions options)
+        /// <param name="sources">With <paramref name="aa"/>, the bank's own record of linked accounts; without them check 9 does not run.</param>
+        public CaseService(ICaseRepository cases, ICaseDocumentStore store, FraudOptions options,
+                           IMsmeDataStore? sources = null, IAaStatementAnalysisService? aa = null)
         {
             _cases = cases;
             _store = store;
             _options = options;
+            _sources = sources;
+            _aa = aa;
         }
 
         public async Task<CaseIntakeResult> CreateAsync(NewCaseRequest request, IReadOnlyList<CaseUpload> files,
@@ -134,10 +143,19 @@ namespace FinRiskLensAI.Fraud.Cases
             if (application == null) return;
 
             var (rows, pages, fields) = await _cases.GetExtractedAsync(loanApplicationId, ct);
-            var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields), _options);
+            var bankRecord = rows.Count > 0 ? await BankRecordAsync(application.Uan, ct) : null;
+            var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields, bankRecord), _options);
             foreach (var f in findings) { f.CreatedBy = "DETERMINISTIC_CHECKS"; f.UpdatedBy = f.CreatedBy; }
 
             await _cases.ReplaceFindingsAsync(loanApplicationId, FindingSource.Deterministic, findings, ct);
+        }
+
+        /// <summary>The bank's transactions for the linked Udyam number, as fetched through Account Aggregator; null when there are none.</summary>
+        private async Task<IReadOnlyList<AaTransaction>?> BankRecordAsync(string? uan, CancellationToken ct)
+        {
+            if (uan == null || _sources == null || _aa == null) return null;
+            var json = await _sources.DownloadAsync(uan, MsmeDataFiles.Aa, ct);
+            return json == null ? null : _aa.Analyze(json).Transactions;
         }
 
         public async Task<bool> MarkProcessingAsync(int loanApplicationId, CancellationToken ct = default)

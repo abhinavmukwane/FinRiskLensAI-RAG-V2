@@ -462,6 +462,39 @@ fallback can actually fire.
 | Main | **`AaCrossCheck` first** (differentiator, reuses existing code) · `RegistryCrossCheck` (MCA employer) · layout embeddings · graph tables · union-find · ring narrative · Ring Explorer |
 | RAG | **R9** case-memory write-back on finding confirmation |
 
+**Status 2026-10-14 — the Account Aggregator cross-check is built and measured.**
+
+| Item | Status |
+|---|---|
+| Check 9 — statement vs the bank's own record | ✅ `DeterministicChecks.BankRecordMismatch`, finding `STATEMENT_VS_AA_MISMATCH` (Tampering, High). Runs whenever the application's Udyam number has an `aa.json` in the sources bucket, parsed by the existing `AaStatementAnalysisService`. A statement is tied to an AA account by the last four digits of its account number — the extractor now reads `account_number` off every statement — or, failing that, by at least half its rows agreeing; an account the applicant did not share is skipped, not flagged. Rows pair on side, amount and date within `AaDateSlackDays`; what is left is reported as amounts changed, transactions the bank never recorded and transactions it recorded that the PDF leaves out, with the net effect on credits and debits in rupees. Missing transactions point at the page where they belong |
+| Demo cases | ✅ **DEMO-G05** — genuine, AA linked, every seventh posting clears a day after its statement date: silent. **DEMO-T04** — two receipts tripled and four EMIs deleted, every balance and page total recomputed, the bank's producer kept: checks 1–8 pass, check 9 fires. AA feeds are generated in Finvu's FI-data shape and written to `gs://finrisklensai-sources/UDYAM-MH-99-*`; `seed` refuses to write any other folder, because the bucket also holds real MSMEs' data |
+| `RegistryCrossCheck` · network lens · **R9** | ⏸ next |
+
+Found while building: on a genuine statement Gemini read 27-08-2026 as 27-07-2026 — the same
+way in three runs — with the amount and balance right. The balance checks never look at
+dates, but the AA comparison saw one transaction added and one missing: a false alarm on an
+honest applicant. A row now also pairs with the bank posting of the same amount that leaves
+the same running balance, whatever date was read. A forger who changes an amount has to
+recompute every balance after it, so this costs nothing in detection.
+
+**Extraction re-measured** (`DemoData eval`, 17 documents, 1,298 rows): the prompt that scored
+895/895 on 2026-10-12 scored **95.6%** on 2026-10-14, and three cases raised findings they
+should not. Same prompt, same model name — the model's behaviour moved. Three failure modes,
+each seen directly by diffing reads against the truth:
+
+| Failure | Fix |
+|---|---|
+| `09-08-2026` read as 8 September — and on one page the model then stopped after 9 of 24 rows | The instruction says Indian documents print the day first, with that example |
+| A digit dropped from a printed page total (`12,22,000` → `1,22,200`) — identically on every run at temperature 0 | A page whose own arithmetic does not add up (row balances, closing balance, printed totals) is read again at `Gemini:RereadThinkingLevel` (`HIGH`). The second read is used only if it adds up; a tampered page fails both and is kept as printed. The second ask is identical — never "the balances failed", which would invite the model to make them add up |
+| Asking for the account number alongside the rows cost row accuracy (87.7% on three cases vs 98.9% without) | Its own small call on page 1, only for bank statements |
+
+| | 2026-10-12 | 2026-10-14, before | **After, two runs** |
+|---|---|---|---|
+| Rows exact | 100% (895/895) | 95.6% | **99.8% · 100%** (of 1,298) |
+| Page values | 100% (172/172) | 100% (244/244) | **100% (244/244)** |
+| Cases matching | 10/10 | 11/14 | **14/14 · 14/14** |
+| Slowest statement | 25 s | 38 s | 61 s — pages that fail re-read at high thinking, which every tampered page does |
+
 ### Phase 6 — Demo, video, deck, submit · Oct 15 – Oct 16
 - Demo data generator run: 20 genuine · 4 tampered · 12 ring · 3 edge cases
 - Knowledge corpus seeded (synthetic policy, typology, regulatory extracts)

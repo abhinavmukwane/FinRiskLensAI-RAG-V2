@@ -37,6 +37,8 @@ if (args[0] == "generate")
         await File.WriteAllBytesAsync(Path.Combine(dir, d.FileName), d.Pdf);
         await File.WriteAllTextAsync(Path.Combine(dir, d.FileName + ".truth.json"), JsonSerializer.Serialize(d.Truth, json));
     }
+    foreach (var c in cases.Where(c => c.AaJson != null))
+        await File.WriteAllTextAsync(Path.Combine(dir, $"{c.Ref.ToLowerInvariant()}_aa.json"), c.AaJson);
     await File.WriteAllTextAsync(Path.Combine(dir, "cases.json"), JsonSerializer.Serialize(
         cases.Select(c => new { c.Ref, Product = c.Product.ToString(), c.Uan, c.Story, c.Expected, Files = c.Docs.Select(d => d.FileName) }), json));
     Console.WriteLine($"{cases.Sum(c => c.Docs.Count)} documents for {cases.Count} cases in {dir}");
@@ -151,28 +153,39 @@ if (args[0] == "eval")
     Console.WriteLine($"doc type       {Pct(typeOk, docs)}");
     Console.WriteLine($"rows exact     {Pct(exactRows, truthRows)}");
     Console.WriteLine($"page values    {Pct(pageOk, pageAll)}");
-    Console.WriteLine($"slip fields    {Pct(fieldOk, fieldAll)}");
+    Console.WriteLine($"fields         {Pct(fieldOk, fieldAll)}");
     Console.WriteLine($"cases whose findings match: {casesOk}/{selected.Count}");
     return casesOk == selected.Count ? 0 : 1;
 }
 
 // ── seed ──────────────────────────────────────────────────────────────────────────
 var casesBucket = config["Gcs:CasesBucket"];
-if (string.IsNullOrWhiteSpace(casesBucket))
+var sourcesBucket = config["Gcs:SourcesBucket"];
+if (string.IsNullOrWhiteSpace(casesBucket) || string.IsNullOrWhiteSpace(sourcesBucket))
 {
-    Console.Error.WriteLine("Gcs:CasesBucket is not configured.");
+    Console.Error.WriteLine("Gcs:CasesBucket and Gcs:SourcesBucket must be configured.");
     return 2;
 }
 
 await using var db = new ApplicationDbContextFactory().CreateDbContext(Array.Empty<string>());
 var repo = new CaseRepository(db);
-var service = new CaseService(repo, new FinRiskLensAI.Fraud.Storage.GcsDocumentStore(casesBucket), new FraudOptions());
+var sources = new FinRiskLensAI.Fraud.Storage.GcsMsmeDataStore(sourcesBucket);
+var service = new CaseService(repo, new FinRiskLensAI.Fraud.Storage.GcsDocumentStore(casesBucket), new FraudOptions(),
+                              sources, new FinRiskLensAI.Services.Implementation.AccountAggregator.AaStatementAnalysisService());
 var existing = (await repo.ListAsync()).Select(c => c.ApplicantRef).ToHashSet();
 
 int mismatches = 0;
 foreach (var c in cases)
 {
     if (existing.Contains(c.Ref)) { Console.WriteLine($"{c.Ref,-9} already seeded — skipped"); continue; }
+
+    // The bank's record goes where the app reads it. The sources bucket also holds real MSMEs'
+    // data, so only the reserved synthetic district (99) is ever written.
+    if (c.AaJson != null)
+    {
+        if (c.Uan?.StartsWith("UDYAM-MH-99-") != true) throw new InvalidOperationException($"{c.Ref}: AA data only for synthetic UDYAM-MH-99-* numbers");
+        await sources.UploadAsync(c.Uan, FinRiskLensAI.Core.Models.Storage.MsmeDataFiles.Aa, c.AaJson);
+    }
 
     var created = await service.CreateAsync(new NewCaseRequest
     {

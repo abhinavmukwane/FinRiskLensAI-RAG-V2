@@ -1,4 +1,5 @@
 using System.Globalization;
+using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Cases;
 
 namespace FinRiskLensAI.Fraud.Checks
@@ -19,6 +20,10 @@ namespace FinRiskLensAI.Fraud.Checks
         public decimal PassThroughShare { get; set; } = 0.8m;
         public int PassThroughMinCredits { get; set; } = 10;
         public int ModifiedGraceMinutes { get; set; } = 1;
+        /// <summary>Days a bank's posting date may lag the date printed on the statement (clearing, value dates).</summary>
+        public int AaDateSlackDays { get; set; } = 1;
+        /// <summary>When no account number ties a statement to an AA account, the share of its rows that must agree before it counts as the same account.</summary>
+        public decimal AaMinMatchShare { get; set; } = 0.5m;
         /// <summary>Producer/creator substrings that mean a consumer tool touched the file, not a bank system.</summary>
         public string[] ConsumerEditors { get; set; } =
         {
@@ -28,12 +33,16 @@ namespace FinRiskLensAI.Fraud.Checks
         };
     }
 
-    /// <summary>Everything the checks read for one application.</summary>
+    /// <summary>
+    /// Everything the checks read for one application. <paramref name="BankRecord"/> is the bank's own
+    /// transactions for the linked Udyam number, fetched through Account Aggregator, when there are any.
+    /// </summary>
     public sealed record CaseData(
         LoanApplication Application,
         IReadOnlyList<StatementRow> Rows,
         IReadOnlyList<PageSummary> Pages,
-        IReadOnlyList<DocField> Fields);
+        IReadOnlyList<DocField> Fields,
+        IReadOnlyList<AaTransaction>? BankRecord = null);
 
     /// <summary>
     /// The deterministic checks (Doc/10_FRAUD_LENS_BUILD.md §4, reference design §11).
@@ -66,6 +75,7 @@ namespace FinRiskLensAI.Fraud.Checks
                 Add(findings, WindowDressing(doc, rows, data.Application.SubmittedAt, o));
                 Add(findings, PassThrough(doc, rows, o));
                 Add(findings, Metadata(doc, o));
+                if (data.BankRecord != null) Add(findings, BankRecordMismatch(doc, rows, fields, data.BankRecord, o));
             }
             return findings;
         }
@@ -303,7 +313,150 @@ namespace FinRiskLensAI.Fraud.Checks
                                        PageNo = 1, Note = doc.PdfProducer } });
         }
 
+        // ── 9. The statement against the bank's own record (Account Aggregator) ─────
+        /// <summary>
+        /// The applicant can edit a PDF; they cannot edit what the bank sends through Account
+        /// Aggregator. A careful forgery recomputes every balance and total, so checks 1–3 pass —
+        /// but to be worth making it has to disagree with the bank somewhere. Rows are matched on
+        /// side, amount and date (within <see cref="FraudOptions.AaDateSlackDays"/>); narrations differ
+        /// between a bank's PDF and its AA feed, so they are not compared.
+        /// </summary>
+        public static Finding? BankRecordMismatch(CaseDocument doc, IReadOnlyList<StatementRow> rows, IReadOnlyList<DocField> fields,
+                                                  IReadOnlyList<AaTransaction> bankRecord, FraudOptions o)
+        {
+            // Which AA account is this statement? The one with the same last four digits; failing that
+            // (none printed, or a feed without account numbers) the one most of its rows agree with.
+            var printed = LastFour(Field(fields, "account_number")?.Value);
+            var best = bankRecord.Where(t => !t.IsUnpassed).GroupBy(t => t.AccountRef)
+                .Select(a => (Account: a.Key, SameNumber: printed != null && printed == LastFour(a.Key), Match: MatchBank(rows, a.ToList(), o)))
+                .Where(x => x.Match != null && (x.SameNumber || x.Match.Agree >= o.AaMinMatchShare * x.Match.Rows))
+                .OrderByDescending(x => x.SameNumber).ThenByDescending(x => x.Match!.Agree)
+                .FirstOrDefault();
+            var m = best.Match;
+            if (m == null) return null;   // not an account the applicant shared through AA, or no common dates
+            if (m.Altered.Count + m.OnlyOnPdf.Count + m.OnlyAtBank.Count == 0) return null;
+
+            var parts = new List<string>();
+            if (m.Altered.Count > 0) parts.Add($"{Times(m.Altered.Count, "amount")} changed");
+            if (m.OnlyOnPdf.Count > 0) parts.Add($"{Times(m.OnlyOnPdf.Count, "transaction")} the bank never recorded");
+            if (m.OnlyAtBank.Count > 0) parts.Add($"{Times(m.OnlyAtBank.Count, "transaction")} the bank recorded left out");
+
+            string first;
+            if (m.Altered.Count > 0)
+            {
+                var (r, b) = m.Altered[0];
+                first = $"row {r.RowNo} on {r.TxnDate:dd MMM yyyy} shows a {Side(r)} of {Rs(Amount(r))} where the bank recorded {Rs(b.Amount)}";
+            }
+            else if (m.OnlyOnPdf.Count > 0)
+            {
+                var r = m.OnlyOnPdf[0];
+                first = $"the {Side(r)} of {Rs(Amount(r))} on {r.TxnDate:dd MMM yyyy} (row {r.RowNo}) is not in the bank's record";
+            }
+            else
+            {
+                var b = m.OnlyAtBank[0];
+                first = $"the bank recorded a {b.Direction.ToLowerInvariant()} of {Rs(b.Amount)} on {b.Date:dd MMM yyyy} (“{b.Narration}”) that the PDF leaves out";
+            }
+
+            var effect = new List<string>();
+            if (Math.Abs(m.CreditGap) > o.AmountTolerance) effect.Add($"{Rs(Math.Abs(m.CreditGap))} {(m.CreditGap > 0 ? "more" : "less")} in credits");
+            if (Math.Abs(m.DebitGap) > o.AmountTolerance) effect.Add($"{Rs(Math.Abs(m.DebitGap))} {(m.DebitGap > 0 ? "more" : "less")} in debits");
+
+            return New(doc, "STATEMENT_VS_AA_MISMATCH", FindingCategory.Tampering, FindingSeverity.High,
+                $"Statement disagrees with the bank's own record: {doc.FileName}",
+                $"Compared with {(best.Account is { Length: > 0 } a ? "account " + a : "the account")} as the bank itself reported it through Account Aggregator, " +
+                $"{m.From:dd MMM yyyy} to {m.To:dd MMM yyyy}: {m.Agree} of {m.Rows} rows agree, with {string.Join(", ", parts.SkipLast(1))}{(parts.Count > 1 ? " and " : "")}{parts[^1]}. First: {first}." +
+                (effect.Count > 0 ? $" Net effect: the PDF shows {string.Join(" and ", effect)} than the bank recorded." : "") +
+                " Balances and totals can be recomputed to hide an edit; the bank's own record cannot be.",
+                "Assess the application on the Account Aggregator data, not the uploaded PDF, and ask the applicant to explain every difference listed.",
+                m.Altered.Select(x => RowEvidence(x.Row, $"bank recorded {Rs(x.Bank.Amount)}"))
+                 .Concat(m.OnlyAtBank.Select(b => PageEvidence(doc,
+                     rows.LastOrDefault(r => r.TxnDate <= DateOnly.FromDateTime(b.Date))?.PageNo ?? rows[0].PageNo,
+                     $"bank recorded {b.Date:dd MMM yyyy}: {b.Direction.ToLowerInvariant()} {Rs(b.Amount)} “{b.Narration}” — not on the statement")))
+                 .Concat(m.OnlyOnPdf.Select(r => RowEvidence(r, "not in the bank's record"))));
+        }
+
+        private sealed record BankMatch(DateOnly From, DateOnly To, int Rows, int Agree,
+                                        List<(StatementRow Row, AaTransaction Bank)> Altered,
+                                        List<StatementRow> OnlyOnPdf, List<AaTransaction> OnlyAtBank,
+                                        decimal CreditGap, decimal DebitGap);
+
+        /// <summary>One statement against one AA account, over the dates both cover; null when they share none.</summary>
+        private static BankMatch? MatchBank(IReadOnlyList<StatementRow> rows, List<AaTransaction> account, FraudOptions o)
+        {
+            static DateOnly Day(AaTransaction t) => DateOnly.FromDateTime(t.Date);
+
+            var moving = rows.Where(r => r.Credit > 0 || r.Debit > 0).ToList();
+            if (moving.Count == 0 || account.Count == 0) return null;
+
+            // A statement may run past the consent period or start before it: judge only the days both
+            // cover, but match across the slack either side, so a posting that lags past the edge still pairs
+            var from = new[] { moving.Min(r => r.TxnDate), account.Min(Day) }.Max();
+            var to = new[] { moving.Max(r => r.TxnDate), account.Max(Day) }.Min();
+            if (from > to) return null;
+            bool Inside(DateOnly d) => d >= from && d <= to;
+            var (lo, hi) = (from.AddDays(-o.AaDateSlackDays), to.AddDays(o.AaDateSlackDays));
+
+            var pdf = moving.Where(r => r.TxnDate >= lo && r.TxnDate <= hi).ToList();
+            var bank = account;
+            var judged = pdf.Count(r => Inside(r.TxnDate));
+            if (judged == 0) return null;
+            var used = new bool[bank.Count];
+
+            // Nearest unused bank transaction on the same side that fits, within the date slack unless anyDate
+            int Find(StatementRow r, Func<AaTransaction, bool> fits, bool anyDate = false)
+            {
+                int found = -1, gap = int.MaxValue;
+                for (int i = 0; i < bank.Count; i++)
+                {
+                    if (used[i] || bank[i].IsCredit != r.Credit > 0 || !fits(bank[i])) continue;
+                    var g = Math.Abs(Day(bank[i]).DayNumber - r.TxnDate.DayNumber);
+                    if ((anyDate || g <= o.AaDateSlackDays) && g < gap) { found = i; gap = g; }
+                }
+                return found;
+            }
+            bool Near(decimal? a, decimal? b) => a != null && b != null && Math.Abs(a.Value - b.Value) <= o.AmountTolerance;
+
+            var unmatched = new List<StatementRow>();
+            foreach (var r in pdf)
+            {
+                var i = Find(r, t => Near(t.Amount, Amount(r)));
+                // A misread date is not a disagreement: the same amount leaving the same running balance
+                // is the same posting. A forger who changes an amount has to recompute the balances after it.
+                if (i < 0) i = Find(r, t => Near(t.Amount, Amount(r)) && Near(t.Balance, r.Balance), anyDate: true);
+                if (i >= 0) used[i] = true;
+                else if (Inside(r.TxnDate)) unmatched.Add(r);
+            }
+
+            // Left over on both sides, same day and side: one transaction with its amount changed
+            var altered = new List<(StatementRow Row, AaTransaction Bank)>();
+            var onlyOnPdf = new List<StatementRow>();
+            foreach (var r in unmatched)
+            {
+                var i = Find(r, _ => true);
+                if (i < 0) onlyOnPdf.Add(r); else { used[i] = true; altered.Add((r, bank[i])); }
+            }
+            var onlyAtBank = bank.Where((t, i) => !used[i] && Inside(Day(t))).ToList();
+
+            // Net effect, from the differences themselves: edges and posting lags add nothing
+            decimal Gap(bool credit) =>
+                altered.Where(x => (x.Row.Credit > 0) == credit).Sum(x => Amount(x.Row) - x.Bank.Amount)
+              + onlyOnPdf.Where(r => (r.Credit > 0) == credit).Sum(Amount)
+              - onlyAtBank.Where(t => t.IsCredit == credit).Sum(t => t.Amount);
+
+            return new BankMatch(from, to, judged, judged - unmatched.Count, altered, onlyOnPdf, onlyAtBank, Gap(true), Gap(false));
+        }
+
         // ── helpers ─────────────────────────────────────────────────────────────────
+
+        private static decimal Amount(StatementRow r) => r.Credit is decimal c and > 0 ? c : r.Debit ?? 0;
+        private static string Side(StatementRow r) => r.Credit > 0 ? "credit" : "debit";
+
+        private static string? LastFour(string? s)
+        {
+            var digits = new string((s ?? "").Where(char.IsDigit).ToArray());
+            return digits.Length >= 4 ? digits[^4..] : null;
+        }
 
         private static Finding New(CaseDocument doc, string type, FindingCategory category, FindingSeverity severity,
                                    string title, string explanation, string action, IEnumerable<Evidence> evidence)

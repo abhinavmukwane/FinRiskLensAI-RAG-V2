@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json;
 using FinRiskLensAI.Core.Models.Cases;
 
 namespace FinRiskLensAI.DemoData
@@ -13,6 +15,8 @@ namespace FinRiskLensAI.DemoData
                                   decimal? DeclaredEmis, string Story, string[] Expected, List<DemoDoc> Docs)
     {
         public string[] ExpectedAi { get; init; } = Array.Empty<string>();
+        /// <summary>The bank's own record of the account, as Account Aggregator delivers it, when the applicant linked one.</summary>
+        public string? AaJson { get; init; }
     }
 
     /// <summary>
@@ -38,6 +42,9 @@ namespace FinRiskLensAI.DemoData
                           "Genuine agri trader, many small receipts.", tamper: null));
             cases.Add(Salaried("DEMO-G04", seed: 14, "Ananya Rao", Banks.Narmada, gross: 92_000, tamperSlip: false,
                                "Genuine salaried applicant; slip and statement agree."));
+            cases.Add(Sme("DEMO-G05", seed: 15, "Sahyadri Food Products", "UDYAM-MH-99-0000105", Banks.Kaveri,
+                          "Genuine food processor with Account Aggregator linked: the uploaded statement matches the bank's " +
+                          "own record, including postings that clear a day after the statement date.", tamper: null, aaLinked: true));
 
             // ── Tampered documents ──────────────────────────────────────────────────
             cases.Add(Sme("DEMO-T01", seed: 21, "Shivam Steel Fabricators", null, Banks.Kaveri,
@@ -50,6 +57,10 @@ namespace FinRiskLensAI.DemoData
             cases.Add(Salaried("DEMO-T03", seed: 23, "Rohit Kulkarni", Banks.Kaveri, gross: 68_000, tamperSlip: true,
                                "Net pay on the slip was typed in higher than gross less deductions.")
                       with { ExpectedAi = new[] { "INCOME_MISMATCH" } });
+            cases.Add(Sme("DEMO-T04", seed: 24, "Mahalaxmi Agro Implements", "UDYAM-MH-99-0000204", Banks.Narmada,
+                          "A careful forgery: two receipts tripled and four loan EMIs deleted, then every balance and page total " +
+                          "recomputed and the bank's own PDF producer kept. Only the bank's Account Aggregator record disagrees.",
+                          tamper: Tamper.CleanForgery, aaLinked: true));
 
             // ── Behaviour the documents are honest about ────────────────────────────
             cases.Add(Sme("DEMO-B01", seed: 31, "Vighnaharta Enterprises", null, Banks.Kaveri,
@@ -70,11 +81,12 @@ namespace FinRiskLensAI.DemoData
             return cases;
         }
 
-        private enum Tamper { InflateCredit, SplicePage, RoundTrip, WindowDress, PassThrough, HiddenLoans }
+        private enum Tamper { InflateCredit, SplicePage, RoundTrip, WindowDress, PassThrough, HiddenLoans, CleanForgery }
 
         // ── SME current account ─────────────────────────────────────────────────────
 
-        private static DemoCase Sme(string reference, int seed, string business, string? uan, Bank bank, string story, Tamper? tamper)
+        private static DemoCase Sme(string reference, int seed, string business, string? uan, Bank bank, string story, Tamper? tamper,
+                                    bool aaLinked = false)
         {
             var rnd = new Random(seed);
             var txns = new List<Txn>();
@@ -129,6 +141,9 @@ namespace FinRiskLensAI.DemoData
                 txns.Add(Txn.Out(new DateOnly(2026, 9, 12), "NACH DR KREDITPAL DEMO NBFC EMI", 12_200, "KreditPal Demo NBFC", "XX8830"));
                 txns.Add(Txn.In(new DateOnly(2026, 8, 20), "LOAN DISB QUICKCASH DEMO LENDING", 200_000, "QuickCash Demo Lending", "XX4409"));
             }
+            if (tamper == Tamper.CleanForgery)
+                for (var m = From; m <= To; m = m.AddMonths(1))
+                    txns.Add(Txn.Out(m.AddDays(4), "NACH DR SWIFT DEMO FINANCE EMI", 32_500, "Swift Demo Finance", "XX5512"));
             if (tamper == Tamper.WindowDress)
             {
                 txns.Add(Txn.In(new DateOnly(2026, 9, 18), "RTGS CR NIRMAL CAPITAL SERVICES", 2_500_000, "Nirmal Capital Services", "XX6620"));
@@ -140,6 +155,8 @@ namespace FinRiskLensAI.DemoData
             var producer = (Producer: bank.Producer, Creator: bank.Creator);
             var created = new DateTime(2026, 10, 1, 9, 12, 0);
             var modified = created;
+            var account = MaskedAccount(rnd);
+            var aaJson = aaLinked ? AaFeed(bank, account, doc) : null;   // the bank's record, before any edit
 
             switch (tamper)
             {
@@ -161,16 +178,30 @@ namespace FinRiskLensAI.DemoData
                     modified = created.AddDays(1);
                     break;
                 }
+                case Tamper.CleanForgery:
+                {
+                    // Every EMI deleted and July's and August's first large receipt tripled, then the statement
+                    // rebuilt so every balance and page total follows; producer and dates left as the bank's
+                    var rows = doc.Pages.SelectMany(p => p.Rows).ToList();
+                    var boosted = new[] { 7, 8 }.Select(mo => rows.First(r => r.Date.Month == mo && r.Credit > 50_000)).ToHashSet();
+                    doc = Statement(bank, business, opening, rows
+                        .Where(r => !r.Description.EndsWith(" EMI"))
+                        .Select(r => new Txn(r.Date, r.Description, r.Debit, boosted.Contains(r) ? r.Credit * 3 : r.Credit,
+                                             r.CounterpartyName, r.CounterpartyAccount))
+                        .ToList());
+                    break;
+                }
             }
+            doc.Fields.Add(Field("account_number", account));
 
             var file = $"{reference.ToLowerInvariant()}_{bank.Short}_statement_jun-sep.pdf";
-            var pdf = Render.Statement(bank, business, MaskedAccount(rnd), doc, producer.Producer, producer.Creator, created, modified);
+            var pdf = Render.Statement(bank, business, account, doc, producer.Producer, producer.Creator, created, modified);
             var receipts = txns.Where(t => t.Credit > 0).Sum(t => t.Credit!.Value) / 4;
 
             // Hidden-loan applicants declare no EMIs — that is the lie
-            var declaredEmis = tamper == Tamper.HiddenLoans ? 0 : Round(rnd.Next(0, 40_000));
+            var declaredEmis = tamper is Tamper.HiddenLoans or Tamper.CleanForgery ? 0 : Round(rnd.Next(0, 40_000));
             return new DemoCase(reference, CaseProduct.SmeLoan, uan, Round(receipts), business, declaredEmis,
-                                story, Expected(tamper), new List<DemoDoc> { new(file, pdf, doc) });
+                                story, Expected(tamper), new List<DemoDoc> { new(file, pdf, doc) }) { AaJson = aaJson };
         }
 
         private static string[] Expected(Tamper? tamper) => tamper switch
@@ -180,6 +211,7 @@ namespace FinRiskLensAI.DemoData
             Tamper.RoundTrip => new[] { "SALARY_ROUNDTRIP" },
             Tamper.WindowDress => new[] { "PRE_APPLICATION_WINDOW_DRESSING" },
             Tamper.PassThrough => new[] { "PASS_THROUGH" },
+            Tamper.CleanForgery => new[] { "STATEMENT_VS_AA_MISMATCH" },
             _ => Array.Empty<string>()
         };
 
@@ -215,7 +247,9 @@ namespace FinRiskLensAI.DemoData
 
             var statement = Statement(bank, name, Round(rnd.Next(40_000, 90_000)), txns);
             var stFile = $"{reference.ToLowerInvariant()}_{bank.Short}_statement_jun-sep.pdf";
-            var stPdf = Render.Statement(bank, name, MaskedAccount(rnd), statement, bank.Producer, bank.Creator,
+            var account = MaskedAccount(rnd);
+            statement.Fields.Add(Field("account_number", account));
+            var stPdf = Render.Statement(bank, name, account, statement, bank.Producer, bank.Creator,
                                          new DateTime(2026, 10, 1, 8, 40, 0), new DateTime(2026, 10, 1, 8, 40, 0));
 
             var printedNet = tamperSlip ? net + 25_000 : net;
@@ -301,6 +335,41 @@ namespace FinRiskLensAI.DemoData
             return doc;
         }
 
+        /// <summary>
+        /// The bank's own record of the account in the Finvu FI-data shape Account Aggregator delivers.
+        /// Every seventh posting clears the day after its statement date, as real value dates do.
+        /// </summary>
+        private static string AaFeed(Bank bank, string account, ExtractedDocument statement)
+        {
+            static string Amt(decimal? v) => v?.ToString("0.00", CultureInfo.InvariantCulture) ?? "0.00";
+            var rows = statement.Pages.SelectMany(p => p.Rows).ToList();
+            return JsonSerializer.Serialize(new
+            {
+                body = new[] { new { fipName = bank.Name, fiObjects = new[] { new
+                {
+                    maskedAccNumber = account,
+                    type = "deposit",
+                    Summary = new { currentBalance = Amt(rows[^1].Balance), type = "CURRENT", status = "ACTIVE", branch = bank.Branch, ifscCode = bank.Ifsc },
+                    Transactions = new
+                    {
+                        startDate = From.ToString("yyyy-MM-dd"), endDate = To.ToString("yyyy-MM-dd"),
+                        Transaction = rows.Select((r, i) => new
+                        {
+                            txnId = $"T{i + 1:000000}",
+                            type = r.Credit > 0 ? "CREDIT" : "DEBIT",
+                            mode = r.Description.Split(' ')[0],
+                            amount = Amt(r.Credit ?? r.Debit),
+                            currentBalance = Amt(r.Balance),
+                            transactionTimestamp = $"{r.Date:yyyy-MM-dd}T10:00:00",
+                            valueDate = (i % 7 == 6 ? r.Date.AddDays(1) : r.Date).ToString("yyyy-MM-dd"),
+                            narration = r.Description,
+                            reference = $"REF{i + 1:000000}"
+                        })
+                    }
+                } } } }
+            }, new JsonSerializerOptions { WriteIndented = true });
+        }
+
         private static ExtractedField Field(string name, string value) => new() { Name = name, Value = value };
         private static ExtractedField Field(string name, decimal value) => new() { Name = name, Value = Render.Inr(value), NumValue = value };
 
@@ -327,6 +396,7 @@ namespace FinRiskLensAI.DemoData
 {
     using FinRiskLensAI.Fraud.Cases;
     using FinRiskLensAI.Fraud.Checks;
+    using FinRiskLensAI.Services.Implementation.AccountAggregator;
 
     public static class DryRun
     {
@@ -378,7 +448,8 @@ namespace FinRiskLensAI.DemoData
                 }));
             }
 
-            return DeterministicChecks.Run(new CaseData(app, rows, pages, fields), options)
+            var bankRecord = c.AaJson == null ? null : new AaStatementAnalysisService().Analyze(c.AaJson).Transactions;
+            return DeterministicChecks.Run(new CaseData(app, rows, pages, fields, bankRecord), options)
                                       .Select(f => f.Type).Distinct().OrderBy(t => t).ToArray();
         }
     }

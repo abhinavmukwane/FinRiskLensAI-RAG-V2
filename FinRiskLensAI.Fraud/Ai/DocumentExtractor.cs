@@ -18,7 +18,8 @@ namespace FinRiskLensAI.Fraud.Ai
             Copy every number exactly as printed. Never correct, recompute or reconcile anything: a
             document whose arithmetic does not add up is precisely what the investigation needs to see.
 
-            - Dates as YYYY-MM-DD. Amounts as plain numbers: no currency symbol, no thousands
+            - Dates as YYYY-MM-DD. Indian documents print the day first: 09-08-2026 is 9 August 2026,
+              never 8 September. Amounts as plain numbers: no currency symbol, no thousands
               separators ("1,20,000.50" is 120000.50). Use null for a value that is not printed.
             - docType: BankStatement, SalarySlip, Itr, GstReturn, KycId, UtilityBill, Invoice, or
               Unclassified when none fits.
@@ -52,9 +53,18 @@ namespace FinRiskLensAI.Fraud.Ai
         public async Task<ExtractedDocument> ExtractAsync(byte[] content, string contentType, CancellationToken ct = default)
         {
             var pages = contentType == "application/pdf" ? SplitPages(content) : null;
-            if (pages == null) return Map(await ReadAsync(content, contentType, null, ct));
+            var doc = pages == null ? Map(await ReadCheckedAsync(content, contentType, null, ct)) : await ReadPagesAsync(pages, contentType, ct);
 
-            var reads = await Task.WhenAll(pages.Select((page, i) => ReadAsync(page, contentType, (i + 1, pages.Count), ct)));
+            // The statement's own account number ties it to the bank's Account Aggregator record. Asked in a
+            // call of its own: asking for it alongside the rows cost row accuracy (DemoData eval, 2026-10-14).
+            if (doc.DocType == CaseDocType.BankStatement && await AccountNumberAsync(pages?[0] ?? content, contentType, ct) is { Length: > 0 } account)
+                doc.Fields.Add(new ExtractedField { Name = "account_number", Value = account, PageNo = 1 });
+            return doc;
+        }
+
+        private async Task<ExtractedDocument> ReadPagesAsync(List<byte[]> pages, string contentType, CancellationToken ct)
+        {
+            var reads = await Task.WhenAll(pages.Select((page, i) => ReadCheckedAsync(page, contentType, (i + 1, pages.Count), ct)));
             var merged = Map(new RawDocument
             {
                 DocType = reads.Select(r => r.DocType).Where(t => t != null && t != nameof(CaseDocType.Unclassified))
@@ -77,7 +87,44 @@ namespace FinRiskLensAI.Fraud.Ai
             return merged;
         }
 
-        private async Task<RawDocument> ReadAsync(byte[] content, string contentType, (int Page, int Of)? page, CancellationToken ct)
+        /// <summary>
+        /// A read whose own arithmetic does not add up is read once more. A misread digit or a dropped row
+        /// breaks it and usually reads right the second time; a tampered page breaks it both times and is
+        /// kept exactly as read. The second read thinks harder (<see cref="GeminiOptions.RereadThinkingLevel"/>) but
+        /// is asked the same thing: telling the model the balances failed would invite it to make them add
+        /// up, which is the one thing it must never do.
+        /// </summary>
+        private async Task<RawDocument> ReadCheckedAsync(byte[] content, string contentType, (int Page, int Of)? page, CancellationToken ct)
+        {
+            var first = await ReadAsync(content, contentType, page, ct);
+            if (AddsUp(first)) return first;
+            var second = await ReadAsync(content, contentType, page, ct, _gemini.Options.RereadThinkingLevel);
+            return AddsUp(second) ? second : first;
+        }
+
+        /// <summary>Every printed balance follows from the one before, and the page's printed totals and closing balance match its rows.</summary>
+        public static bool AddsUp(RawDocument read)
+        {
+            const decimal tolerance = 1m;   // as FraudOptions.AmountTolerance
+            foreach (var p in read.Pages ?? new())
+            {
+                var rows = p.Rows ?? new();
+                var balance = p.OpeningBalance;
+                foreach (var r in rows)
+                {
+                    var next = balance + (r.Credit ?? 0) - (r.Debit ?? 0);
+                    if (next != null && r.Balance != null && Math.Abs(next.Value - r.Balance.Value) > tolerance) return false;
+                    balance = r.Balance ?? next;
+                }
+                if (p.ClosingBalance != null && balance != null && Math.Abs(p.ClosingBalance.Value - balance.Value) > tolerance) return false;
+                if (p.StatedTotalDebit is { } d && Math.Abs(d - rows.Sum(r => r.Debit ?? 0)) > tolerance) return false;
+                if (p.StatedTotalCredit is { } c && Math.Abs(c - rows.Sum(r => r.Credit ?? 0)) > tolerance) return false;
+            }
+            return true;
+        }
+
+        private async Task<RawDocument> ReadAsync(byte[] content, string contentType, (int Page, int Of)? page, CancellationToken ct,
+                                                  string? thinkingLevel = null)
         {
             var o = _gemini.Options;
             var ask = page == null ? "Extract this document."
@@ -87,10 +134,38 @@ namespace FinRiskLensAI.Fraud.Ai
             {
                 return await _gemini.GenerateJsonAsync<RawDocument>(o.ExtractModel, o.ExtractLocation, Instruction,
                     new JsonNode[] { GeminiClient.Inline(content, contentType), GeminiClient.Text(ask) },
-                    Schema(), maxOutputTokens: 32_000, o.ExtractThinkingLevel, ct);
+                    Schema(), maxOutputTokens: 32_000, thinkingLevel ?? o.ExtractThinkingLevel, ct);
             }
             finally { Gate.Release(); }
         }
+
+        /// <summary>Null when none is printed or the call fails — check 9 then ties the statement to an account by its rows.</summary>
+        private async Task<string?> AccountNumberAsync(byte[] firstPage, string contentType, CancellationToken ct)
+        {
+            var o = _gemini.Options;
+            var schema = new JsonObject
+            {
+                ["type"] = "OBJECT",
+                ["properties"] = new JsonObject { ["accountNumber"] = new JsonObject { ["type"] = "STRING", ["nullable"] = true } }
+            };
+            await Gate.WaitAsync(ct);
+            try
+            {
+                var read = await _gemini.GenerateJsonAsync<AccountRead>(o.ExtractModel, o.ExtractLocation,
+                    "Return the bank statement's own account number exactly as printed, masked digits included — not a " +
+                    "counterparty's account. Null when none is printed.",
+                    new JsonNode[] { GeminiClient.Inline(firstPage, contentType), GeminiClient.Text("Read the account number.") },
+                    schema, maxOutputTokens: 2_000, o.ExtractThinkingLevel, ct);
+                return read.AccountNumber?.Trim();
+            }
+            catch (Exception) when (!ct.IsCancellationRequested)
+            {
+                return null;
+            }
+            finally { Gate.Release(); }
+        }
+
+        public sealed class AccountRead { public string? AccountNumber { get; set; } }
 
         /// <summary>One single-page PDF per page; null for one-page files and for PDFs PdfPig cannot open (encrypted).</summary>
         private static List<byte[]>? SplitPages(byte[] pdf)

@@ -1,3 +1,4 @@
+using FinRiskLensAI.Core.Models.AccountAggregator;
 using FinRiskLensAI.Core.Models.Cases;
 using FinRiskLensAI.Fraud.Checks;
 
@@ -194,6 +195,39 @@ namespace FinRiskLensAI.Tests
         {
             var f = DeterministicChecks.Metadata(new CaseDocument { CaseDocumentID = 9, PdfProducer = "Canva" }, O)!;
             Assert.Equal("METADATA_ANOMALY:doc9", f.DedupKey);
+        }
+
+        [Fact]
+        public void Statement_is_compared_with_the_banks_own_record()
+        {
+            var rows = new List<StatementRow>
+            {
+                Row("2026-03-01", 10_000, null, 60_000),
+                Row("2026-03-02", 90_000, null, 150_000),   // the bank recorded 9,000
+                Row("2026-03-04", null, 1_000, 149_000),
+                Row("2026-03-01", null, 2_000, 147_000),    // printed 08-03, misread as 01-03
+            };
+            var fields = new[] { new DocField { DocFieldID = 1, CaseDocumentID = Doc.CaseDocumentID, Name = "account_number", Value = "XXXXXXXX4321" } };
+            static AaTransaction Bank(string date, decimal credit, decimal debit, string account = "XXXX4321", decimal? balance = null)
+                => new() { Date = DateTime.Parse(date), Credit = credit, Debit = debit, AccountRef = account, Balance = balance, Narration = "txn" };
+            var bank = new List<AaTransaction>
+            {
+                Bank("2026-03-01", 10_000, 0),
+                Bank("2026-03-03", 9_000, 0),            // posted a day late; the PDF changed its amount
+                Bank("2026-03-03", 0, 25_000),           // an EMI the PDF leaves out
+                Bank("2026-03-04", 0, 1_000),
+                Bank("2026-03-08", 0, 2_000, balance: 147_000),
+                Bank("2026-03-02", 777, 0, "XXXX9999"),  // another account of the applicant's: not this statement
+            };
+
+            var f = DeterministicChecks.BankRecordMismatch(Doc, rows, fields, bank, O)!;
+
+            Assert.Equal("STATEMENT_VS_AA_MISMATCH", f.Type);
+            Assert.Contains(f.Evidence, e => e.RefId == rows[1].StatementRowID && e.Note!.Contains("₹9,000.00"));
+            Assert.Contains(f.Evidence, e => e.Kind == EvidenceKind.Page && e.Note!.Contains("₹25,000.00"));
+            Assert.Contains("₹81,000.00 more in credits and ₹25,000.00 less in debits", f.Explanation);
+            Assert.Contains("3 of 4 rows agree", f.Explanation);   // the misread date pairs by amount and balance
+            Assert.Null(DeterministicChecks.BankRecordMismatch(Doc, rows, fields, bank.Where(t => t.AccountRef == "XXXX9999").ToList(), O));
         }
     }
 }

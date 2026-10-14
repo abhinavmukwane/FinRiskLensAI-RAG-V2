@@ -21,6 +21,8 @@ namespace FinRiskLensAI.Fraud.Ai
         public string ExtractLocation { get; set; } = "asia-south1";
         /// <summary>Transcription needs little reasoning; thinking tokens also count against the output cap.</summary>
         public string ExtractThinkingLevel { get; set; } = "LOW";
+        /// <summary>For the second read of a page whose arithmetic did not add up: at temperature 0 a repeat of the first read is the first read.</summary>
+        public string RereadThinkingLevel { get; set; } = "HIGH";
         public string FlashModel { get; set; } = "gemini-3.8-flash";
         public string FlashLocation { get; set; } = "global";
         public string ProModel { get; set; } = "gemini-3.1-pro-preview";
