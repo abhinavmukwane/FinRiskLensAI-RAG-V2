@@ -2,6 +2,10 @@ using FinRiskLensAI.Core.Models.Facts;
 using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
+using FinRiskLensAI.Core.Interfaces.IServices.Cases;
+using FinRiskLensAI.Core.Models.Cases;
+using FinRiskLensAI.Fraud.Cases;
+using FinRiskLensAI.Fraud.Pipeline;
 using FinRiskLensAI.Core.Interfaces.IServices.Common;
 using FinRiskLensAI.Core.Interfaces.IServices.GST;
 using FinRiskLensAI.Core.Models.Mca;
@@ -25,10 +29,18 @@ namespace FinRiskLensAI.Controllers
         private readonly IGSTR2And3BResponceService _gstResponces;
         private readonly IDummyDataService _dummyData;
         private readonly CustomerProfileBuilder _profile;
+        private readonly ICaseService _cases;
+        private readonly CaseQueue _queue;
+
+        // Every file at the cap, plus room for the form fields
+        private const long MaxUploadBytes = (long)CaseService.MaxFiles * CaseService.MaxFileBytes + 1024 * 1024;
+
         public DashboardController(IMsmeDataStore store, ILogger<DashboardController> logger, 
             IAccountAggregatorService AAService, IIpRiskService ipRisk, IGSTR2And3BResponceService gstResponces, 
-            IDummyDataService dummyData, CustomerProfileBuilder profile)
+            IDummyDataService dummyData, CustomerProfileBuilder profile, ICaseService cases, CaseQueue queue)
         {
+            _cases = cases;
+            _queue = queue;
             _store = store;
             _logger = logger;
             _aaService = AAService;
@@ -102,7 +114,57 @@ namespace FinRiskLensAI.Controllers
             ViewBag.McaOrganizationType = org == "-" ? null : org;
             ViewBag.McaApplicable = CustomerProfileBuilder.IsMcaRegistered(org);
 
+            // What the customer has uploaded so far, and whether each is read yet — never the findings
+            ViewBag.Uploads = string.IsNullOrWhiteSpace(uan)
+                ? new List<CaseDocument>()
+                : (await _cases.GetByUanAsync(uan, ct))?.Application.Documents ?? new List<CaseDocument>();
+
             return View();
+        }
+
+        /// <summary>
+        /// The customer's own documents — statements of accounts not shared through Account Aggregator,
+        /// ITR copies, GST returns, financials. They join the customer's one assessment and go through
+        /// the same pipeline a bank upload does; the bank sees the result on its Risk Lens.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(MaxUploadBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxUploadBytes)]
+        public async Task<IActionResult> UploadDocuments(List<IFormFile> files, CancellationToken ct)
+        {
+            var user = HttpContext.Session.GetCurrentUser();
+            if (string.IsNullOrWhiteSpace(user?.UdyamNumber)) return RedirectToAction(nameof(CustDashboard));
+
+            // Check sizes before buffering, so an oversize file is refused without being read
+            var tooBig = files.FirstOrDefault(f => f.Length > CaseService.MaxFileBytes);
+            if (tooBig != null)
+            {
+                TempData["UploadError"] = $"{tooBig.FileName} is over {CaseService.MaxFileBytes / 1024 / 1024} MB.";
+                return RedirectToAction(nameof(CustDashboard));
+            }
+
+            var uploads = new List<CaseUpload>();
+            foreach (var f in files)
+            {
+                using var ms = new MemoryStream((int)f.Length);
+                await f.CopyToAsync(ms, ct);
+                uploads.Add(new CaseUpload(f.FileName, ms.ToArray()));
+            }
+
+            var result = await _cases.AddCustomerDocumentsAsync(user.UdyamNumber, user.NameOfEnterprise, uploads,
+                                                                $"customer:{user.UdyamNumber}", ct);
+            if (result.Error != null)
+            {
+                TempData["UploadError"] = result.Error;
+                return RedirectToAction(nameof(CustDashboard));
+            }
+
+            _logger.LogInformation("Customer {Uan} uploaded {Count} document(s) to assessment {Id}",
+                user.UdyamNumber, uploads.Count, result.LoanApplicationID);
+            _queue.Enqueue(result.LoanApplicationID!.Value);
+            TempData["UploadDone"] = $"{uploads.Count} document{(uploads.Count == 1 ? "" : "s")} received — your bank will review them.";
+            return RedirectToAction(nameof(CustDashboard));
         }
 
         /// <summary>

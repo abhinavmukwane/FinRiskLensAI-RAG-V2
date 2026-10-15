@@ -26,11 +26,13 @@ namespace FinRiskLensAI.Controllers
         private readonly CustomerProfileBuilder _profile;
         private readonly FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService _loanCase;
         private readonly ILogger<BankAdminController> _logger;
+        private readonly FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService _cases;
 
         public BankAdminController(IBankAdminService bankAdmin,
             CustomerProfileBuilder profile, FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService loanCase,
-            ILogger<BankAdminController> logger)
+            ILogger<BankAdminController> logger, FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService cases)
         {
+            _cases = cases;
             _bankAdmin = bankAdmin;
             _profile = profile;
             _loanCase = loanCase;
@@ -74,6 +76,7 @@ namespace FinRiskLensAI.Controllers
             {
                 model.Page = await _bankAdmin.GetCustomersAsync(model.Query, ct);
                 model.States = await _bankAdmin.GetStatesAsync(ct);
+                model.Risk = await _cases.GetRiskSummariesAsync(ct);
             }
             catch (Exception ex)
             {
@@ -101,7 +104,7 @@ namespace FinRiskLensAI.Controllers
             var model = new BankCustomerDetailViewModel
             {
                 Uan = uan?.Trim(),
-                ActiveTab = string.IsNullOrWhiteSpace(tab) ? "udyam" : tab.Trim().ToLowerInvariant()
+                ActiveTab = string.IsNullOrWhiteSpace(tab) ? "risk" : tab.Trim().ToLowerInvariant()
             };
 
             if (string.IsNullOrWhiteSpace(model.Uan))
@@ -137,6 +140,9 @@ namespace FinRiskLensAI.Controllers
                         key => Url.Action("Customer", "BankAdmin", new { uan = model.Uan, tab = key }) ?? "#");
 
                 model.IpAudit = await _profile.GetIpAuditAsync(model.Uan, model.Customer.IPAddress, ct);
+
+                // The Risk Lens: this customer's one assessment, if they have shared anything to assess
+                model.Risk = await _cases.GetByUanAsync(model.Uan, ct);
             }
             catch (OperationCanceledException)
             {

@@ -562,9 +562,16 @@ The pivot to one assessment per customer. Full plan, flows and defaults in
 
 | Item | Status |
 |---|---|
-| Assessment per customer — one per Udyam number; uploads attach to it | ⏸ Oct 16 |
-| Customer dashboard: **Upload documents** card, sharing status | ⏸ Oct 16 |
-| Bank: risk status on **Customers**; **Risk Lens** tab first on the customer page; **Cases** menu removed | ⏸ Oct 16 |
+| Assessment per customer — one per Udyam number; uploads attach to it | ✅ `CaseService.AddCustomerDocumentsAsync`: the customer's first upload opens their assessment, later ones join it, files already shared are skipped; same validation, storage and pipeline as before. One per Udyam number is enforced in code (latest wins), no schema change |
+| Customer dashboard: **Upload documents** card, sharing status | ✅ upload card after MCA; each file listed as Reading / Received / could not be read — never the findings |
+| Bank: risk status on **Customers**; **Risk Lens** tab first on the customer page; **Cases** menu removed | ✅ one verdict rule (`RiskSummary.Decide`) for both; Risk Lens sections Identity, GST, Bank conduct, ITR, Network and Uploaded documents, each with its status, a summary from the customer's own data and its findings (shared `_FindingCard`, review returns to the Risk Lens, local URLs only). Case inbox and the bank's upload form removed; the case page stays for evidence links and rings |
+
+Verified 2026-10-15 on the development database: a customer upload created the assessment, a repeat
+upload was refused, the checks and the network lens filed their findings under the right sections,
+and the risk summary read High risk; in the browser the Customers risk column, the Risk Lens for a
+Clear customer, and the review return (a local return URL honoured, an outside one refused) were
+checked. **Do not deploy before the demo customers (Oct 17–18):** without the case inbox the demo
+cases have no entry point except Rings.
 | Account Aggregator risk flags as findings · GST–ITR–bank turnover reconciliation · identity consistency · uploaded ITR vs filed | ⏸ Oct 16–17 |
 | Network lens: shared director, shared mobile / email / address, circular GST trading | ⏸ Oct 16–17 |
 | AI credit decision (Gemini Pro, grounded) + `credit_decisions` table + gate on the verdict | ⏸ Oct 17 |

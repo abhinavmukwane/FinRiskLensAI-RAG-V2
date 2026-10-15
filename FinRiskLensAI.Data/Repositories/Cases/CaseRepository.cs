@@ -67,8 +67,52 @@ namespace FinRiskLensAI.Data.Repositories.Cases
             var byApp = salary.ToLookup(x => x.LoanApplicationID, x => x.Row);
 
             return apps.Select(a => new NetworkApplication(a.LoanApplicationID, a.ApplicantRef, a.DeclaredEmployer,
-                                                           a.Documents, byApp[a.LoanApplicationID].ToList()))
+                                                           a.Documents, byApp[a.LoanApplicationID].ToList(), a.Uan))
                        .ToList();
+        }
+
+        public Task<int?> FindByUanAsync(string uan, CancellationToken ct = default)
+            => _context.LoanApplications.AsNoTracking()
+                   .Where(a => a.Uan == uan)
+                   .OrderByDescending(a => a.LoanApplicationID)
+                   .Select(a => (int?)a.LoanApplicationID)
+                   .FirstOrDefaultAsync(ct);
+
+        public async Task AddDocumentsAsync(int loanApplicationId, IReadOnlyList<CaseDocument> documents, CancellationToken ct = default)
+        {
+            foreach (var d in documents) d.LoanApplicationID = loanApplicationId;
+            _context.CaseDocuments.AddRange(documents);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task<IReadOnlyDictionary<string, RiskSummary>> GetRiskSummariesAsync(CancellationToken ct = default)
+        {
+            var apps = await _context.LoanApplications.AsNoTracking()
+                .Where(a => a.Uan != null)
+                .Select(a => new
+                {
+                    a.LoanApplicationID, a.Uan, a.Status, a.InvestigatedAt,
+                    Documents = a.Documents.Count,
+                    Pending = a.Documents.Count(d => d.ExtractStatus == ExtractStatus.Pending)
+                })
+                .ToListAsync(ct);
+            var open = (await _context.Findings.AsNoTracking()
+                    .Where(f => f.ReviewStatus == ReviewStatus.Open)
+                    .GroupBy(f => new { f.LoanApplicationID, f.Severity })
+                    .Select(g => new { g.Key.LoanApplicationID, g.Key.Severity, Count = g.Count() })
+                    .ToListAsync(ct))
+                .ToLookup(x => x.LoanApplicationID);
+
+            return apps.GroupBy(a => a.Uan!)
+                .Select(g => g.MaxBy(a => a.LoanApplicationID)!)
+                .ToDictionary(a => a.Uan!, a =>
+                {
+                    int Open(FindingSeverity s) => open[a.LoanApplicationID].Where(x => x.Severity == s).Sum(x => x.Count);
+                    var (high, medium, low) = (Open(FindingSeverity.High), Open(FindingSeverity.Medium), Open(FindingSeverity.Low));
+                    var assessing = a.Pending > 0 || a.Status == CaseStatus.Processing;
+                    return new RiskSummary(a.LoanApplicationID, RiskSummary.Decide(assessing, high, medium + low),
+                                           high, medium, low, a.Documents, a.InvestigatedAt);
+                }, StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<(IReadOnlyList<StatementRow> Rows, IReadOnlyList<PageSummary> Pages, IReadOnlyList<DocField> Fields)>

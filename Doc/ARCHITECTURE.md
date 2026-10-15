@@ -17,10 +17,10 @@ How the system is put together. The build history and every measurement are in
 
 ```
  Customer (MSME)                         Bank officer
- ① Register with Udyam ✅                ③ Customers — risk status per customer 🆕
- ② Share data ──────────────────────►   ④ Risk Lens — verdict + a section per source 🆕
+ ① Register with Udyam ✅                ③ Customers — risk status per customer ✅
+ ② Share data ──────────────────────►   ④ Risk Lens — verdict + a section per source ✅
     fetch: AA ✅ · GST ✅ · ITR ✅ · MCA ✅  ⑤ Confirm / dismiss findings ✅
-    upload documents 🆕                  ⑥ Clear? → loan case + AI credit decision 🆕
+    upload documents ✅                  ⑥ Clear? → loan case + AI credit decision 🆕
                                          ⑦ Send to LOS · ULI (OCEN) · ONDC ✅ (+ decision 🆕)
 ```
 
@@ -30,8 +30,9 @@ customer: each names what is wrong, explains it in rupees, and links to the exac
 page that shows it. The officer confirms or dismisses each one; a customer with no open risk
 goes on to a loan case with an AI credit decision, sent to the bank's LOS, ULI or ONDC.
 
-*Until Phase 7 lands, the bank portal still works per case: an officer opens a case and uploads
-the documents (§2 is the same engine either way).*
+*The bank no longer opens cases: the customer uploads, and every upload joins that customer's one
+assessment (§2 is the same engine either way). Source-data checks and the credit decision are the
+rest of Phase 7.*
 
 Three kinds of evidence, in this order:
 

@@ -1339,3 +1339,16 @@
 .bp-rejected ul { margin: 6px 0 0; padding-left: 18px; }
 .bp-rejected li { margin: 3px 0; }
 .bp-review-form .bp-select { flex: 1 1 240px; min-width: 0; padding: 6px 10px; font-size: .8rem; cursor: text; }
+
+/* ===================== Risk Lens (Doc/12_CUSTOMER_RISK_LENS.md) ===================== */
+.rl-verdict { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.rl-verdict-main { display: flex; align-items: flex-start; gap: 14px; }
+.rl-verdict-chip { font-size: .85rem; padding: 6px 12px; white-space: nowrap; }
+.rl-grid { display: grid; gap: 14px; margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.rl-section { margin-top: 14px; }
+.rl-grid .rl-section { margin-top: 0; }
+.rl-grid .rl-has-findings { grid-column: 1 / -1; }   /* finding cards need the full width */
+.rl-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.rl-summary { margin: 0 0 6px; }
+.rl-more { font-size: .82rem; }
+.rl-section .bp-finding { margin-top: 12px; }

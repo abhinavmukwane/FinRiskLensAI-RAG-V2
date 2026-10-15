@@ -16,8 +16,6 @@ namespace FinRiskLensAI.Controllers
     [Route("cases")]
     public class CasesController : Controller
     {
-        // Every file at the cap, plus room for the form fields
-        private const long MaxRequestBytes = (long)CaseService.MaxFiles * CaseService.MaxFileBytes + 1024 * 1024;
 
         private readonly ICaseService _cases;
         private readonly CaseQueue _queue;
@@ -30,54 +28,9 @@ namespace FinRiskLensAI.Controllers
             _logger = logger;
         }
 
-        [HttpGet("")]
-        public async Task<IActionResult> Index(CancellationToken ct)
-            => View(await _cases.ListAsync(ct));
-
         [HttpGet("rings")]
         public async Task<IActionResult> Rings(CancellationToken ct)
             => View(await _cases.ListRingsAsync(ct));
-
-        [HttpGet("new")]
-        public IActionResult New() => View(new NewCaseRequest());
-
-        [HttpPost("new")]
-        [ValidateAntiForgeryToken]
-        [RequestSizeLimit(MaxRequestBytes)]
-        [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBytes)]
-        public async Task<IActionResult> New(NewCaseRequest request, List<IFormFile> files, CancellationToken ct)
-        {
-            if (!ModelState.IsValid) return View(request);
-
-            // Check sizes before buffering, so an oversize file is refused without being read
-            var tooBig = files.FirstOrDefault(f => f.Length > CaseService.MaxFileBytes);
-            if (tooBig != null)
-            {
-                ModelState.AddModelError("", $"{tooBig.FileName} is over {CaseService.MaxFileBytes / 1024 / 1024} MB.");
-                return View(request);
-            }
-
-            var uploads = new List<CaseUpload>();
-            foreach (var f in files)
-            {
-                using var ms = new MemoryStream((int)f.Length);
-                await f.CopyToAsync(ms, ct);
-                uploads.Add(new CaseUpload(f.FileName, ms.ToArray()));
-            }
-
-            var user = HttpContext.Session.GetCurrentBankUser()!;
-            var result = await _cases.CreateAsync(request, uploads, user.UserId, ct);
-            if (result.Error != null)
-            {
-                ModelState.AddModelError("", result.Error);
-                return View(request);
-            }
-
-            _logger.LogInformation("Case {CaseId} created by {User} from {Count} uploaded file(s)",
-                result.LoanApplicationID, user.UserId, uploads.Count);
-            _queue.Enqueue(result.LoanApplicationID!.Value);
-            return RedirectToAction(nameof(Detail), new { id = result.LoanApplicationID });
-        }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> Detail(int id, CancellationToken ct)
@@ -88,10 +41,10 @@ namespace FinRiskLensAI.Controllers
 
         [HttpPost("{id:int}/checks")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RunChecks(int id, CancellationToken ct)
+        public async Task<IActionResult> RunChecks(int id, string? returnUrl, CancellationToken ct)
         {
             await _cases.RunChecksAsync(id, ct);
-            return RedirectToAction(nameof(Detail), new { id });
+            return Back(returnUrl) ?? RedirectToAction(nameof(Detail), new { id });
         }
 
         /// <summary>
@@ -100,24 +53,30 @@ namespace FinRiskLensAI.Controllers
         /// </summary>
         [HttpPost("{id:int}/investigate")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Investigate(int id, CancellationToken ct)
+        public async Task<IActionResult> Investigate(int id, string? returnUrl, CancellationToken ct)
         {
             if (!await _cases.MarkProcessingAsync(id, ct)) return NotFound();
             _queue.Enqueue(id);
-            return RedirectToAction(nameof(Detail), new { id });
+            return Back(returnUrl) ?? RedirectToAction(nameof(Detail), new { id });
         }
 
         /// <summary>Confirm, dismiss, or reopen a finding. The note travels with it into case memory later.</summary>
         [HttpPost("{id:int}/findings/{findingId:int}/review")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Review(int id, int findingId, ReviewStatus status, string? note, CancellationToken ct)
+        public async Task<IActionResult> Review(int id, int findingId, ReviewStatus status, string? note, string? returnUrl,
+                                                CancellationToken ct)
         {
             if (!Enum.IsDefined(status) || note?.Length > 2000) return BadRequest();
 
             var user = HttpContext.Session.GetCurrentBankUser()!;
             var found = await _cases.ReviewFindingAsync(id, findingId, status, user.UserId, note, ct);
-            return found ? Redirect(Url.Action(nameof(Detail), new { id }) + $"#finding-{findingId}") : NotFound();
+            if (!found) return NotFound();
+            var back = Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Detail), new { id });
+            return Redirect(back + $"#finding-{findingId}");
         }
+
+        /// <summary>Back to the page the action started from — only ever a local URL, never an open redirect.</summary>
+        private IActionResult? Back(string? returnUrl) => Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl!) : null;
 
         /// <summary>The stored file, inline — the evidence viewer's source.</summary>
         [HttpGet("{id:int}/documents/{docId:int}")]

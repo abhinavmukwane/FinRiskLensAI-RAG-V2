@@ -1,0 +1,200 @@
+@model FinRiskLensAI.Core.Models.Admin.BankCustomerDetailViewModel
+@using FinRiskLensAI.Core.Models.Cases
+@*
+    Risk Lens — one customer's fraud and risk assessment, section by section
+    (Doc/12_CUSTOMER_RISK_LENS.md §4). Findings come from the customer's one assessment; the
+    section summaries from the same source data the other tabs show.
+*@
+@{
+    var risk = Model.Risk;
+    var app = risk?.Application;
+    var findings = risk?.Findings ?? Array.Empty<Finding>();
+    var open = findings.Where(f => f.ReviewStatus == ReviewStatus.Open).ToList();
+    int Open(FindingSeverity s) => open.Count(f => f.Severity == s);
+    var assessing = app != null && (app.Status == CaseStatus.Processing || app.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending));
+    var verdict = app == null ? RiskVerdict.AwaitingData : RiskSummary.Decide(assessing, Open(FindingSeverity.High), Open(FindingSeverity.Medium) + Open(FindingSeverity.Low));
+    var docsById = app?.Documents.ToDictionary(d => d.CaseDocumentID) ?? new Dictionary<int, CaseDocument>();
+    var back = Url.Action("Customer", "BankAdmin", new { uan = Model.Uan, tab = "risk" });
+
+    static string Chip(RiskVerdict v) => v switch
+    {
+        RiskVerdict.Clear => "bp-case-clear", RiskVerdict.Review => "bp-case-review", RiskVerdict.HighRisk => "bp-case-hold",
+        RiskVerdict.Assessing => "bp-case-processing", _ => "bp-case-new"
+    };
+    string Money(decimal v) => "₹" + v.ToString("N0", new System.Globalization.CultureInfo("en-IN"));
+
+    // Section status: Flag on an open High, Watch on any other open finding, otherwise what the data allows
+    (string Label, string Css) Status(string key, bool shared)
+    {
+        var mine = open.Where(f => RiskSections.Of(f.Type) == key).ToList();
+        if (mine.Any(f => f.Severity == FindingSeverity.High)) return ("Flag", "bp-case-hold");
+        if (mine.Count > 0) return ("Watch", "bp-case-review");
+        return shared ? ("No findings", "bp-case-clear") : ("Not shared", "bp-case-new");
+    }
+
+    var aa = Model.Aa; var mca = Model.Mca; var udyam = Model.Udyam;
+    var sections = new List<(string Key, string Icon, string Title, string Tab, bool Shared, string Summary)>
+    {
+        (RiskSections.Identity, "bi-person-vcard", "Identity", "udyam", udyam?.HasData == true,
+            udyam?.HasData == true
+                ? $"{udyam.EnterpriseName} · {udyam.OrganizationType} · Udyam since {udyam.RegistrationDate:MMM yyyy}"
+                  + (mca == null || !mca.IsApplicable ? "" : mca.HasData ? $" · MCA: {mca.Status}" : " · MCA not fetched")
+                : "Udyam profile not available"),
+        (RiskSections.Gst, "bi-receipt", "GST", "gst", Model.Gst?.HasData == true,
+            Model.Gst?.HasData == true ? $"Returns shared{(string.IsNullOrWhiteSpace(Model.Gst.FilingPeriod) ? "" : $" · period {Model.Gst.FilingPeriod}")}" : "GST returns not shared yet"),
+        (RiskSections.Bank, "bi-bank", "Bank conduct", "aa", aa?.HasData == true || app?.Documents.Any(d => d.DocType == CaseDocType.BankStatement) == true,
+            aa?.HasData == true
+                ? $"Account Aggregator: {aa.MonthsCovered} months, {aa.TransactionCount} transactions, average monthly credit {Money(aa.AvgMonthlyCredit)}"
+                : "Account Aggregator not linked — uploaded statements only"),
+        (RiskSections.Itr, "bi-file-earmark-text", "ITR", "itr", Model.Itr?.HasData == true,
+            Model.Itr?.HasData == true ? $"{Model.Itr.FormType} · assessment year {Model.Itr.AssessmentYear}" : "ITR not shared yet"),
+        (RiskSections.Network, "bi-diagram-3", "Network", "", true,
+            findings.Any(f => f.Type == "FRAUD_RING") ? "Linked to other customers — see the finding" : "No links to other customers")
+    };
+}
+
+@* ── Verdict ─────────────────────────────────────────────────────────────── *@
+<div class="bp-card rl-verdict">
+    <div class="rl-verdict-main">
+        <span class="bp-case-status @Chip(verdict) rl-verdict-chip">@RiskSummary.Label(verdict)</span>
+        <div>
+            @if (app == null)
+            {
+                <div class="bp-strong">Nothing to assess yet</div>
+                <div class="bp-muted">The customer has not uploaded documents. Shared sources are in the tabs; their checks join this page as they are built.</div>
+            }
+            else
+            {
+                <div class="bp-strong">
+                    @(open.Count == 0 ? "No open findings" : $"{Open(FindingSeverity.High)} High · {Open(FindingSeverity.Medium)} Medium · {Open(FindingSeverity.Low)} Low open")
+                    <span class="bp-muted">· @(findings.Count - open.Count) reviewed · @app.Documents.Count document@(app.Documents.Count == 1 ? "" : "s")</span>
+                </div>
+                <div class="bp-muted">
+                    @if (verdict == RiskVerdict.Clear)
+                    {
+                        <span><i class="bi bi-check2-circle"></i> No open risk — this customer can go forward to a loan case.</span>
+                    }
+                    else if (verdict == RiskVerdict.Assessing)
+                    {
+                        <span><i class="bi bi-hourglass-split"></i> Reading and checking the latest documents — this page refreshes until done.</span>
+                    }
+                    else
+                    {
+                        <span><i class="bi bi-slash-circle"></i> A loan case waits until every open finding is confirmed or dismissed.</span>
+                    }
+                    @if (app.InvestigatedAt != null)
+                    {
+                        <span> · AI investigation @app.InvestigatedAt.Value.ToString("dd MMM yyyy HH:mm") UTC by @app.InvestigatedBy</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    @if (app != null)
+    {
+        <div class="bp-findings-actions">
+            <form method="post" asp-controller="Cases" asp-action="RunChecks" asp-route-id="@app.LoanApplicationID">
+                <input type="hidden" name="returnUrl" value="@back" />
+                <button type="submit" class="bp-btn bp-btn-ghost bp-btn-sm"><i class="bi bi-arrow-repeat"></i> Re-run checks</button>
+            </form>
+            <form method="post" asp-controller="Cases" asp-action="Investigate" asp-route-id="@app.LoanApplicationID">
+                <input type="hidden" name="returnUrl" value="@back" />
+                <button type="submit" class="bp-btn bp-btn-sm" @(assessing ? "disabled" : "")><i class="bi bi-robot"></i> Run investigation</button>
+            </form>
+        </div>
+    }
+</div>
+@if (assessing)
+{
+    <meta http-equiv="refresh" content="8" />
+}
+
+@* ── Sources ───────────────────────────────────────────────────────────────── *@
+<div class="rl-grid">
+    @foreach (var s in sections)
+    {
+        var (label, css) = Status(s.Key, s.Shared);
+        var mine = findings.Where(f => RiskSections.Of(f.Type) == s.Key).ToList();
+        <section class="bp-card rl-section @(mine.Count > 0 ? "rl-has-findings" : "")" id="rl-@s.Key">
+            <div class="rl-section-head">
+                <span class="bp-strong"><i class="bi @s.Icon"></i> @s.Title</span>
+                <span class="bp-case-status @css">@label</span>
+            </div>
+            <p class="bp-muted rl-summary">@s.Summary</p>
+            @if (!string.IsNullOrEmpty(s.Tab))
+            {
+                <a class="bp-link rl-more" href="@Url.Action("Customer", "BankAdmin", new { uan = Model.Uan, tab = s.Tab })">Details <i class="bi bi-arrow-right-short"></i></a>
+            }
+            @foreach (var f in mine)
+            {
+                @await Html.PartialAsync("_FindingCard", new FindingCardModel(f, docsById, app!.LoanApplicationID, back))
+            }
+        </section>
+    }
+</div>
+
+@* ── Uploaded documents: the checks on the documents themselves ─────────────── *@
+<section class="bp-card rl-section" id="rl-documents">
+    <div class="rl-section-head">
+        <span class="bp-strong"><i class="bi bi-files"></i> Uploaded documents</span>
+        @{ var (dLabel, dCss) = Status(RiskSections.Documents, app?.Documents.Count > 0); }
+        <span class="bp-case-status @dCss">@dLabel</span>
+    </div>
+    @if (app == null || app.Documents.Count == 0)
+    {
+        <p class="bp-muted rl-summary">No documents uploaded by the customer yet.</p>
+    }
+    else
+    {
+        <div class="bp-table-wrap">
+            <table class="bp-table">
+                <thead><tr><th>File</th><th>Type</th><th>Pages</th><th>Reading</th></tr></thead>
+                <tbody>
+                    @foreach (var d in app.Documents)
+                    {
+                        <tr>
+                            <td>
+                                <a class="bp-link bp-strong" target="_blank" rel="noopener"
+                                   href="@Url.Action("Document", "Cases", new { id = app.LoanApplicationID, docId = d.CaseDocumentID })">
+                                    <i class="bi @(d.ContentType == "application/pdf" ? "bi-file-earmark-pdf" : "bi-file-earmark-image")"></i> @d.FileName
+                                </a>
+                            </td>
+                            <td>@d.DocType</td>
+                            <td>@(d.PageCount?.ToString() ?? "—")</td>
+                            <td>
+                                @if (d.ExtractStatus == ExtractStatus.Pending) { <span class="bp-case-status bp-case-processing">Reading</span> }
+                                else if (d.ExtractStatus == ExtractStatus.Done) { <span class="bp-case-status bp-case-clear">Read</span> }
+                                else { <span class="bp-case-status bp-case-hold" title="@d.ExtractError">Unreadable</span> }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @foreach (var f in findings.Where(f => RiskSections.Of(f.Type) == RiskSections.Documents))
+        {
+            @await Html.PartialAsync("_FindingCard", new FindingCardModel(f, docsById, app.LoanApplicationID, back))
+        }
+    }
+</section>
+
+@* ── What the AI was not allowed to claim ──────────────────────────────────── *@
+@if (risk?.RejectedClaims.Count > 0)
+{
+    <details class="bp-rejected bp-card">
+        <summary>
+            <i class="bi bi-shield-x"></i>
+            @risk.RejectedClaims.Count AI claim@(risk.RejectedClaims.Count == 1 ? "" : "s") rejected by grounding verification
+        </summary>
+        <p class="bp-muted">
+            Proposed by the investigator and discarded before anyone could act on them, because they could not be
+            traced to this customer's data. Shown for transparency; they are not findings.
+        </p>
+        <ul>
+            @foreach (var d in risk.RejectedClaims)
+            {
+                <li class="bp-muted">@d.Reason</li>
+            }
+        </ul>
+    </details>
+}
