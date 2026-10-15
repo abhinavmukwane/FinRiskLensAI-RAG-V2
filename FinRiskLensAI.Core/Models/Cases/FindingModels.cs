@@ -2,7 +2,7 @@ using FinRiskLensAI.Core.Models.Common;
 
 namespace FinRiskLensAI.Core.Models.Cases
 {
-    // Findings, not scores — Doc/10_FRAUD_LENS_BUILD.md §4. Every finding names what
+    // Evidence-based findings — Doc/10_FRAUD_LENS_BUILD.md §4. Every finding names what
     // was wrong and points at the rows, fields or pages that show it.
 
     public enum FindingCategory { Tampering, IncomeInflation, HiddenLiabilities, CrossDocument, Behavioural, Fabrication, Network }

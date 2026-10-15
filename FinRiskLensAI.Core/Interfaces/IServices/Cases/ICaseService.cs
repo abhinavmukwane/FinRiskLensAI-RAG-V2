@@ -23,6 +23,9 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Cases
         /// <summary>Runs the deterministic checks over whatever has been extracted so far. Safe to repeat.</summary>
         Task RunChecksAsync(int loanApplicationId, CancellationToken ct = default);
 
+        /// <summary>Every fraud ring across all applications, largest first.</summary>
+        Task<IReadOnlyList<Ring>> ListRingsAsync(CancellationToken ct = default);
+
         /// <summary>Shows the case as Processing before the pipeline picks it up. False when it does not exist.</summary>
         Task<bool> MarkProcessingAsync(int loanApplicationId, CancellationToken ct = default);
 

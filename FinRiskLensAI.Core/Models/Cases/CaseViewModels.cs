@@ -45,4 +45,14 @@ namespace FinRiskLensAI.Core.Models.Cases
     }
 
     public sealed record CaseFile(Stream Content, string ContentType, string FileName);
+
+    /// <summary>What the network lens reads of one application: who it names, its documents' fingerprints, its salary credits.</summary>
+    public sealed record NetworkApplication(int LoanApplicationID, string ApplicantRef, string? DeclaredEmployer,
+                                            IReadOnlyList<CaseDocument> Documents, IReadOnlyList<StatementRow> SalaryCredits);
+
+    /// <summary>One thing separate applications share — a file, a template, a salary account — and each one's evidence of it.</summary>
+    public sealed record RingLink(string Kind, string Detail, IReadOnlyDictionary<int, IReadOnlyList<Evidence>> Members);
+
+    /// <summary>Applications joined, directly or through each other, by at least one link.</summary>
+    public sealed record Ring(IReadOnlyList<NetworkApplication> Members, IReadOnlyList<RingLink> Links);
 }

@@ -1,6 +1,6 @@
 # FinRiskLens — evidence-based fraud detection for lending
 
-**Findings, not scores.** FinRiskLens reads the documents submitted with a loan
+**Every finding backed by evidence.** FinRiskLens reads the documents submitted with a loan
 application — bank statements, salary slips, ITRs — and returns fraud findings that each
 name what is wrong and point at the exact row, field or page that shows it.
 
@@ -36,7 +36,7 @@ fictional and every page is stamped *SYNTHETIC DOCUMENT*.
 1. Sign in to the bank portal at <https://finrisklensai.cloud.run/Auth/BankLogin>.
    Credentials are shared with the evaluation panel directly rather than published here.
 2. Open **Cases**. Each demo case shows its findings, the evidence behind them, and the
-   documents themselves.
+   documents themselves. **Rings** lists the applications linked to each other.
 3. Upload your own PDF statement or slip with **New case** and watch it go through the
    pipeline, or press **Run investigation** on any case.
 
@@ -52,6 +52,8 @@ fictional and every page is stamped *SYNTHETIC DOCUMENT*.
 | DEMO-B03 | Every receipt forwarded the same day | Pass-through (mule-like account) |
 | DEMO-A01 | Monthly NACH EMIs to two lenders, never declared; two fresh loans 48 days apart | Undeclared EMIs, loan stacking — cited to the credit policy |
 | DEMO-A02 | Weekly betting, monthly crypto, a bounced EMI | Gambling and crypto exposure — cited to policy §4.2 — and the bounce |
+| DEMO-R01 … R04 | Four salaried applicants supplied by one fabricator. Each case is clean on its own | A fraud ring: statements claiming two banks and slips claiming three employers, all made by the same software — and every salary paid from one account |
+| DEMO-R05, R06 | Two businesses; the second uploaded the first one's statement | A fraud ring: the same file, byte for byte |
 
 ---
 
@@ -70,14 +72,18 @@ fictional and every page is stamped *SYNTHETIC DOCUMENT*.
    │              totals, slip arithmetic, round-tripping, window dressing, pass-through, metadata —
    │              and the statement against the bank's own record, fetched through Account Aggregator
    ▼
-   ④ INVESTIGATE  Gemini 3.1 Pro agent with tools scoped to this one application: statement rows,
+   ④ LINK         the network lens across every application: a shared file, a template claiming
+   │              different issuers, or one salary account behind different employers joins
+   │              applications into a fraud ring (union-find), and every member gets the finding
+   ▼
+   ⑤ INVESTIGATE  Gemini 3.1 Pro agent with tools scoped to this one application: statement rows,
    │              counterparty summary, document fields, GST / ITR / Account Aggregator facts,
    │              and a hybrid search over the lender's policy and fraud typologies
    ▼
-   ⑤ VERIFY       every AI claim must cite rows or fields of this case, and every rupee amount
+   ⑥ VERIFY       every AI claim must cite rows or fields of this case, and every rupee amount
    │              must trace to them — or it is dropped, and the drop is shown, not hidden
    ▼
-   ⑥ REVIEW       findings with evidence links and policy citations; confirm, dismiss, reopen
+   ⑦ REVIEW       findings with evidence links and policy citations; confirm, dismiss, reopen
 ```
 
 ### Three kinds of evidence
@@ -122,6 +128,10 @@ truth. Two fixes brought it back: the extractor is told that Indian documents pr
 first, and a page whose own arithmetic does not add up is read a second time with more
 thinking. A tampered page fails both reads and is kept exactly as printed; the second read
 is never told what failed, so the model is never invited to make the numbers add up.
+
+**Network lens** — `DemoData eval` also runs the lens on Gemini's own reading. Over the nine
+salaried and ring cases it finds exactly the two planted rings, each with every link, and
+leaves the three genuine colleagues of one employer unlinked.
 
 **Investigator** — `DemoData investigate`, the first 12 cases (the two added since raise nothing either)
 
@@ -277,8 +287,8 @@ development file, and uploaded with the source when you deploy.
 
 ### Tests
 
-56 xUnit tests: the nine deterministic checks (one hand-made statement each, plus a clean
-one that must raise nothing), the extractor's re-read rule, the grounding verifier, the chunker, reciprocal rank fusion,
+63 xUnit tests: the nine deterministic checks (one hand-made statement each, plus a clean
+one that must raise nothing), the network lens finding exactly the planted rings, the extractor's re-read rule, the grounding verifier, the chunker, reciprocal rank fusion,
 PDF inspection, and every demo case run through the checks in memory.
 
 ```bash
@@ -291,13 +301,16 @@ dotnet test tests/FinRiskLensAI.Tests
 
 | Document | Covers |
 |---|---|
+| [`ARCHITECTURE.md`](Doc/ARCHITECTURE.md) | How the system is put together — pipeline, projects, Google Cloud, data, verification sources, security |
 | [`10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) | The build: what was kept, removed and added; phases, status, measurements, deployment |
 | [`11_RAG_ARCHITECTURE.md`](Doc/11_RAG_ARCHITECTURE.md) | Retrieval in depth — corpora, chunking, embeddings, hybrid search, rerank, grounding |
 | [`DB_SCRIPTS.md`](Doc/DB_SCRIPTS.md) | Every table created or altered, with the SQL |
+| [`VIDEO_SCRIPT.md`](Doc/VIDEO_SCRIPT.md) | The 3-minute demo video — screens and voiceover |
+| [`FinRiskLens_AI_Builder_Cup_2026.pptx`](Doc/FinRiskLens_AI_Builder_Cup_2026.pptx) | The submission deck, with a PDF alongside |
 | [`knowledge/README.md`](Doc/knowledge/README.md) | The sample policy and typology corpora, and how to ingest them |
 
-Documents `00`–`09` describe the IDBI Innovate version this grew out of, including a
-scoring engine this fork removed. They are kept as history.
+The documents of the IDBI Innovate version this grew out of were removed on 2026-10-15;
+they remain in the git history.
 
 ## Repository layout
 

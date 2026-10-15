@@ -139,15 +139,31 @@ namespace FinRiskLensAI.Fraud.Cases
 
         public async Task RunChecksAsync(int loanApplicationId, CancellationToken ct = default)
         {
+            // Joining a ring changes it for everyone already in it, so their findings are refreshed too
+            foreach (var other in await RunChecksOnceAsync(loanApplicationId, ct))
+                await RunChecksOnceAsync(other, ct);
+        }
+
+        public async Task<IReadOnlyList<Ring>> ListRingsAsync(CancellationToken ct = default)
+            => NetworkLens.Find(await _cases.GetNetworkAsync(ct));
+
+        /// <summary>This application's checks and its ring finding; returns the other members of its ring.</summary>
+        private async Task<IReadOnlyList<int>> RunChecksOnceAsync(int loanApplicationId, CancellationToken ct)
+        {
             var application = await _cases.GetAsync(loanApplicationId, ct);
-            if (application == null) return;
+            if (application == null) return Array.Empty<int>();
 
             var (rows, pages, fields) = await _cases.GetExtractedAsync(loanApplicationId, ct);
             var bankRecord = rows.Count > 0 ? await BankRecordAsync(application.Uan, ct) : null;
             var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields, bankRecord), _options);
-            foreach (var f in findings) { f.CreatedBy = "DETERMINISTIC_CHECKS"; f.UpdatedBy = f.CreatedBy; }
 
+            var ring = (await ListRingsAsync(ct)).FirstOrDefault(r => r.Members.Any(m => m.LoanApplicationID == loanApplicationId));
+            if (ring != null) findings.Add(NetworkLens.FindingFor(ring, loanApplicationId));
+
+            foreach (var f in findings) { f.CreatedBy = "DETERMINISTIC_CHECKS"; f.UpdatedBy = f.CreatedBy; }
             await _cases.ReplaceFindingsAsync(loanApplicationId, FindingSource.Deterministic, findings, ct);
+
+            return ring?.Members.Select(m => m.LoanApplicationID).Where(id => id != loanApplicationId).ToList() ?? (IReadOnlyList<int>)Array.Empty<int>();
         }
 
         /// <summary>The bank's transactions for the linked Udyam number, as fetched through Account Aggregator; null when there are none.</summary>

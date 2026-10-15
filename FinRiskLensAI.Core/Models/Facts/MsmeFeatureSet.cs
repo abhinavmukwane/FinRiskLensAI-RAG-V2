@@ -2,8 +2,8 @@
 {
     /// <summary>
     /// All engineered features for one MSME, extracted from the raw source payloads
-    /// (Udyam, GST, ITR, AA). Availability flags drive the missing-dimension weight
-    /// redistribution described in Doc/03_SCORING_ENGINE.md.
+    /// (Udyam, GST, ITR, AA) — the verification facts the investigator reads. Availability
+    /// flags say which sources an MSME has shared.
     /// </summary>
     public class MsmeFeatureSet
     {

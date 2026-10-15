@@ -34,6 +34,10 @@ namespace FinRiskLensAI.Controllers
         public async Task<IActionResult> Index(CancellationToken ct)
             => View(await _cases.ListAsync(ct));
 
+        [HttpGet("rings")]
+        public async Task<IActionResult> Rings(CancellationToken ct)
+            => View(await _cases.ListRingsAsync(ct));
+
         [HttpGet("new")]
         public IActionResult New() => View(new NewCaseRequest());
 

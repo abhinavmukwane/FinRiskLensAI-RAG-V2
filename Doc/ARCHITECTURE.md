@@ -1,262 +1,123 @@
-# FinRiskLensAI — Architecture
+# FinRiskLens — Architecture
 
-*(updated 2026-07-04 — reflects the implemented state: ML engine, Azure Blob data
-flow, int-identity entity convention, remote SQL Server)*
+*Evidence-based fraud detection and risk analysis for lending · Google AI Builder Cup 2026 (BFSI)*
 
-## 1. Overview
-
-**FinRiskLensAI** is an ASP.NET Core 8 (MVC) application organized as a layered
-solution: an MSME Financial Health Score platform (IDBI Innovate 2026) that
-aggregates alternate data (Udyam, GST, ITR, AA bank statements; EPFO later),
-computes a six-dimension 0–1000 score with **ML.NET**, derives the bank-decision
-ratios and indicative loan eligibility, and renders a Financial Health Card
-dashboard. Composition via **Autofac**, persistence via **EF Core 8**, raw
-payload storage via **Azure Blob Storage**, logging via **Serilog**.
-
-| Property            | Value                                                  |
-| ------------------- | ------------------------------------------------------ |
-| Target framework    | `net8.0`                                               |
-| Web stack           | ASP.NET Core MVC (Controllers + Views + API endpoints) |
-| DI container        | Autofac (via `AutofacServiceProviderFactory`)          |
-| ORM                 | EF Core 8 — SQL Server (remote), Npgsql branch unused  |
-| ML                  | ML.NET 3 (LightGBM, SSA time-series, RandomizedPca)    |
-| Payload storage     | Azure Blob Storage (container `msme-data`)             |
-| Logging             | Serilog (Console + rolling File sinks)                 |
-| Auth                | JWT config present; bearer handler **not yet wired**   |
+How the system is put together. The build history and every measurement are in
+[`10_FRAUD_LENS_BUILD.md`](10_FRAUD_LENS_BUILD.md); retrieval in depth is in
+[`11_RAG_ARCHITECTURE.md`](11_RAG_ARCHITECTURE.md); every table change is in
+[`DB_SCRIPTS.md`](DB_SCRIPTS.md).
 
 ---
 
-## 2. Solution Structure
+## 1. What it does
+
+A credit officer opens a case and uploads what the applicant submitted — bank statements,
+salary slips, ITRs, as PDF or image. FinRiskLens returns **findings**: each names what is
+wrong, explains it in rupees, and links to the exact row, field or page that shows it. The
+officer confirms or dismisses each one.
+
+Three kinds of evidence, in this order:
+
+| Layer | Asks | Finds |
+|---|---|---|
+| **The document itself** | Does its own arithmetic and file history hold? | Edited balances, spliced pages, typed-in net pay, files made in Word or Canva |
+| **The source of truth** | Does it match what the bank or registry holds? | Statements that differ from the bank's Account Aggregator record |
+| **The network** | Does it share what unrelated applicants never share? | One template, one file or one salary account across separate applications — a fraud ring |
+| **Judgement** | What does a careful investigator see across all of it? | Undeclared EMIs, loan stacking, gambling exposure, slip vs salary credited — each cited to rows and to the lender's policy |
+
+## 2. The case pipeline
 
 ```
-F:\FinRiskLensAI_Git\
-├── FinRiskLensAI-RAG-V2.sln
-│
-├── FinRiskLensAI-RAG-V2\          → Web / Presentation layer (startup project)
-│   ├── Controllers\               HomeController · OnboardingController
-│   │                              DashboardController   (Financial Health Card UI)
-│   │                              MsmeDataController    (blob upload/status/analyze API)
-│   │                              ScoringController     (direct analyze API — dev/test)
-│   ├── Models\                    ErrorViewModel · FinancialHealthCardViewModel
-│   ├── Views\                     Home · Onboarding · Dashboard\FinancialHealthCard.cshtml
-│   ├── wwwroot\                   static assets (bootstrap, css, js)
-│   ├── Program.cs                 host bootstrap, DI, middleware pipeline
-│   └── appsettings.json           DB, AzureBlob, JWT, Serilog config
-│
-├── FinRiskLensAI.Core\            → Domain layer (contracts + models, no infra deps)
-│   ├── Interfaces\                IRepository<T> · IRiskScoringService (+ RiskAnalysisRequest)
-│   │                              IBlobAnalysisService (+ MsmeDataStatusReport) · IMsmeDataStore
-│   ├── Models\Common\             AuditableEntity (audit fields only — no base Id)
-│   ├── Models\Admin\              AdmLogin
-│   ├── Models\Onboarding\         MsmeEnquiry · MsmeLocation · MsmeNicCode
-│   ├── Models\Scoring\            RiskAnalysisResult (+ ScoreBandType, ImpactDirection)
-│   │                              MsmeFeatureSet · LendingAssessment (+ RatioStatus)
-│   ├── Models\Storage\            MsmeDataManifest (+ MsmeDataStatus) · MsmeDataFiles
-│   └── DI\CoreModule.cs
-│
-├── FinRiskLensAI.ML\              → AI/ML engine (implementations only; contracts in Core)
-│   ├── Features\                  Udyam/Gst/Itr/Aa feature extractors · TrendMath
-│   ├── MachineLearning\           ScoreCalibrationModel (LightGBM + PFI)
-│   │                              CashflowTrendAnalyzer (SSA) · IncomeAnomalyDetector (PCA)
-│   │                              ScoreFeatureVector · SyntheticProfileGenerator
-│   ├── Services\                  RiskScoringService · BlobAnalysisService · LendingCalculator
-│   ├── Storage\                   AzureBlobDataStore
-│   └── DI\MLModule.cs
-│
-├── FinRiskLensAI.Services\        → Application layer (business services; DI scaffold)
-│   └── DI\ServicesModule.cs
-│
-└── FinRiskLensAI.Data\            → Infrastructure / Persistence layer
-    ├── DbContextEDMX\             ApplicationDbContext · ApplicationDbContextFactory
-    ├── Configurations\            IEntityTypeConfiguration<T> per entity
-    ├── Migrations\SqlServer\      single InitialCreate baseline (int identity PKs)
-    ├── Repositories\RepositoryBase.cs
-    └── DI\DataModule.cs
+Upload ──► ① INGEST ──► ② EXTRACT ──► ③ CHECK ──► ④ LINK ──► ⑤ INVESTIGATE ──► ⑥ VERIFY ──► ⑦ REVIEW
 ```
 
----
+| Step | Where | What happens |
+|---|---|---|
+| ① Ingest | `Fraud/Cases/CaseService`, `DocumentInspector` | Type sniffed from the bytes (PDF, PNG, JPEG only), SHA-256, PDF producer, creator, dates and fonts. Stored content-addressed in Cloud Storage, Mumbai |
+| ② Extract | `Fraud/Ai/DocumentExtractor` | Gemini Flash in Mumbai reads every page in parallel into a fixed schema; numbers copied as printed, never corrected. A page whose own arithmetic does not add up is read once more with more thinking — a tampered page fails both reads and is kept as printed. The statement's account number is read in a call of its own |
+| ③ Check | `Fraud/Checks/DeterministicChecks` | Nine pure C# checks: running balance, page carry-over, stated totals, slip arithmetic, round-tripping, window dressing, pass-through, PDF metadata, and the statement against the bank's own Account Aggregator record |
+| ④ Link | `Fraud/Checks/NetworkLens` | Same file, same template claiming different issuers, same salary account behind different employers — union-find joins applications into rings |
+| ⑤ Investigate | `Fraud/Ai/Investigator`, `InvestigatorTools` | Gemini Pro agent, function calling, 8-turn cap. Its tools are bound server-side to one application: overview, statement rows, counterparty summary, document fields, verification facts, policy search |
+| ⑥ Verify | `Fraud/Ai/GroundingVerifier` | An AI claim survives only if every cited row or field belongs to the case and every rupee amount traces to them. Rejected claims are logged (`ai_drop_log`) and shown on the case page |
+| ⑦ Review | `CasesController`, `Views/Cases/Detail` | Findings most severe first, evidence opening the document at its page, policy clauses by breadcrumb; confirm / dismiss / reopen with a note |
 
-## 3. Layered Architecture
+`Fraud/Pipeline/CasePipeline` runs ②–⑥ off the request thread (`Channel<T>` + a hosted
+worker) and re-queues anything a restart interrupted.
 
-Clean/Onion layering — dependencies point inward to `Core`, which holds all
-**contracts** (interfaces) and **models** (including the scoring/lending/storage
-shapes). The ML project is an infrastructure-style implementation layer, like
-`Data`: it implements Core interfaces and is only reachable elsewhere through
-them.
+## 3. Solution structure
 
-| Project        | References           | Role                                        |
-| -------------- | -------------------- | ------------------------------------------- |
-| **Web**        | `Core`, `Services`, `ML` (for DI module + implementations resolution) | controllers, views, composition root |
-| **Services**   | `Core`, `Data`       | business/use-case services                  |
-| **Data**       | `Core`               | EF Core persistence                         |
-| **ML**         | `Core`               | scoring engine, blob store, ML.NET models   |
-| **Core**       | *(none)*             | entities, contracts, result models, enums   |
+| Project | Role |
+|---|---|
+| `FinRiskLensAI-RAG-V2` | ASP.NET Core 8 MVC web app: bank portal (Cases, Rings, Customer 360), MSME onboarding and consent journeys, the source-data ingest API |
+| `FinRiskLensAI.Fraud` | The product: extraction, checks, network lens, investigator, grounding, RAG, Cloud Storage stores, pipeline |
+| `FinRiskLensAI.Core` | Entities, view models, interfaces — no infrastructure |
+| `FinRiskLensAI.Data` | EF Core 8 + Npgsql, repositories, migrations (PostgreSQL + pgvector) |
+| `FinRiskLensAI.Services` | Verification-source connectors and analyses: Udyam, GST, ITR, Account Aggregator (Finvu), MCA; loan-case push to LOS / ULI / ONDC |
+| `FinRiskLensAI.ML` | Source-facts extraction from the stored registry and bank payloads (what the investigator's facts tool reads) |
+| `tools/FinRiskLensAI.DemoData` | Synthetic cases with ground truth: `generate`, `seed`, `eval` (live extraction scored row by row, rings on Gemini's reading), `investigate` |
+| `tools/FinRiskLensAI.RagCli` | Build and query the knowledge base without the UI |
+| `tests/FinRiskLensAI.Tests` | xUnit: every check, the network lens, grounding, chunking, fusion, PDF inspection, every demo case |
 
-Rule of thumb: **anything two layers need to agree on lives in `Core`**
-(e.g. `RiskAnalysisResult`, `IMsmeDataStore`); anything that needs a package
-(EF, ML.NET, Azure SDK) lives in the implementing layer.
+Dependency injection is Autofac with convention scanning (`*Service`, `*Repository`);
+`FraudModule` registers the Gemini client, extractor, investigator, queue and the two
+Cloud Storage stores, and fails on first use if a bucket is not configured.
 
----
+## 4. Google Cloud
 
-## 4. Dependency Injection (Autofac)
+| Service | Use | Region |
+|---|---|---|
+| **Vertex AI — Gemini Flash** | Document extraction | `asia-south1` (Mumbai) |
+| **Vertex AI — Gemini embeddings** | 768-dimension vectors for the knowledge base | `asia-south1` |
+| **Vertex AI — Gemini Pro** | Investigator (falls back to a second Pro model) | `global` — sees extracted facts only |
+| **Vertex AI — Gemini Flash** | Reranker for policy search | `global` |
+| **Cloud Run** | The web app, built from source by buildpacks; one warm instance with session affinity | `asia-south1` |
+| **Cloud SQL for PostgreSQL 16 + pgvector** | Cases, findings, evidence, knowledge chunks and vectors | `asia-south1` |
+| **Cloud Storage** | `finrisklensai-cases` (uploads) · `finrisklensai-sources` (registry and AA payloads) · `finrisklensai-keys` (sign-in keys, from the next deploy) | `asia-south1` |
 
-```csharp
-builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
-builder.Host.ConfigureContainer<ContainerBuilder>(container =>
-{
-    container.RegisterModule(new CoreModule());
-    container.RegisterModule(new DataModule());
-    container.RegisterModule(new ServicesModule());
-    container.RegisterModule(new MLModule());
-});
-```
+Applicant documents are stored, read and embedded in Mumbai. Model names and locations are
+configuration (`Gemini:*`), never code. Credentials are Application Default: the developer's
+gcloud login locally, the `finrisk-run` service account on Cloud Run. The deploy command and
+every flag are in `10_FRAUD_LENS_BUILD.md` → *Deploying*.
 
-| Module           | Registration strategy                                                                                     |
-| ---------------- | --------------------------------------------------------------------------------------------------------- |
-| `CoreModule`     | placeholder (empty)                                                                                        |
-| `DataModule`     | assembly scan `*Repository` → interfaces; generic `RepositoryBase<>` → `IRepository<>`                     |
-| `ServicesModule` | assembly scan `*Service` → interfaces                                                                      |
-| `MLModule`       | extractors + ML models as **singletons** (models train lazily, once per process); scan `*Service`; `AzureBlobDataStore` → `IMsmeDataStore` |
+## 5. Data
 
-> Convention: `*Repository` / `*Service` naming + an interface = automatic
-> registration. ML model singletons matter — LightGBM/PCA training (~1–2 s)
-> happens once on first use.
+| Table | Holds |
+|---|---|
+| `applications` | One case: applicant reference, product, Udyam number, declared income, EMIs, employer, status |
+| `documents` | Each upload: hash, storage path, doc type, PDF metadata, claimed issuer, extraction status |
+| `statement_rows` · `page_summaries` · `doc_fields` | What extraction read — rows with counterparties, page balances and totals, named fields |
+| `findings` · `evidence` | Findings with category, severity, source (deterministic or AI-verified), review state; evidence pointing at rows, fields, pages, documents or policy chunks |
+| `ai_drop_log` | AI claims the grounding verifier rejected, per investigation run |
+| `knowledge_docs` · `knowledge_chunks` · `chunk_embeddings` · `rag_query_log` | The RAG corpora: credit policy, fraud typology, regulation |
 
----
+Snake-case naming, int identity keys, audit columns stamped on save. Rings are computed
+from these tables on demand — no ring table (see `CaseRepository.GetNetworkAsync` for the
+ceiling and the upgrade path).
 
-## 5. Domain Model Conventions
+## 6. Verification sources
 
-**Changed 2026-07-03** — the earlier `BaseEntity` (Guid `Id` + `IsDeleted`) was
-removed. Current rules:
+The truth uploads are checked against, stored per MSME as JSON in
+`gs://finrisklensai-sources/{UDYAM-number}/`:
 
-```csharp
-public abstract class AuditableEntity        // audit fields only
-{
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
-    public string? CreatedBy { get; set; }
-    public string? UpdatedBy { get; set; }
-}
-```
+| Source | Collected by | Used for |
+|---|---|---|
+| **Account Aggregator** (Finvu) | MSME consent journey → FI fetch | Check 9 (statement vs bank record); AA facts for the investigator |
+| **GST** returns | GST connector | Turnover and filing facts |
+| **ITR** | ITR connector | Filed turnover and income |
+| **Udyam**, **MCA** | Registry connectors | Identity, company status, directors |
 
-- Every entity declares its own **int identity primary key named
-  `<EntityName>ID`** — `AdmLoginID`, `MsmeEnquiryID`, `MsmeLocationID`,
-  `MsmeNicCodeID` (`UseIdentityColumn()` in its configuration).
-- No Guid keys, no shared `Id`, no soft-delete flag.
-- Audit timestamps are stamped automatically in
-  `ApplicationDbContext.SaveChangesAsync`.
+Payloads arrive through the ingest API, `PUT /api/msme-data/{uan}/manifest`,
+`PUT /api/msme-data/{uan}/files/{fileName}`, `GET /api/msme-data/{uan}/status` — closed
+unless the caller sends `X-Ingest-Key`.
 
-Implemented tables: `ADM_Login` (seeded admin), `t_MsmeEnquiry` (Udyam response
-cache, unique per UAN, raw JSON in `Payload`), `t_MsmeLocations`,
-`t_MsmeNicCodes`. The core scoring entities from `01_DOMAIN_MODEL.md`
-(`Msme`, `ScoreComputation`, …) are still pending.
+## 7. Security
 
----
-
-## 6. Persistence
-
-- `ApplicationDbContext` — decimal `precision(18,4)` convention,
-  `ApplyConfigurationsFromAssembly`, automatic audit stamping.
-- `RepositoryBase<T> : IRepository<T> where T : class` — async CRUD;
-  `GetByIdAsync(int id)` uses `FindAsync`, so it works with any single int key
-  regardless of the property name. No internal `SaveChanges` (unit-of-work by
-  the caller).
-- Migrations: one clean `InitialCreate` baseline under
-  `Data/Migrations/SqlServer/`; history table `cre.__EFMigrationsHistory`.
-  Commands are documented in `DB_SCRIPTS.md`. Runtime connection comes from
-  `appsettings.json`, design-time from `ApplicationDbContextFactory` — keep in
-  sync.
-
----
-
-## 7. The ML Engine & Data Flow (summary — details in `08_ML_ENGINE.md`)
-
-```
-data pulls (Udyam/GST/ITR/AA APIs)                    credit officer / MSME
-        │  raw JSON per response                                ▲
-        ▼                                                       │
-Azure Blob  msme-data/{UAN}/…  ──►  BlobAnalysisService  ──►  result.json
-   (manifest gates completeness)          │                     │
-                                          ▼                     ▼
-                              RiskScoringService        Dashboard/FinancialHealthCard
-                       extractors → 6 dimensions →      (gauge, radar, bars, ratios,
-                       LightGBM blend → anomaly →        lending assessment, Chart.js)
-                       explanations → recommendations →
-                       LendingCalculator (ratios + eligibility)
-```
-
-- **Two API entry paths:** `POST /api/scoring/analyze` (payloads in body —
-  dev/test) and `api/msme-data/{uan}` (blob flow — production path, handles any
-  payload size; one file per request, one file in memory at a time).
-- **Output** (`RiskAnalysisResult` in Core): overall score + band, six
-  `DimensionScore`s, PFI-template explanations, product recommendations,
-  cross-source anomaly check, the **`LendingAssessment`** (12 appraisal ratios
-  incl. DSCR/FOIR/banking penetration/GSTR-1-vs-3B consistency/ITR financial
-  ratios, plus indicative working-capital and term-loan eligibility scaled by
-  score band), and four **underwriting deep-dives**: `BankStatementAnalysis`
-  (AMB, channel split, payment classification, return counts),
-  `GstDeepDive` (tax discipline, ITC, customer/vendor concentration),
-  `FinancialRatios` (ITR P&L/balance-sheet), `IndustryRiskInfo`
-  (NIC sector risk weight).
-
----
-
-## 8. Configuration
-
-- **`Database`** — `DbType` switch; SQL Server connection to the remote shared
-  instance (login `FinRiskLensAI`; tables land in that login's default schema).
-  PostgreSQL string retained but unused.
-- **`AzureBlob`** — connection string + container (`msme-data`) for the per-UAN
-  payload folders.
-- **`Jwt`** — issuer `FinRiskLensAI`, audience `MsmeClients`; **handler not yet
-  registered** (`AddAuthentication().AddJwtBearer` absent) — required before the
-  external APIs in `04_API_CONTRACTS.md` ship.
-- **`Serilog`** — console + daily rolling file, per-namespace overrides.
-
-> ⚠️ **Secrets:** DB credentials and the storage account key are checked into
-> `appsettings.json` as a hackathon trade-off. Rotate and move to a secret store
-> before anything public.
-
----
-
-## 9. Key NuGet Dependencies
-
-| Package                                              | Project | Purpose                                  |
-| ---------------------------------------------------- | ------- | ---------------------------------------- |
-| `Autofac` (+ DI extensions)                          | all     | IoC container                            |
-| `Microsoft.EntityFrameworkCore` (+ SqlServer, Design)| Data, Web | ORM + tooling                          |
-| `Microsoft.ML` / `.LightGbm` / `.TimeSeries`         | ML      | scoring model, SSA trend, PCA anomaly    |
-| `Azure.Storage.Blobs`                                | ML      | per-UAN payload folders                  |
-| `Microsoft.AspNetCore.Authentication.JwtBearer`      | Web     | JWT bearer (pending wiring)              |
-| `Serilog` (+ sinks/enrichers)                        | all     | structured logging                       |
-| `Newtonsoft.Json`                                    | ML, Data| tolerant payload parsing, result persist |
-
----
-
-## 10. Extending the Application
-
-1. **Domain** — entity in `Core/Models/...` deriving from `AuditableEntity`,
-   with its own `<EntityName>ID` int key; contracts in `Core/Interfaces`;
-   shared result/DTO shapes in `Core/Models/...`.
-2. **Persistence** — `IEntityTypeConfiguration<T>` (+ `UseIdentityColumn()` on
-   the key) in `Data/Configurations`; `DbSet` on the context; migration via the
-   commands in `DB_SCRIPTS.md`.
-3. **Application/ML** — `IFooService` in Core, `FooService` in `Services` (or
-   `ML` if it needs ML/storage packages); auto-registers by naming convention.
-4. **Presentation** — controller depends on the Core interface; Razor views;
-   API endpoints follow the existing `api/...` attribute-routing style.
-
----
-
-## 11. Known Gaps / Notes
-
-- **JWT bearer handler still unregistered** — the one remaining item from
-  `07_SETUP_GAPS.md`.
-- `Services` project is still a scaffold — onboarding/consent services from
-  `02_CUSTOMER_FLOW.md` Steps 1–6 are unbuilt.
-- Scoring output is persisted as `result.json` in the blob folder, not yet
-  mapped to `ScoreComputation`/`ScoreExplanation` entities.
-- `m_StaticResponces` exists in the DB but its entity code was never pushed —
-  re-add under the new convention (`StaticResponcesID`).
-- The folder name `DbContextEDMX` is legacy-flavored; the context is code-first
-  EF Core, not an EDMX model.
+- Bank portal behind its own sign-in (`BankAdminAuthorize`); MSME side by email OTP.
+- Session cookies signed with Data Protection keys kept in a private bucket only the
+  service account can read.
+- Production secrets live in a git-ignored `appsettings.Production.json`, uploaded with the
+  source at deploy; the repository is public and holds none.
+- Cloud SQL accepts encrypted connections only; Cloud Run reaches it through the connector
+  socket, with no network path opened.
+- The investigator cannot reach outside its case: every tool is bound server-side to one
+  application's data before the run.

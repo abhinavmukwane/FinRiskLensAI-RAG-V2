@@ -40,8 +40,11 @@
             <a class="@Nav("Customers")" href="@Url.Action("Customers", "BankAdmin")">
                 <i class="bi bi-people"></i><span>Customers</span>
             </a>
-            <a class="@(controller == "cases" ? "bp-nav-link active" : "bp-nav-link")" href="@Url.Action("Index", "Cases")">
+            <a class="@(controller == "cases" && action != "rings" ? "bp-nav-link active" : "bp-nav-link")" href="@Url.Action("Index", "Cases")">
                 <i class="bi bi-folder2-open"></i><span>Cases</span>
+            </a>
+            <a class="@(controller == "cases" && action == "rings" ? "bp-nav-link active" : "bp-nav-link")" href="@Url.Action("Rings", "Cases")">
+                <i class="bi bi-diagram-3"></i><span>Rings</span>
             </a>
         </nav>
 

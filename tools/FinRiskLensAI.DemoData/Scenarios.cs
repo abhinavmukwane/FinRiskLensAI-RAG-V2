@@ -17,6 +17,8 @@ namespace FinRiskLensAI.DemoData
         public string[] ExpectedAi { get; init; } = Array.Empty<string>();
         /// <summary>The bank's own record of the account, as Account Aggregator delivers it, when the applicant linked one.</summary>
         public string? AaJson { get; init; }
+        /// <summary>The planted ring this case belongs to; cases sharing a name must form exactly one ring.</summary>
+        public string? Ring { get; init; }
     }
 
     /// <summary>
@@ -78,8 +80,38 @@ namespace FinRiskLensAI.DemoData
                                "Weekly betting and a monthly crypto purchase; the declared EMI's NACH bounced once.",
                                vices: true) with { ExpectedAi = new[] { "BOUNCES", "GAMBLING_CRYPTO_EXPOSURE" } });
 
+            // ── Rings: each case is clean alone; only the network lens links them ──────
+            // A fabricator's kit: one tool makes every statement and slip, whichever bank or employer it
+            // claims, and one account pays every "salary"
+            var kit = (Producer: "PDFsharp 1.50.5147 (www.pdfsharp.com)", Creator: "DocuForge Templates", Payer: "XX9917");
+            foreach (var (reference, seed, name, bank, gross, employer) in new[]
+            {
+                ("DEMO-R01", 61, "Karan Mehta", Banks.Kaveri, 85_000m, "Zenith Demo Infotech Pvt Ltd"),
+                ("DEMO-R02", 62, "Sneha Pawar", Banks.Narmada, 78_000m, "Coral Demo Systems Pvt Ltd"),
+                ("DEMO-R03", 63, "Imran Shaikh", Banks.Kaveri, 92_000m, "Apex Demo Consulting LLP"),
+                ("DEMO-R04", 64, "Divya Nair", Banks.Narmada, 88_000m, "Coral Demo Systems Pvt Ltd"),
+            })
+                cases.Add(Salaried(reference, seed, name, bank, gross, tamperSlip: false,
+                                   "One of four applicants supplied by the same fabricator: every document is internally consistent, " +
+                                   "but all were made by one tool and every salary comes from one account.",
+                                   kit: new RingKit(employer, kit.Payer, kit.Producer, kit.Creator)) with { Ring = "kit" });
+
+            // One statement, two applicants: the second uploaded the first one's file
+            var original = Sme("DEMO-R05", seed: 65, "Bhavani Textiles", null, Banks.Kaveri,
+                               "A genuine-looking statement — also submitted, byte for byte, by DEMO-R06.", tamper: null) with { Ring = "copy" };
+            cases.Add(original);
+            cases.Add(original with
+            {
+                Ref = "DEMO-R06", Employer = "Shree Balaji Garments",
+                Story = "Submitted DEMO-R05's statement file as its own.",
+                Docs = original.Docs.Select(d => d with { FileName = "demo-r06_statement.pdf" }).ToList()
+            });
+
             return cases;
         }
+
+        /// <summary>A fabricator's kit: who the slip names as employer, the account that pays, the tool that made the files.</summary>
+        private sealed record RingKit(string Employer, string PayerAccount, string Producer, string Creator);
 
         private enum Tamper { InflateCredit, SplicePage, RoundTrip, WindowDress, PassThrough, HiddenLoans, CleanForgery }
 
@@ -218,10 +250,10 @@ namespace FinRiskLensAI.DemoData
         // ── Salaried applicant: statement + latest salary slip ──────────────────────
 
         private static DemoCase Salaried(string reference, int seed, string name, Bank bank, decimal gross, bool tamperSlip,
-                                         string story, bool vices = false)
+                                         string story, bool vices = false, RingKit? kit = null)
         {
             var rnd = new Random(seed);
-            const string employer = "Orbitron Demo Software Pvt Ltd";
+            var employer = kit?.Employer ?? "Orbitron Demo Software Pvt Ltd";
             var pf = Math.Round(gross * 0.12m * 0.5m);
             var pt = 200m;
             var tds = Math.Round(gross * 0.08m);
@@ -230,7 +262,9 @@ namespace FinRiskLensAI.DemoData
             var txns = new List<Txn>();
             for (var d = From; d <= To; d = d.AddDays(1))
             {
-                if (d.Day == 1) txns.Add(Txn.In(d, $"NEFT CR SALARY {employer.ToUpperInvariant()}", net, employer, "XX7788"));
+                // The payer's account is printed in the narration, as bank statements do: it is what links a ring
+                var payer = kit?.PayerAccount ?? "XX7788";
+                if (d.Day == 1) txns.Add(Txn.In(d, $"NEFT CR SALARY {employer.ToUpperInvariant()} A/C {payer}", net, employer, payer));
                 if (d.Day == 3) txns.Add(Txn.Out(d, "NEFT DR RENT", 24_000, "Kale Properties", "XX2045"));
                 if (d.Day == 5) txns.Add(Txn.Out(d, "NACH DR SIP MUTUAL FUND", 10_000, null, null));
                 if (d.Day == 10) txns.Add(Txn.Out(d, "CARD BILL PAYMENT", Round(rnd.Next(8_000, 20_000)), null, null));
@@ -249,7 +283,7 @@ namespace FinRiskLensAI.DemoData
             var stFile = $"{reference.ToLowerInvariant()}_{bank.Short}_statement_jun-sep.pdf";
             var account = MaskedAccount(rnd);
             statement.Fields.Add(Field("account_number", account));
-            var stPdf = Render.Statement(bank, name, account, statement, bank.Producer, bank.Creator,
+            var stPdf = Render.Statement(bank, name, account, statement, kit?.Producer ?? bank.Producer, kit?.Creator ?? bank.Creator,
                                          new DateTime(2026, 10, 1, 8, 40, 0), new DateTime(2026, 10, 1, 8, 40, 0));
 
             var printedNet = tamperSlip ? net + 25_000 : net;
@@ -271,8 +305,8 @@ namespace FinRiskLensAI.DemoData
                 }
             };
             var slipPdf = Render.Slip(employer, name, "September 2026", gross, pf, pt, tds, printedNet,
-                                      tamperSlip ? "Canva" : "Orbitron Payroll 4.2",
-                                      tamperSlip ? "Canva" : "Payroll Export",
+                                      kit?.Producer ?? (tamperSlip ? "Canva" : "Orbitron Payroll 4.2"),
+                                      kit?.Creator ?? (tamperSlip ? "Canva" : "Payroll Export"),
                                       new DateTime(2026, 9, 30, 18, 0, 0),
                                       tamperSlip ? new DateTime(2026, 10, 2, 11, 30, 0) : new DateTime(2026, 9, 30, 18, 0, 0));
 
@@ -400,6 +434,47 @@ namespace FinRiskLensAI.DemoData
 
     public static class DryRun
     {
+        /// <summary>
+        /// The demo cases as the network lens sees them: file hashes, PDF metadata, claimed issuers, salary credits —
+        /// from the given extraction when there is one, else from the truth the documents were drawn from.
+        /// </summary>
+        public static IReadOnlyList<NetworkApplication> Network(IReadOnlyList<DemoCase> cases,
+                                                                IReadOnlyDictionary<string, ExtractedDocument>? extracted = null)
+        {
+            int appId = 0, docId = 0;
+            long rowId = 0;
+            return cases.Select(c =>
+            {
+                var id = ++appId;
+                var docs = new List<CaseDocument>();
+                var salary = new List<StatementRow>();
+                foreach (var d in c.Docs)
+                {
+                    var meta = DocumentInspector.ReadPdf(d.Pdf);
+                    var read = extracted?.GetValueOrDefault(d.FileName) ?? d.Truth;
+                    docs.Add(new CaseDocument
+                    {
+                        CaseDocumentID = ++docId, LoanApplicationID = id, FileName = d.FileName,
+                        Sha256 = System.Security.Cryptography.SHA256.HashData(d.Pdf), DocType = read.DocType,
+                        PdfProducer = meta.Producer, PdfCreator = meta.Creator, FontSet = meta.FontSet, ClaimedIssuer = read.ClaimedIssuer
+                    });
+                    var rowNo = 0;
+                    foreach (var p in read.Pages)
+                    foreach (var r in p.Rows)
+                    {
+                        rowNo++;
+                        if (r.Credit > 0 && r.CounterpartyAccount != null && r.Description.Contains("SALARY", StringComparison.OrdinalIgnoreCase))
+                            salary.Add(new StatementRow
+                            {
+                                StatementRowID = ++rowId, CaseDocumentID = docId, PageNo = p.PageNo, RowNo = rowNo, TxnDate = r.Date,
+                                Description = r.Description, Credit = r.Credit, CounterpartyName = r.CounterpartyName, CounterpartyAcct = r.CounterpartyAccount
+                            });
+                    }
+                }
+                return new NetworkApplication(id, c.Ref, c.Employer, docs, salary);
+            }).ToList();
+        }
+
         /// <summary>
         /// The case through the checks with no database: metadata read back from the
         /// generated PDF, truth mapped to rows the way <c>CaseRepository.SaveExtractionAsync</c> does.

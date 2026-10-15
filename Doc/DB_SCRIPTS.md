@@ -332,7 +332,8 @@ GO
 upsert. A failed append is logged but never fails the analysis.
 
 Demo series: `Doc/sql/demo_score_history_seed.sql` (eight monthly points per demo
-account; deletes only `Source = 'seed'` rows, so real history survives).
+account; deletes only `Source = 'seed'` rows, so real history survives). Removed with the
+other IDBI-era files on 2026-10-15 — in git history if ever needed.
 
 ---
 
@@ -565,7 +566,7 @@ embedding on `documents` (Phase 5, network lens). Each lands with the code that 
 ## 2026-10-03 — Findings
 
 Migration `20261003170922_Findings`. What the deterministic checks (and, from Phase 4,
-the verified AI findings) produce. Findings, not scores: each names what is wrong and
+the verified AI findings) produce. Evidence-based findings: each names what is wrong and
 points at the rows, fields or pages that show it.
 
 ```sql

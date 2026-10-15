@@ -53,6 +53,8 @@ if (args[0] == "generate")
         Console.WriteLine($"{c.Ref,-9} {(ok ? "ok  " : "DIFF")} {(actual.Length == 0 ? "no findings" : string.Join(", ", actual))}" +
                           (ok ? "" : $"   expected: {(c.Expected.Length == 0 ? "none" : string.Join(", ", c.Expected.OrderBy(t => t)))}"));
     }
+    foreach (var ring in FinRiskLensAI.Fraud.Checks.NetworkLens.Find(DryRun.Network(cases)))
+        Console.WriteLine($"ring      {string.Join(", ", ring.Members.Select(m => m.ApplicantRef))} — {string.Join("; ", ring.Links.Select(l => l.Kind))}");
     return diffs == 0 ? 0 : 1;
 }
 
@@ -155,7 +157,17 @@ if (args[0] == "eval")
     Console.WriteLine($"page values    {Pct(pageOk, pageAll)}");
     Console.WriteLine($"fields         {Pct(fieldOk, fieldAll)}");
     Console.WriteLine($"cases whose findings match: {casesOk}/{selected.Count}");
-    return casesOk == selected.Count ? 0 : 1;
+
+    // Rings from Gemini's reading: the links must survive extraction, not just exist in the truth files
+    static string Key(IEnumerable<string> refs) => string.Join(", ", refs.OrderBy(r => r));
+    var read = results.Where(r => r.Value.Doc != null).ToDictionary(r => r.Key, r => r.Value.Doc!);
+    var ringsRead = FinRiskLensAI.Fraud.Checks.NetworkLens.Find(DryRun.Network(selected, read))
+        .Select(r => (Key: Key(r.Members.Select(m => m.ApplicantRef)), Links: string.Join("; ", r.Links.Select(l => l.Kind)))).ToList();
+    var planted = selected.Where(c => c.Ring != null).GroupBy(c => c.Ring).Where(g => g.Count() >= 2).Select(g => Key(g.Select(c => c.Ref))).ToHashSet();
+    foreach (var (key, links) in ringsRead) Console.WriteLine($"ring from Gemini's reading: {key} — {links}{(planted.Contains(key) ? "" : "   NOT PLANTED")}");
+    var ringsOk = planted.SetEquals(ringsRead.Select(r => r.Key));
+    if (!ringsOk) Console.WriteLine($"rings planted: {(planted.Count == 0 ? "none" : string.Join(" | ", planted))}");
+    return casesOk == selected.Count && ringsOk ? 0 : 1;
 }
 
 // ── seed ──────────────────────────────────────────────────────────────────────────
@@ -175,6 +187,7 @@ var service = new CaseService(repo, new FinRiskLensAI.Fraud.Storage.GcsDocumentS
 var existing = (await repo.ListAsync()).Select(c => c.ApplicantRef).ToHashSet();
 
 int mismatches = 0;
+var done = new List<(DemoCase Case, int Id)>();
 foreach (var c in cases)
 {
     if (existing.Contains(c.Ref)) { Console.WriteLine($"{c.Ref,-9} already seeded — skipped"); continue; }
@@ -202,9 +215,14 @@ foreach (var c in cases)
         await service.ApplyExtractionAsync(id, docId, d.Truth, "demo-seed:truth");
     }
     await service.RunChecksAsync(id);
+    done.Add((c, id));
+}
 
+// Compared once everything is in: a ring's finding appears only when its other members exist
+foreach (var (c, id) in done)
+{
     var actual = (await repo.GetFindingsAsync(id)).Select(f => f.Type).Distinct().OrderBy(t => t).ToArray();
-    var expected = c.Expected.OrderBy(t => t).ToArray();
+    var expected = c.Expected.Concat(c.Ring != null ? new[] { "FRAUD_RING" } : Array.Empty<string>()).OrderBy(t => t).ToArray();
     var ok = actual.SequenceEqual(expected);
     if (!ok) mismatches++;
 

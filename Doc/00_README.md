@@ -1,71 +1,16 @@
-# FinRiskLensAI — Documentation Index
+# FinRiskLens — Documentation
 
-FinRiskLensAI is an MSME Financial Health Score platform, built for IDBI
-Innovate 2026 (Problem Statement 3). It aggregates alternate data (GST, ITR, AA
-bank statements, UPI patterns, EPFO payroll) for New-to-Credit (NTC) and
-New-to-Bank (NTB) MSMEs, computes a 6-dimension weighted credit health score,
-and exposes it to IDBI's Loan Origination System and to the broader
-ULI/OCEN lending ecosystem.
+Evidence-based fraud detection and risk analysis for lending, built on Google Cloud for the
+**Google AI Builder Cup 2026 (BFSI track)** by team ASM FinTech Developer. Start with the
+repository [`README.md`](../README.md).
 
-The codebase already exists as a scaffold — see `ARCHITECTURE.md` (provided
-separately) for the current solution structure, layering, and DI setup.
-These documents describe the *business flows* and *build order* on top of
-that scaffold. They intentionally leave implementation detail (exact method
-signatures, exact LINQ, exact Razor markup) to you — that's the point of
-handing this to Claude Code rather than writing it all by hand.
-
-## Reading order
-
-1. `01_DOMAIN_MODEL.md` — entities, relationships, what each layer owns
-2. `02_CUSTOMER_FLOW.md` — the end-to-end MSME journey, step by step
-3. `03_SCORING_ENGINE.md` — how the 6-dimension score is computed
-4. `04_API_CONTRACTS.md` — internal + external API surface: inbound score
-   APIs (ULI/OCEN DSP, LOS) and the built outbound loan-case push
-   (LOS / ULI / ONDC, §4a)
-5. `05_INTEGRATIONS.md` — AA, GST, ITR, EPFO, Udyam — what each one is
-   and how
-   we talk to it
-6. `06_BUILD_PLAN.md` — suggested build order, mapped to the hackathon
-   timeline
-7. `07_SETUP_GAPS.md` — the two known gaps in the current scaffold
-   (DbContext registration, JWT handler) plus PostgreSQL provider wiring
-8. `08_ML_ENGINE.md` — the implemented ML.NET scoring engine
-   (`FinRiskLensAI.ML`): use cases, API contract (direct endpoint + the
-   Azure Blob Storage collection flow for large payloads), pipeline
-   internals with code, and extension points (EPFO, sandbox swap, bureau)
-9. `09_FINALS_ENHANCEMENT_PLAN.md` — the top-5 finals build plan: verified
-   prototype state, the AA scoring gap, tiered priorities with effort
-   estimates, and what deliberately not to build
-10. `10_FRAUD_LENS_BUILD.md` — the RAG-V2 fork's build plan: what this
-    codebase keeps, removes and adds to become evidence-based fraud
-    detection, the Google Cloud services required, and the phased
-    schedule with the parallel RAG lane
-11. `11_RAG_ARCHITECTURE.md` — retrieval-augmented generation in full:
-    where RAG belongs and where it deliberately does not, the five
-    corpora, chunking, hybrid retrieval, the citation contract and its
-    verifier, evaluation and failure modes
-
-## Ground rules for implementation
-
-- Follow the existing layering strictly: `Core` has no dependencies,
-  `Data` depends only on `Core`, `Services` depends on `Core` + `Data`,
-  `Web` depends on `Core` + `Services`. Do not let `Web` call `Data`
-  directly, and do not let `Core` reference EF Core or any infrastructure
-  package.
-- New repositories end in `Repository` and implement an interface — they
-  auto-register via `DataModule`. New services end in `Service` and
-  implement an interface — they auto-register via `ServicesModule`. Don't
-  hand-register anything that fits this convention.
-- ~~All entities derive from `BaseEntity` or `AuditableEntity`.~~
-  **Changed 2026-07-03:** `BaseEntity` was removed. Entities derive from
-  `AuditableEntity` (audit timestamps/actors only) and each declares its own
-  **int identity primary key named `<EntityName>ID`** (e.g. `MsmeEnquiryID`) —
-  no Guid keys, no shared `Id`, no `IsDeleted`/soft-delete.
-- Money and score fields are `decimal`, relying on the existing
-  `precision(18,4)` convention — don't override precision per-field
-  without a reason.
-- This is a hackathon build against a July 31, 2026 deadline. Prefer
-  working, demonstrable slices over exhaustive edge-case handling. Where a
-  document below says "synthetic data" — that means the IDBI sandbox
-  isn't available yet, so build against a local fixture/generator first
-  and swap the data source when sandbox access opens.
+| Document | What it covers |
+|---|---|
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | How the system is put together — pipeline, projects, Google Cloud, data, verification sources, security |
+| [`10_FRAUD_LENS_BUILD.md`](10_FRAUD_LENS_BUILD.md) | Build plan and status by phase, every measurement, the deploy command |
+| [`11_RAG_ARCHITECTURE.md`](11_RAG_ARCHITECTURE.md) | Retrieval in depth — corpora, chunking, embeddings, hybrid search, rerank, grounding |
+| [`DB_SCRIPTS.md`](DB_SCRIPTS.md) | Every table change, with the SQL, and how to migrate production |
+| [`VIDEO_SCRIPT.md`](VIDEO_SCRIPT.md) | The 3-minute demo video — screens and voiceover |
+| [`FinRiskLens_AI_Builder_Cup_2026.pptx`](FinRiskLens_AI_Builder_Cup_2026.pptx) | Submission deck (PDF alongside) |
+| [`knowledge/`](knowledge/) | The policy and fraud-typology corpora the investigator searches |
+| [`demo-data/`](demo-data/) | Registry and Account Aggregator payloads used as test fixtures |

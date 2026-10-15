@@ -32,8 +32,8 @@
 .frl-login-menu {
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
-    right: auto;
+    left: auto;
+    right: 0;   /* opens leftwards: anchored left, it ran off a phone screen even while hidden */
     min-width: 190px;
     background: #fff;
     border-radius: .75rem;

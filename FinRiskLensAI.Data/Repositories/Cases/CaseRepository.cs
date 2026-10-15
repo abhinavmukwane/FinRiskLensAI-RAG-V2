@@ -53,6 +53,24 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                                       g => (IReadOnlyList<int>)g.Select(p => p.LoanApplicationID).OrderBy(id => id).ToList());
         }
 
+        // ponytail: every application in memory on each call — fine to a few thousand cases; past that,
+        // write entity links (file hash, template, payer account) to a table at extraction and query those
+        public async Task<IReadOnlyList<NetworkApplication>> GetNetworkAsync(CancellationToken ct = default)
+        {
+            var apps = await _context.LoanApplications.AsNoTracking().Include(a => a.Documents).ToListAsync(ct);
+            var salary = await (
+                from r in _context.StatementRows.AsNoTracking()
+                join d in _context.CaseDocuments on r.CaseDocumentID equals d.CaseDocumentID
+                where r.Credit > 0 && r.CounterpartyAcct != null && r.Description.ToUpper().Contains("SALARY")
+                select new { d.LoanApplicationID, Row = r })
+                .ToListAsync(ct);
+            var byApp = salary.ToLookup(x => x.LoanApplicationID, x => x.Row);
+
+            return apps.Select(a => new NetworkApplication(a.LoanApplicationID, a.ApplicantRef, a.DeclaredEmployer,
+                                                           a.Documents, byApp[a.LoanApplicationID].ToList()))
+                       .ToList();
+        }
+
         public async Task<(IReadOnlyList<StatementRow> Rows, IReadOnlyList<PageSummary> Pages, IReadOnlyList<DocField> Fields)>
             GetExtractedAsync(int loanApplicationId, CancellationToken ct = default)
         {

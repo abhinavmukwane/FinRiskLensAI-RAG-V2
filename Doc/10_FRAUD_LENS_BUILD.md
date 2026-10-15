@@ -198,8 +198,9 @@ There is none today. `DeterministicChecksTests`, `GroundingVerifierTests`,
 
 ### Why PostgreSQL and not SQL Server
 
-The project runs on SQL Server today, so this is a deliberate reversal — recorded
-here because `07_SETUP_GAPS.md` documents the team choosing SQL Server originally.
+The IDBI Innovate version ran on SQL Server, so this was a deliberate reversal — recorded
+here because that version's setup notes (removed with the other IDBI-era documents on
+2026-10-15, still in git history) record the team choosing SQL Server originally.
 
 | | SQL Server on Cloud SQL | PostgreSQL on Cloud SQL |
 |---|---|---|
@@ -312,7 +313,19 @@ One command from the repository root — Cloud Build runs the .NET buildpack on 
 project and Cloud Run starts it:
 
 ```bash
-gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/tmp/dp-keys --add-cloudsql-instances finrisklensai:asia-south1:finrisklens-db
+gcloud run deploy finrisklens --source . --region asia-south1 --project finrisklensai --service-account finrisk-run@finrisklensai.iam.gserviceaccount.com --allow-unauthenticated --min-instances 1 --max-instances 1 --no-cpu-throttling --session-affinity --memory 1Gi --cpu 1 --timeout 300 --execution-environment gen2 --set-build-env-vars GOOGLE_BUILDABLE=FinRiskLensAI-RAG-V2/FinRiskLensAI-RAG-V2.csproj --set-env-vars ASPNETCORE_HTTP_PORTS=8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,DataProtection__KeysPath=/dp-keys --add-cloudsql-instances finrisklensai:asia-south1:finrisklens-db --add-volume name=dp-keys,type=cloud-storage,bucket=finrisklensai-keys --add-volume-mount volume=dp-keys,mount-path=/dp-keys
+```
+
+Once, before the first deploy that carries the volume — a private bucket only the service
+account can touch (not the cases or sources bucket: developers have access to those, and
+whoever holds these keys can forge a sign-in cookie):
+
+```bash
+gcloud storage buckets create gs://finrisklensai-keys --project finrisklensai --location asia-south1 --uniform-bucket-level-access --public-access-prevention
+```
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://finrisklensai-keys --member serviceAccount:finrisk-run@finrisklensai.iam.gserviceaccount.com --role roles/storage.objectAdmin
 ```
 
 | Setting | Why |
@@ -323,7 +336,8 @@ gcloud run deploy finrisklens --source . --region asia-south1 --project finriskl
 | `GOOGLE_BUILDABLE` | The solution has several projects; this names the web app |
 | `ASPNETCORE_HTTP_PORTS=8080` | The buildpack image does not set a port; Kestrel's default (5000) fails Cloud Run's health check |
 | `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | TLS ends at Google's front end: trust `X-Forwarded-Proto/-For` so HTTPS-only cookies work and client IPs are real |
-| `DataProtection__KeysPath=/tmp/dp-keys` | The app folder is read-only on Cloud Run. Keys are per-instance, so a new revision signs everyone out once |
+| `DataProtection__KeysPath=/dp-keys` + `--add-volume … type=cloud-storage` | The keys that sign session cookies live in `gs://finrisklensai-keys`, mounted as a folder, so a redeploy during judging signs nobody out. No code: the app already reads its key folder from this setting. Until 2026-10-15 they were in `/tmp`, and every new revision signed everyone out |
+| `--execution-environment gen2` | Cloud Storage volume mounts need the second-generation environment |
 | `appsettings.Production.json` | Production secrets — Cloud SQL connection, encryption key, SMTP, Finvu, Groq, Signzy, loan-case keys, `MsmeData:IngestKey`. **Git-ignored, never committed**; it sits next to `appsettings.json` on the machine that deploys, `gcloud run deploy --source` uploads it (`.gcloudignore` deliberately leaves it in), and ASP.NET loads it in Production. Edit it, redeploy, done. Secret Manager is no longer used (2026-10-13) |
 | *(no secret flags)* | The Secret Manager mount earlier revisions carried was removed on 2026-10-13 with `gcloud run services update finrisklens --remove-secrets /secrets/appsettings.secrets.json` — `--clear-secrets` on a deploy does **not** remove a volume mount. A redeploy keeps the service's existing settings, so it stays gone |
 
@@ -468,7 +482,15 @@ fallback can actually fire.
 |---|---|
 | Check 9 — statement vs the bank's own record | ✅ `DeterministicChecks.BankRecordMismatch`, finding `STATEMENT_VS_AA_MISMATCH` (Tampering, High). Runs whenever the application's Udyam number has an `aa.json` in the sources bucket, parsed by the existing `AaStatementAnalysisService`. A statement is tied to an AA account by the last four digits of its account number — the extractor now reads `account_number` off every statement — or, failing that, by at least half its rows agreeing; an account the applicant did not share is skipped, not flagged. Rows pair on side, amount and date within `AaDateSlackDays`; what is left is reported as amounts changed, transactions the bank never recorded and transactions it recorded that the PDF leaves out, with the net effect on credits and debits in rupees. Missing transactions point at the page where they belong |
 | Demo cases | ✅ **DEMO-G05** — genuine, AA linked, every seventh posting clears a day after its statement date: silent. **DEMO-T04** — two receipts tripled and four EMIs deleted, every balance and page total recomputed, the bank's producer kept: checks 1–8 pass, check 9 fires. AA feeds are generated in Finvu's FI-data shape and written to `gs://finrisklensai-sources/UDYAM-MH-99-*`; `seed` refuses to write any other folder, because the bucket also holds real MSMEs' data |
-| `RegistryCrossCheck` · network lens · **R9** | ⏸ next |
+| Network lens | ✅ 2026-10-15 — `Fraud/Checks/NetworkLens.cs`, finding `FRAUD_RING` (Network, High) on every member. Three deterministic links: the same file (SHA-256) in separate applications; one template — PDF producer, creator and fonts — on documents claiming different issuers (one bank's statements all share its template; two banks never do); one account paying "salary" to applicants naming different employers (colleagues share a payroll account; strangers do not). Union-find groups them. Runs with the checks; a case joining a ring refreshes every member's finding. **Rings** page in the bank portal lists each ring, its links and members |
+| Ring demo cases | ✅ **DEMO-R01…R04** — a fabricator's kit: statements claiming Kaveri and Narmada and slips claiming three employers, all from one tool, all salaries from one account. **DEMO-R05/R06** — one statement file in two applications. `DemoScenarioTests` asserts the lens finds exactly these two rings over every demo case — the genuine colleagues at one employer and the many customers of one bank stay unlinked |
+| Cut, deliberately | Layout embeddings (the producer/creator/fonts fingerprint is exact and needs no model); a Gemini ring narrative (the finding already names every link); a graph view (the table shows the same) |
+| `RegistryCrossCheck` · **R9** | ⏸ next |
+
+Found while building: on the development database the lens at once linked DEMO-T01 and
+DEMO-T03 to `LIVE-GEMINI-01` — a live-extraction test that re-uploaded their files — and test
+cases #2 and #3, which share a statement. Correct, and a reason to remove test cases before
+judging.
 
 Found while building: on a genuine statement Gemini read 27-08-2026 as 27-07-2026 — the same
 way in three runs — with the amount and balance right. The balance checks never look at
@@ -509,7 +531,8 @@ each seen directly by diffing reads against the truth:
 | Cases | ✅ 10 so far: 4 genuine, 3 tampered (inflated receipt, spliced page, fabricated slip), 3 behavioural (round-tripping, window dressing, pass-through) |
 | Expected vs actual | ✅ `DemoScenarioTests` (10 cases, in memory) and the `seed` command (real intake → truth applied as extraction → checks) both pass: genuine cases raise nothing, the others raise exactly their expected findings |
 | Seeded on Neon | ✅ cases #4–#13 (`DEMO-*`); `seed` skips cases that already exist |
-| Ring cases (12) · edge cases (3) | ⏸ ring cases need the network lens (Phase 5) to have anything to find; edge cases next — QuestPDF can encrypt, so a password-protected statement is cheap |
+| Ring cases | ✅ 2026-10-15 — six, in two rings (see Phase 5) |
+| Edge cases (3) | ⏸ QuestPDF can encrypt, so a password-protected statement is cheap |
 
 ```bash
 dotnet run --project tools/FinRiskLensAI.DemoData -- generate <dir>

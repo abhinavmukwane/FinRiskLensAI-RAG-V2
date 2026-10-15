@@ -13,6 +13,9 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Cases
         /// <summary>For each document of this application, the other applications holding the same bytes.</summary>
         Task<IReadOnlyDictionary<int, IReadOnlyList<int>>> FindSharedFilesAsync(int loanApplicationId, CancellationToken ct = default);
 
+        /// <summary>Every application with its documents and its salary credits — the network lens's input.</summary>
+        Task<IReadOnlyList<NetworkApplication>> GetNetworkAsync(CancellationToken ct = default);
+
         /// <summary>What the extractor wrote for this application's documents.</summary>
         Task<(IReadOnlyList<StatementRow> Rows, IReadOnlyList<PageSummary> Pages, IReadOnlyList<DocField> Fields)>
             GetExtractedAsync(int loanApplicationId, CancellationToken ct = default);

@@ -126,7 +126,12 @@
             <p>@f.Explanation</p>
             @if (f.RecommendedAction != null)
             {
-                <p class="bp-finding-action"><i class="bi bi-arrow-return-right"></i> @f.RecommendedAction</p>
+                <p class="bp-finding-action"><i class="bi bi-arrow-return-right"></i> @f.RecommendedAction
+                    @if (f.Type == "FRAUD_RING")
+                    {
+                        <a class="bp-link" href="@Url.Action("Rings", "Cases")">See the ring <i class="bi bi-diagram-3"></i></a>
+                    }
+                </p>
             }
 
             @if (f.Evidence.Count > 0)

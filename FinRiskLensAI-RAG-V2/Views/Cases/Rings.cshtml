@@ -1,0 +1,69 @@
+@model IReadOnlyList<FinRiskLensAI.Core.Models.Cases.Ring>
+@{
+    ViewBag.Title = "Rings";
+    Layout = "~/Views/Shared/_BankAdminLayout.cshtml";
+}
+
+<div class="bp-page-head">
+    <div>
+        <div class="bp-eyebrow">FraudLens · Network</div>
+        <h1>Rings</h1>
+        <div class="bp-welcome-meta">
+            <span><i class="bi bi-diagram-3"></i>@Model.Count ring@(Model.Count == 1 ? "" : "s") ·
+                @Model.Sum(r => r.Members.Count) applications</span>
+        </div>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="bp-empty">
+        <i class="bi bi-diagram-3"></i>
+        <h2>No rings</h2>
+        <p>No two applications share a file, a document template or a salary account.</p>
+    </div>
+}
+
+@foreach (var (ring, n) in Model.Select((r, i) => (r, i + 1)))
+{
+    <div class="bp-card mt-3">
+        <div class="bp-card-label">
+            <span><i class="bi bi-diagram-3"></i>Ring @n
+                <span class="bp-muted">@ring.Members.Count applications · @ring.Links.Count link@(ring.Links.Count == 1 ? "" : "s")</span>
+            </span>
+        </div>
+
+        <ul class="bp-evidence">
+            @foreach (var l in ring.Links)
+            {
+                <li><strong>@l.Kind</strong> — @l.Detail
+                    <span class="bp-muted">(@string.Join(", ", ring.Members.Where(m => l.Members.ContainsKey(m.LoanApplicationID)).Select(m => m.ApplicantRef)))</span>
+                </li>
+            }
+        </ul>
+
+        <div class="bp-table-wrap">
+            <table class="bp-table bp-table-hover">
+                <thead>
+                    <tr>
+                        <th>Case</th>
+                        <th>Application no.</th>
+                        <th>Declared employer</th>
+                        <th>Documents</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in ring.Members)
+                    {
+                        <tr onclick="location.href='@Url.Action("Detail", "Cases", new { id = m.LoanApplicationID })'" style="cursor:pointer">
+                            <td class="bp-mono">#@m.LoanApplicationID</td>
+                            <td class="bp-strong">@m.ApplicantRef</td>
+                            <td>@(m.DeclaredEmployer ?? "—")</td>
+                            <td>@string.Join(", ", m.Documents.Select(d => d.FileName))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

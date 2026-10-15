@@ -21,5 +21,15 @@ namespace FinRiskLensAI.Tests
             var c = All.Value[reference];
             Assert.Equal(c.Expected.OrderBy(t => t), DryRun.FindingTypes(c, new FraudOptions()));
         }
+
+        [Fact]
+        public void The_network_lens_finds_exactly_the_planted_rings()
+        {
+            static string Key(IEnumerable<string> refs) => string.Join(",", refs.OrderBy(r => r));
+            var planted = All.Value.Values.Where(c => c.Ring != null).GroupBy(c => c.Ring).Select(g => Key(g.Select(c => c.Ref)));
+            var found = NetworkLens.Find(DryRun.Network(Scenarios.All())).Select(r => Key(r.Members.Select(m => m.ApplicantRef)));
+
+            Assert.Equal(planted.OrderBy(k => k), found.OrderBy(k => k));
+        }
     }
 }
