@@ -25,6 +25,7 @@ integrations.
 | **Build plan and status** | [`Doc/10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) |
 | **RAG architecture** | [`Doc/11_RAG_ARCHITECTURE.md`](Doc/11_RAG_ARCHITECTURE.md) |
 | **Database changes** | [`Doc/DB_SCRIPTS.md`](Doc/DB_SCRIPTS.md) |
+| **Next: one assessment per customer** | [`Doc/12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) |
 
 ---
 
@@ -301,6 +302,7 @@ dotnet test tests/FinRiskLensAI.Tests
 
 | Document | Covers |
 |---|---|
+| [`12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) | The plan in force: customer and bank journeys, Risk Lens sections, AI credit decision, loan case to LOS / ULI / ONDC |
 | [`ARCHITECTURE.md`](Doc/ARCHITECTURE.md) | How the system is put together — pipeline, projects, Google Cloud, data, verification sources, security |
 | [`10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) | The build: what was kept, removed and added; phases, status, measurements, deployment |
 | [`11_RAG_ARCHITECTURE.md`](Doc/11_RAG_ARCHITECTURE.md) | Retrieval in depth — corpora, chunking, embeddings, hybrid search, rerank, grounding |

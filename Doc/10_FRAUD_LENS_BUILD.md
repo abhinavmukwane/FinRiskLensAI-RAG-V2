@@ -3,7 +3,13 @@
 Turning this codebase into **FinRiskLens — evidence-based fraud detection + fraud
 ring discovery** for the Google AI Builder Cup 2026 (BFSI track).
 
-> **Submission: Oct 18, 2026. Target: Oct 16. Team registration closes Oct 11.**
+> **Direction changed 2026-10-15 — one assessment per customer, not per case.** The customer
+> shares or uploads its data; the bank sees one fraud and risk page per customer, section by
+> section; when it is clear, the bank raises the loan case with an AI credit decision and sends it
+> to LOS, ULI (OCEN) or ONDC. Plan: [`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md);
+> status: Phase 7 below. Everything built so far is the engine underneath and carries over.
+>
+> **Submission: Oct 18, 2026** (target moved from Oct 16 for Phase 7). Team registration closed Oct 11.
 > This plan starts Sep 29 — roughly **18 working days**. The reference design's own
 > 4-week plan has already lost its first week, so everything below is compressed
 > and carries an explicit cut list.
@@ -544,9 +550,27 @@ dotnet run --project tools/FinRiskLensAI.DemoData -- generate <dir>
 dotnet run --project tools/FinRiskLensAI.DemoData -- seed
 ```
 
-`seed` refuses to run unless `AzureBlob:Container` is the fork's own container — V1's
-`msme-data` holds live data under IDBI evaluation.
+`seed` writes to the database in the active settings (development by default; production
+through the Cloud SQL Auth Proxy, see `DB_SCRIPTS.md`) and to the buckets in `appsettings.json`.
+It writes Account Aggregator payloads only into synthetic `UDYAM-MH-99-*` folders, because the
+sources bucket also holds real MSMEs' data.
 - **R10** reranker + tuning against the eval set — only if time allows
+
+### Phase 7 — Customer Risk Lens · Oct 16 – Oct 18
+The pivot to one assessment per customer. Full plan, flows and defaults in
+[`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md).
+
+| Item | Status |
+|---|---|
+| Assessment per customer — one per Udyam number; uploads attach to it | ⏸ Oct 16 |
+| Customer dashboard: **Upload documents** card, sharing status | ⏸ Oct 16 |
+| Bank: risk status on **Customers**; **Risk Lens** tab first on the customer page; **Cases** menu removed | ⏸ Oct 16 |
+| Account Aggregator risk flags as findings · GST–ITR–bank turnover reconciliation · identity consistency · uploaded ITR vs filed | ⏸ Oct 16–17 |
+| Network lens: shared director, shared mobile / email / address, circular GST trading | ⏸ Oct 16–17 |
+| AI credit decision (Gemini Pro, grounded) + `credit_decisions` table + gate on the verdict | ⏸ Oct 17 |
+| `riskAssessment` and `creditDecision` blocks in the LOS, ULI and ONDC payloads | ⏸ Oct 17 |
+| Demo customers in both databases; eval re-run | ⏸ Oct 17–18 |
+| README, architecture, deck and video to the customer flow; deploy; submit | ⏸ Oct 18 |
 
 ---
 

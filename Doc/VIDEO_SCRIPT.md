@@ -2,6 +2,10 @@
 
 **Google AI Builder Cup 2026 · BFSI track · Team ASM FinTech Developer**
 
+> **To be rewritten for the customer flow** ([`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md))
+> once Phase 7 is live: customer shares data → bank's Risk Lens → loan case with AI credit
+> decision → LOS / ULI / ONDC. This version walks today's case flow.
+
 Recorded on the live site (<https://finrisklensai.cloud.run>), signed in to the bank
 portal. Every case shown is synthetic and stamped as such. About 430 words of voiceover
 at a calm pace; each block lists what is on screen and what is said.

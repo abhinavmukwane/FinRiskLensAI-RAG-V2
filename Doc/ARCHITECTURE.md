@@ -11,10 +11,27 @@ How the system is put together. The build history and every measurement are in
 
 ## 1. What it does
 
-A credit officer opens a case and uploads what the applicant submitted — bank statements,
-salary slips, ITRs, as PDF or image. FinRiskLens returns **findings**: each names what is
-wrong, explains it in rupees, and links to the exact row, field or page that shows it. The
-officer confirms or dismisses each one.
+> **Direction (2026-10-15): one assessment per customer.** Planned in
+> [`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md) and built in Phase 7. ✅ marks what runs
+> today; 🆕 what Phase 7 adds.
+
+```
+ Customer (MSME)                         Bank officer
+ ① Register with Udyam ✅                ③ Customers — risk status per customer 🆕
+ ② Share data ──────────────────────►   ④ Risk Lens — verdict + a section per source 🆕
+    fetch: AA ✅ · GST ✅ · ITR ✅ · MCA ✅  ⑤ Confirm / dismiss findings ✅
+    upload documents 🆕                  ⑥ Clear? → loan case + AI credit decision 🆕
+                                         ⑦ Send to LOS · ULI (OCEN) · ONDC ✅ (+ decision 🆕)
+```
+
+The customer shares what lenders ask for — bank statements through Account Aggregator, GST,
+ITR and company records, and any documents they upload. FinRiskLens returns **findings** on that
+customer: each names what is wrong, explains it in rupees, and links to the exact row, field or
+page that shows it. The officer confirms or dismisses each one; a customer with no open risk
+goes on to a loan case with an AI credit decision, sent to the bank's LOS, ULI or ONDC.
+
+*Until Phase 7 lands, the bank portal still works per case: an officer opens a case and uploads
+the documents (§2 is the same engine either way).*
 
 Three kinds of evidence, in this order:
 
@@ -25,7 +42,10 @@ Three kinds of evidence, in this order:
 | **The network** | Does it share what unrelated applicants never share? | One template, one file or one salary account across separate applications — a fraud ring |
 | **Judgement** | What does a careful investigator see across all of it? | Undeclared EMIs, loan stacking, gambling exposure, slip vs salary credited — each cited to rows and to the lender's policy |
 
-## 2. The case pipeline
+## 2. The assessment pipeline
+
+The engine is the same whether the trigger is a bank upload (today) or a customer upload or a
+newly fetched source (Phase 7).
 
 ```
 Upload ──► ① INGEST ──► ② EXTRACT ──► ③ CHECK ──► ④ LINK ──► ⑤ INVESTIGATE ──► ⑥ VERIFY ──► ⑦ REVIEW
