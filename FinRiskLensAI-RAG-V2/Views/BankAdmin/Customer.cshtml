@@ -147,6 +147,9 @@ else if (c != null)
 
     <!-- ===================== Tabs ===================== -->
     <div class="bp-tabs" role="tablist">
+        <button type="button" class="@Tab("risk")" data-pane="risk" role="tab">
+            <i class="bi bi-shield-exclamation"></i><span>Risk Lens</span>
+        </button>
         <button type="button" class="@Tab("udyam")" data-pane="udyam" role="tab">
             <i class="bi bi-grid-3x3-gap"></i><span>Udyam Identity</span>
         </button>
@@ -176,6 +179,10 @@ else if (c != null)
 
     <!-- ===================== Panes ===================== -->
     <div class="bp-panes">
+
+        <section class="@Pane("risk")" data-pane="risk">
+            @await Html.PartialAsync("_RiskLensBody", Model)
+        </section>
 
         <section class="@Pane("udyam")" data-pane="udyam">
             @if (Model.Udyam != null)

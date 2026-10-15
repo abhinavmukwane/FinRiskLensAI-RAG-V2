@@ -16,6 +16,15 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Cases
         /// <summary>Every application with its documents and its salary credits — the network lens's input.</summary>
         Task<IReadOnlyList<NetworkApplication>> GetNetworkAsync(CancellationToken ct = default);
 
+        /// <summary>The customer's assessment — the latest application for this Udyam number — or null.</summary>
+        Task<int?> FindByUanAsync(string uan, CancellationToken ct = default);
+
+        /// <summary>Attaches more documents to an existing application.</summary>
+        Task AddDocumentsAsync(int loanApplicationId, IReadOnlyList<CaseDocument> documents, CancellationToken ct = default);
+
+        /// <summary>Per Udyam number, the latest assessment's open findings by severity and whether it is still being worked on.</summary>
+        Task<IReadOnlyDictionary<string, RiskSummary>> GetRiskSummariesAsync(CancellationToken ct = default);
+
         /// <summary>What the extractor wrote for this application's documents.</summary>
         Task<(IReadOnlyList<StatementRow> Rows, IReadOnlyList<PageSummary> Pages, IReadOnlyList<DocField> Fields)>
             GetExtractedAsync(int loanApplicationId, CancellationToken ct = default);

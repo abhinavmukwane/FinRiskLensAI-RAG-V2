@@ -40,8 +40,8 @@ namespace FinRiskLensAI.Fraud.Cases
         public async Task<CaseIntakeResult> CreateAsync(NewCaseRequest request, IReadOnlyList<CaseUpload> files,
                                                         string actor, CancellationToken ct = default)
         {
-            if (files.Count == 0) return new(null, "Attach at least one document.");
-            if (files.Count > MaxFiles) return new(null, $"At most {MaxFiles} documents per case.");
+            var (documents, error) = await StoreAsync(files, actor, new HashSet<string>(), ct);
+            if (error != null) return new(null, error);
 
             var application = new LoanApplication
             {
@@ -53,33 +53,94 @@ namespace FinRiskLensAI.Fraud.Cases
                 DeclaredEmis = request.DeclaredEmis,
                 SubmittedAt = DateTime.UtcNow,
                 CreatedBy = actor,
-                UpdatedBy = actor
+                UpdatedBy = actor,
+                Documents = documents
             };
+            var id = await _cases.AddAsync(application, ct);
 
-            // Validate every file before storing any, so a bad fourth file does not
-            // leave three orphans behind.
+            // Metadata checks need nothing but the upload, so the case opens with them run
+            await RunChecksAsync(id, ct);
+            return new(id, null);
+        }
+
+        public async Task<CaseIntakeResult> AddCustomerDocumentsAsync(string uan, string? enterpriseName, IReadOnlyList<CaseUpload> files,
+                                                                      string actor, CancellationToken ct = default)
+        {
+            uan = uan.Trim().ToUpperInvariant();
+            var existingId = await _cases.FindByUanAsync(uan, ct);
+            var existing = existingId == null ? null : await _cases.GetAsync(existingId.Value, ct);
+            var attached = existing?.Documents.Select(d => Convert.ToHexString(d.Sha256).ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+
+            var (documents, error) = await StoreAsync(files, actor, attached, ct);
+            if (error != null) return new(null, error);
+            if (documents.Count == 0) return new(existingId, "These files have already been shared.");
+
+            int id;
+            if (existing == null)
+            {
+                // The customer's one assessment, opened by their first upload
+                var name = string.IsNullOrWhiteSpace(enterpriseName) ? null : enterpriseName.Trim();
+                id = await _cases.AddAsync(new LoanApplication
+                {
+                    ApplicantRef = uan,
+                    ProductType = CaseProduct.SmeLoan,
+                    Uan = uan,
+                    DeclaredEmployer = name?.Length > 200 ? name[..200] : name,
+                    SubmittedAt = DateTime.UtcNow,
+                    CreatedBy = actor,
+                    UpdatedBy = actor,
+                    Documents = documents
+                }, ct);
+            }
+            else
+            {
+                id = existing.LoanApplicationID;
+                await _cases.AddDocumentsAsync(id, documents, ct);
+            }
+
+            await RunChecksAsync(id, ct);
+            return new(id, null);
+        }
+
+        public async Task<CaseDetailViewModel?> GetByUanAsync(string uan, CancellationToken ct = default)
+            => await _cases.FindByUanAsync(uan.Trim().ToUpperInvariant(), ct) is int id ? await GetAsync(id, ct) : null;
+
+        public Task<IReadOnlyDictionary<string, RiskSummary>> GetRiskSummariesAsync(CancellationToken ct = default)
+            => _cases.GetRiskSummariesAsync(ct);
+
+        /// <summary>
+        /// Validates every file before storing any — so a bad fourth file does not leave three orphans behind —
+        /// then stores each content-addressed and reads its PDF metadata. Files in <paramref name="skip"/>
+        /// (lower-case SHA-256 hex) and repeats within the upload are left out.
+        /// </summary>
+        private async Task<(List<CaseDocument> Documents, string? Error)> StoreAsync(IReadOnlyList<CaseUpload> files, string actor,
+                                                                                  HashSet<string> skip, CancellationToken ct)
+        {
+            if (files.Count == 0) return (new(), "Attach at least one document.");
+            if (files.Count > MaxFiles) return (new(), $"At most {MaxFiles} documents at a time.");
+
             var accepted = new List<(CaseUpload File, string ContentType, string Extension)>();
             foreach (var f in files)
             {
-                if (f.Content.Length == 0) return new(null, $"{f.FileName} is empty.");
-                if (f.Content.Length > MaxFileBytes) return new(null, $"{f.FileName} is over {MaxFileBytes / 1024 / 1024} MB.");
+                if (f.Content.Length == 0) return (new(), $"{f.FileName} is empty.");
+                if (f.Content.Length > MaxFileBytes) return (new(), $"{f.FileName} is over {MaxFileBytes / 1024 / 1024} MB.");
                 var type = DocumentInspector.Sniff(f.Content);
-                if (type == null) return new(null, $"{f.FileName} is not a PDF, PNG or JPEG.");
+                if (type == null) return (new(), $"{f.FileName} is not a PDF, PNG or JPEG.");
                 accepted.Add((f, type.Value.ContentType, type.Value.Extension));
             }
 
-            var seen = new HashSet<string>();
+            var documents = new List<CaseDocument>();
             foreach (var (file, contentType, extension) in accepted)
             {
                 var sha = SHA256.HashData(file.Content);
                 var hex = Convert.ToHexString(sha).ToLowerInvariant();
-                if (!seen.Add(hex)) continue;   // the same file attached twice
+                if (!skip.Add(hex)) continue;   // already attached, or the same file twice in this upload
 
                 var path = $"cases/{hex}{extension}";
                 await _store.PutAsync(path, file.Content, contentType, ct);
 
                 var meta = contentType == "application/pdf" ? DocumentInspector.ReadPdf(file.Content) : null;
-                application.Documents.Add(new CaseDocument
+                documents.Add(new CaseDocument
                 {
                     FileName = Path.GetFileName(file.FileName),
                     ContentType = contentType,
@@ -96,12 +157,7 @@ namespace FinRiskLensAI.Fraud.Cases
                     UpdatedBy = actor
                 });
             }
-
-            var id = await _cases.AddAsync(application, ct);
-
-            // Metadata checks need nothing but the upload, so the case opens with them run
-            await RunChecksAsync(id, ct);
-            return new(id, null);
+            return (documents, null);
         }
 
         public Task<IReadOnlyList<CaseListItem>> ListAsync(CancellationToken ct = default) => _cases.ListAsync(ct);

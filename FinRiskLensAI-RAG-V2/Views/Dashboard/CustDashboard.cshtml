@@ -8,6 +8,8 @@
     var aaid = currentUser.MobileNumber + "@finvu";
     var gstn = currentUser.GstinNumber;
 
+    var uploads = (ViewBag.Uploads as List<FinRiskLensAI.Core.Models.Cases.CaseDocument>) ?? new();
+
     // Client IP captured on the session user at login — shown in the "Secure Connection IP" badge.
     var clientIp = currentUser?.ClientIP;
     if (string.IsNullOrWhiteSpace(clientIp)) clientIp = "N/A";
@@ -142,6 +144,49 @@
                             </button>
                         }
                     </div>
+                </div>
+
+                @* The customer's own documents: they join the one assessment the bank reviews *@
+                <div class="verify-card mt-3">
+                    <form method="post" asp-controller="Dashboard" asp-action="UploadDocuments" enctype="multipart/form-data">
+                        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                            <div>
+                                <h6 class="mb-1">Upload documents</h6>
+                                <small class="text-muted">Statements of other bank accounts, ITR, GST returns, financials — PDF, PNG or JPEG, up to 8 at a time</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="file" name="files" multiple required class="form-control form-control-sm"
+                                       accept="application/pdf,image/png,image/jpeg" aria-label="Documents to upload" style="max-width:230px;" />
+                                <button type="submit" class="btn btn-submit">Upload</button>
+                            </div>
+                        </div>
+                        @if (TempData["UploadError"] is string uploadError)
+                        {
+                            <div class="alert alert-danger py-2 mt-3 mb-0 small">@uploadError</div>
+                        }
+                        @if (TempData["UploadDone"] is string uploadDone)
+                        {
+                            <div class="alert alert-success py-2 mt-3 mb-0 small">@uploadDone</div>
+                        }
+                    </form>
+                    @if (uploads.Count > 0)
+                    {
+                        <ul class="list-unstyled small mt-3 mb-0">
+                            @foreach (var d in uploads)
+                            {
+                                var (label, cls) = d.ExtractStatus switch
+                                {
+                                    FinRiskLensAI.Core.Models.Cases.ExtractStatus.Pending => ("Reading…", "text-muted"),
+                                    FinRiskLensAI.Core.Models.Cases.ExtractStatus.Done => ("Received", "text-success"),
+                                    _ => ("Could not be read — please upload a clearer copy", "text-danger")
+                                };
+                                <li class="d-flex justify-content-between gap-2 border-top pt-2 mt-2">
+                                    <span><i class="bi @(d.ContentType == "application/pdf" ? "bi-file-earmark-pdf" : "bi-file-earmark-image") me-1"></i>@d.FileName</span>
+                                    <span class="@cls">@label</span>
+                                </li>
+                            }
+                        </ul>
+                    }
                 </div>
 
             </div>

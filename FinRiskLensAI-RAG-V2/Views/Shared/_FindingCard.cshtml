@@ -1,0 +1,78 @@
+@model FinRiskLensAI.Core.Models.Cases.FindingCardModel
+@using FinRiskLensAI.Core.Models.Cases
+@{
+    var f = Model.Finding;
+    var reviewed = f.ReviewStatus != ReviewStatus.Open;
+}
+<article id="finding-@f.FindingID" class="bp-finding bp-sev-@f.Severity.ToString().ToLowerInvariant() @(reviewed ? "bp-finding-reviewed" : "")">
+    <div class="bp-finding-meta">
+        <span class="bp-sev">@f.Severity</span>
+        <span>@f.Category</span>
+        <span class="bp-mono">@f.Type</span>
+        <span>@(f.DetectedBy == FindingSource.Deterministic ? "Deterministic" : "AI · verified")</span>
+        @if (reviewed)
+        {
+            <span class="bp-review-chip bp-review-@f.ReviewStatus.ToString().ToLowerInvariant()">@f.ReviewStatus by @f.ReviewedBy</span>
+        }
+    </div>
+    <h3>@f.Title</h3>
+    <p>@f.Explanation</p>
+    @if (f.RecommendedAction != null)
+    {
+        <p class="bp-finding-action"><i class="bi bi-arrow-return-right"></i> @f.RecommendedAction
+            @if (f.Type == "FRAUD_RING")
+            {
+                <a class="bp-link" href="@Url.Action("Rings", "Cases")">See the ring <i class="bi bi-diagram-3"></i></a>
+            }
+        </p>
+    }
+
+    @if (f.Evidence.Count > 0)
+    {
+        <ul class="bp-evidence">
+            @foreach (var e in f.Evidence)
+            {
+                var doc = e.CaseDocumentID is int did && Model.Documents.TryGetValue(did, out var dd) ? dd : null;
+                <li>
+                    @if (e.Kind == EvidenceKind.Policy)
+                    {
+                        <span class="bp-policy"><i class="bi bi-journal-text"></i> @e.Note</span>
+                        continue;
+                    }
+                    @if (doc != null)
+                    {
+                        <a class="bp-link" target="_blank" rel="noopener"
+                           href="@(Url.Action("Document", "Cases", new { id = Model.LoanApplicationID, docId = doc.CaseDocumentID }))@(e.PageNo != null ? $"#page={e.PageNo}" : "")">
+                            <i class="bi bi-box-arrow-up-right"></i> @doc.FileName@(e.PageNo != null ? $", p. {e.PageNo}" : "")
+                        </a>
+                    }
+                    @if (e.Note != null) { <span class="bp-muted">@e.Note</span> }
+                </li>
+            }
+        </ul>
+    }
+
+    @if (f.ReviewNote != null)
+    {
+        <p class="bp-review-note"><i class="bi bi-chat-left-text"></i> @f.ReviewNote</p>
+    }
+
+    <form class="bp-review-form" method="post" asp-controller="Cases" asp-action="Review"
+          asp-route-id="@Model.LoanApplicationID" asp-route-findingId="@f.FindingID">
+        @if (Model.ReturnUrl != null)
+        {
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        }
+        @if (reviewed)
+        {
+            <button type="submit" name="status" value="Open" class="bp-btn bp-btn-ghost bp-btn-sm">Reopen</button>
+        }
+        else
+        {
+            <input type="text" name="note" maxlength="2000" class="bp-select" placeholder="Note for the file (optional)"
+                   aria-label="Review note for this finding" />
+            <button type="submit" name="status" value="Confirmed" class="bp-btn bp-btn-sm"><i class="bi bi-check2"></i> Confirm</button>
+            <button type="submit" name="status" value="Dismissed" class="bp-btn bp-btn-ghost bp-btn-sm"><i class="bi bi-x"></i> Dismiss</button>
+        }
+    </form>
+</article>

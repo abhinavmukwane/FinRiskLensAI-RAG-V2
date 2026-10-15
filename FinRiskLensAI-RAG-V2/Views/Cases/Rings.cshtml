@@ -55,7 +55,9 @@
                 <tbody>
                     @foreach (var m in ring.Members)
                     {
-                        <tr onclick="location.href='@Url.Action("Detail", "Cases", new { id = m.LoanApplicationID })'" style="cursor:pointer">
+                        var href = m.Uan != null ? Url.Action("Customer", "BankAdmin", new { uan = m.Uan, tab = "risk" })
+                                                 : Url.Action("Detail", "Cases", new { id = m.LoanApplicationID });
+                        <tr onclick="location.href='@href'" style="cursor:pointer">
                             <td class="bp-mono">#@m.LoanApplicationID</td>
                             <td class="bp-strong">@m.ApplicantRef</td>
                             <td>@(m.DeclaredEmployer ?? "—")</td>

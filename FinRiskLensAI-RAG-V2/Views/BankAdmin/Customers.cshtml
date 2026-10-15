@@ -102,6 +102,7 @@ else
                                     Onboarded <i class="bi @SortIcon("onboarded")"></i>
                                 </a>
                             </th>
+                            <th>Risk</th>
                             <th class="text-center">Loan case</th>
                             <th></th>
                         </tr>
@@ -123,6 +124,25 @@ else
                                 </td>
                                 <td class="bp-muted">@(c.OrganizationType ?? "—")</td>
                                 <td>@c.OnboardedOn.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    @{
+                                        var r = Model.Risk.TryGetValue(c.Uan ?? "", out var rs) ? rs : null;
+                                        var verdict = r?.Verdict ?? FinRiskLensAI.Core.Models.Cases.RiskVerdict.AwaitingData;
+                                        var chip = verdict switch
+                                        {
+                                            FinRiskLensAI.Core.Models.Cases.RiskVerdict.Clear => "bp-case-clear",
+                                            FinRiskLensAI.Core.Models.Cases.RiskVerdict.Review => "bp-case-review",
+                                            FinRiskLensAI.Core.Models.Cases.RiskVerdict.HighRisk => "bp-case-hold",
+                                            FinRiskLensAI.Core.Models.Cases.RiskVerdict.Assessing => "bp-case-processing",
+                                            _ => "bp-case-new"
+                                        };
+                                    }
+                                    <a class="bp-case-status @chip" onclick="event.stopPropagation()"
+                                       href="@Url.Action("Customer", "BankAdmin", new { uan = c.Uan, tab = "risk" })"
+                                       title="@(r == null ? "No documents assessed yet" : $"{r.OpenHigh} High · {r.OpenMedium} Medium · {r.OpenLow} Low open")">
+                                        @FinRiskLensAI.Core.Models.Cases.RiskSummary.Label(verdict)
+                                    </a>
+                                </td>
                                 <td class="text-center">
                                     @if (c.LastPush != null)
                                     {

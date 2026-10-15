@@ -1,4 +1,5 @@
 using FinRiskLensAI.Core.Models.AccountAggregator;
+using FinRiskLensAI.Core.Models.Cases;
 using FinRiskLensAI.Core.Models.Common;
 using FinRiskLensAI.Core.Models.Itr;
 using FinRiskLensAI.Core.Models.GST;
@@ -19,6 +20,8 @@ namespace FinRiskLensAI.Core.Models.Admin
         public BankCustomerPage Page { get; set; } = new();
         public List<string> States { get; set; } = new();
         public string? LoadError { get; set; }
+        /// <summary>Risk at a glance per Udyam number; a customer missing here has nothing assessed yet.</summary>
+        public IReadOnlyDictionary<string, RiskSummary> Risk { get; set; } = new Dictionary<string, RiskSummary>();
     }
 
     /// <summary>
@@ -32,8 +35,11 @@ namespace FinRiskLensAI.Core.Models.Admin
         public BankCustomerRow? Customer { get; set; }
         public string? LoadError { get; set; }
 
-        /// <summary>Which tab to open on load: udyam | gst | itr | aa | mca | security.</summary>
-        public string ActiveTab { get; set; } = "udyam";
+        /// <summary>Which tab to open on load: risk | udyam | gst | itr | aa | mca | security.</summary>
+        public string ActiveTab { get; set; } = "risk";
+
+        /// <summary>The customer's assessment — findings, documents, AI investigation — or null before any upload.</summary>
+        public CaseDetailViewModel? Risk { get; set; }
 
         public UdyamDetailsViewModel? Udyam { get; set; }
         public GSTAnalysisViewModel? Gst { get; set; }

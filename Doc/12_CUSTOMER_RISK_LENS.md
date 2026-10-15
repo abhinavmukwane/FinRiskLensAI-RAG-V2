@@ -35,8 +35,8 @@ This document is the plan. What is built is tracked in
 |---|---|---|
 | 1. Register | Enters the Udyam number, checks the details, consents, verifies by email OTP | ✅ built |
 | 2. Fetch data | One button per source on the dashboard: **Account Aggregator** (consent in the AA app — live Finvu sandbox), **GST**, **ITR**, **MCA** | ✅ built (GST, ITR, MCA are sample data in the demo; live sources need licensed providers) |
-| 3. Upload documents | A new **Upload documents** card: bank statements of accounts not shared through AA, ITR copies, GST returns, audited financials. PDF or photo | 🆕 to build |
-| 4. See progress | Dashboard shows which sources are shared and that the bank is reviewing. Risk details stay bank-side | 🆕 small |
+| 3. Upload documents | A new **Upload documents** card: bank statements of accounts not shared through AA, ITR copies, GST returns, audited financials. PDF or photo | ✅ built |
+| 4. See progress | Dashboard shows which sources are shared and that the bank is reviewing. Risk details stay bank-side | ✅ each upload: Reading / Received / could not be read |
 
 Every upload and every fetched source lands in the customer's own folder
 (`gs://finrisklensai-sources/{UDYAM}/` for source data, `gs://finrisklensai-cases/` for uploads)
@@ -46,8 +46,8 @@ and starts a fresh assessment automatically.
 
 | Step | What the bank officer sees and does | Status |
 |---|---|---|
-| 1. Customers | The list gains a **risk status** per customer — *Clear*, *Review*, *High risk*, *Awaiting data* — and data completeness | 🆕 extend existing list |
-| 2. Risk Lens | The customer page opens on a new **Risk Lens** tab: the verdict, then one section per source (below). The existing Udyam, GST, AA, ITR and MCA tabs stay as the detail views | 🆕 new tab on Customer 360 |
+| 1. Customers | The list gains a **risk status** per customer — *Clear*, *Review*, *High risk*, *Awaiting data* — and data completeness | ✅ risk column |
+| 2. Risk Lens | The customer page opens on a new **Risk Lens** tab: the verdict, then one section per source (below). The existing Udyam, GST, AA, ITR and MCA tabs stay as the detail views | ✅ built |
 | 3. Review | Each finding has its evidence links and **Confirm / Dismiss** with a note | ✅ reuse |
 | 4. Loan case | **Generate loan case** is enabled only when no High or Medium finding is open. A confirmed finding blocks it; a dismissed one does not | 🆕 gate |
 | 5. AI credit decision | Gemini Pro recommends **Approve / Refer / Decline**, the product, limit and tenure, and the reasons — every amount traced to the customer's own data, every policy point cited. The officer can adjust the amount before accepting | 🆕 to build |

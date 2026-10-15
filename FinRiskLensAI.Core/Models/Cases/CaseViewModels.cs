@@ -48,7 +48,56 @@ namespace FinRiskLensAI.Core.Models.Cases
 
     /// <summary>What the network lens reads of one application: who it names, its documents' fingerprints, its salary credits.</summary>
     public sealed record NetworkApplication(int LoanApplicationID, string ApplicantRef, string? DeclaredEmployer,
-                                            IReadOnlyList<CaseDocument> Documents, IReadOnlyList<StatementRow> SalaryCredits);
+                                            IReadOnlyList<CaseDocument> Documents, IReadOnlyList<StatementRow> SalaryCredits,
+                                            string? Uan = null);
+
+    /// <summary>A customer's overall state on the bank side (Doc/12_CUSTOMER_RISK_LENS.md).</summary>
+    public enum RiskVerdict { AwaitingData, Assessing, Clear, Review, HighRisk }
+
+    /// <summary>One customer's assessment at a glance: the verdict and what drives it.</summary>
+    public sealed record RiskSummary(int LoanApplicationID, RiskVerdict Verdict, int OpenHigh, int OpenMedium, int OpenLow,
+                                     int Documents, DateTime? InvestigatedAt)
+    {
+        /// <summary>
+        /// The one rule for the verdict. Still reading or investigating → Assessing; any open High finding →
+        /// High risk; any other open finding → Review; otherwise Clear. Reviewed findings no longer count.
+        /// </summary>
+        public static RiskVerdict Decide(bool assessing, int openHigh, int openOther)
+            => assessing ? RiskVerdict.Assessing
+             : openHigh > 0 ? RiskVerdict.HighRisk
+             : openOther > 0 ? RiskVerdict.Review
+             : RiskVerdict.Clear;
+
+        public static string Label(RiskVerdict v) => v switch
+        {
+            RiskVerdict.AwaitingData => "Awaiting data",
+            RiskVerdict.Assessing => "Assessing",
+            RiskVerdict.Clear => "Clear",
+            RiskVerdict.Review => "Review",
+            _ => "High risk"
+        };
+    }
+
+    /// <summary>The Risk Lens sections (Doc/12_CUSTOMER_RISK_LENS.md §4), and which section each finding type belongs to.</summary>
+    public static class RiskSections
+    {
+        public const string Identity = "identity", Gst = "gst", Bank = "bank", Itr = "itr", Documents = "documents", Network = "network";
+
+        public static string Of(string findingType) => findingType switch
+        {
+            "IDENTITY_MISMATCH" or "IMPLAUSIBLE_EMPLOYER" or "EMPLOYER_INACTIVE" => Identity,
+            "INCOME_MISMATCH" => Gst,
+            "ITR_MISMATCH" => Itr,
+            "SALARY_ROUNDTRIP" or "PRE_APPLICATION_WINDOW_DRESSING" or "PASS_THROUGH" or "BOUNCES" or "UNDECLARED_EMI"
+                or "LOAN_STACKING" or "GAMBLING_CRYPTO_EXPOSURE" or "SALARY_SOURCE_MISMATCH" => Bank,
+            "FRAUD_RING" => Network,
+            _ => Documents   // tampering, file history, the bank-record comparison
+        };
+    }
+
+    /// <summary>One finding card, wherever it is shown — the case page or a customer's Risk Lens.</summary>
+    public sealed record FindingCardModel(Finding Finding, IReadOnlyDictionary<int, CaseDocument> Documents,
+                                          int LoanApplicationID, string? ReturnUrl);
 
     /// <summary>One thing separate applications share — a file, a template, a salary account — and each one's evidence of it.</summary>
     public sealed record RingLink(string Kind, string Detail, IReadOnlyDictionary<int, IReadOnlyList<Evidence>> Members);
