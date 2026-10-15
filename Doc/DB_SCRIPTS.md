@@ -20,12 +20,18 @@ Neither string is written down here. Production was seeded on 2026-10-12 by appl
 migrations to a fresh database and copying every table from Neon (24 tables, row counts
 compared, identity sequences reset).
 
-**Applying a migration to production:** add your IPv4 address to the instance's authorised
-networks for the duration (`gcloud sql instances patch finrisklens-db --authorized-networks <ip>/32`),
-connect with `SSL Mode=VerifyCA` against the instance's server CA, run
-`dotnet ef database update` with the production string in
-`Database__ConnectionStrings__PostgreSQL`, then clear the network again
-(`--clear-authorized-networks`).
+**Reaching production from a workstation** (migrations, seeding, data fixes): through the
+**Cloud SQL Auth Proxy**, which authenticates with your gcloud identity (`cloudsql.client`) and
+encrypts end to end — no authorised network is ever opened on the instance. Install it once with
+`gcloud components install cloud-sql-proxy`, then:
+
+```bash
+cloud-sql-proxy --address 127.0.0.1 --port 5433 finrisklensai:asia-south1:finrisklens-db
+```
+
+and run `dotnet ef database update` (or a tool) with `Database__ConnectionStrings__PostgreSQL` set
+to the production string with `Host=127.0.0.1;Port=5433;…;SSL Mode=Disable` — the proxy does the
+TLS. Keep the string in the shell's environment, never in a file. Stop the proxy when done.
 
 **Schema:** application tables live in `public`. The EF migrations history table is
 pinned at `cre."__EFMigrationsHistory"` (set in `PostgresSetup`).

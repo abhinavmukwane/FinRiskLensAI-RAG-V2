@@ -490,7 +490,9 @@ fallback can actually fire.
 Found while building: on the development database the lens at once linked DEMO-T01 and
 DEMO-T03 to `LIVE-GEMINI-01` — a live-extraction test that re-uploaded their files — and test
 cases #2 and #3, which share a statement. Correct, and a reason to remove test cases before
-judging.
+judging — done on 2026-10-15 in both databases, through the Cloud SQL Auth Proxy for production
+(`DB_SCRIPTS.md`), and the eight new demo cases seeded there. Each database now holds exactly the
+20 demo cases and the two planted rings.
 
 Found while building: on a genuine statement Gemini read 27-08-2026 as 27-07-2026 — the same
 way in three runs — with the amount and balance right. The balance checks never look at
