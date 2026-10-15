@@ -34,10 +34,10 @@ Lead with the international label. Add the Indian source name as a short context
 
 | Indian source | International label | Source description (tooltips, helper text) | Short tag (when needed) |
 |---|---|---|---|
-| Udyam | Business Registry & Identity | Government MSME business registry | Udyam |
+| Udyam | Business Registry & Identity | Government MSME Business Registry | Udyam |
 | GST | Tax & Sales Compliance | Tax / sales compliance records | GST / GSTIN |
-| Account Aggregator (AA) | Banking & Cash-Flow Analysis | Consented bank data | Account Aggregator |
-| ITR | Income & Tax Filing | Income tax returns | ITR |
+| Account Aggregator (AA) | Banking & Cash-Flow Analysis | Consent-Based Bank Data | Account Aggregator |
+| ITR | Income Tax Filing | Income tax returns | ITR |
 | MCA | Corporate Registry | Corporate registry filings | MCA |
 | PAN | Taxpayer / Business Identity | Taxpayer / business identity | PAN |
 
@@ -84,7 +84,7 @@ Format: **Title** (2–6 words, title case) + **subtitle** (one sentence, ≤ 20
 | Udyam analysis | Business Registry & Identity | Registration, classification and activity details from Udyam. |
 | GST analysis | Tax & Sales Compliance | Filing regularity, turnover trends and tax compliance from GST returns. |
 | AA analysis | Banking & Cash-Flow Analysis | Balances, inflows, outflows and repayment capacity from consented bank data. |
-| ITR analysis | Income & Tax Filing | Declared income and filing history from income tax returns. |
+| ITR analysis | Income Tax Filing | Declared income and filing history from income tax returns. |
 | MCA analysis | Corporate Registry | Company status, directors and filings from the corporate registry. |
 | Dashboard | Risk Overview | Per-source checks and fraud findings, each with its reasons and evidence. |
 | Case page (lender) | Case Findings | What was found, where, and the evidence behind it. |
@@ -127,7 +127,25 @@ These are the defaults. A page may adjust its subtitle to match what it actually
 
 **Sign-in mode (`?mode=login`).** Sign In · Sign In to Your Dashboard · Udyam Registration Number or Mobile Number · Send Code · Verify Contact. Loader: Checking your details… · Finding your account · Checking registered contact · Sending verification code.
 
-Server messages (`res.message` from controllers) are not covered yet. Align them when the controllers are in scope.
+Server messages (`res.message` from controllers) are not covered yet for onboarding. Align them when those controllers are in scope.
+
+### Approved: customer dashboard (`Dashboard/CustDashboard.cshtml`)
+
+| Element | Wording |
+|---|---|
+| Banner | Welcome back · [business name from session] · **Sign-in IP:** [IP] (tooltip: IP address used to sign in. Select to see the IP risk check.) |
+| Panel title / sub | Connect Your Data Sources / Each source is checked separately. Your bank reviews the results. |
+| Source cards | GST · Tax & Sales Compliance — Account Aggregator · Consent-Based Bank Data — ITR · Income Tax Filing — MCA · Corporate Registry |
+| Card buttons | Fetch Details · Retrieved (done) · Not Applicable (MCA for non-companies) |
+| Side panels | GST · Tax & Sales — Filing regularity, turnover and tax paid, from GSTR-2B and GSTR-3B returns. · Account Aggregator — Bank statements for cash-flow analysis, shared only after you approve the consent request in the Account Aggregator. · ITR · Income Tax Filing — Declared income and filing history from income-tax returns. · MCA · Corporate Registry — Company status, paid-up capital, registered charges and directors. Companies and LLPs only. |
+| AA consent | I agree to receive an Account Aggregator consent request. My bank statements are shared only after I approve that request in the Account Aggregator. Button: Request Consent |
+| GST / ITR / MCA consent | I authorize FinRiskLens AI to retrieve my [source] to assess [what it shows] for my bank / for this credit assessment. |
+| Status (client) | Tick the consent box to continue. · Retrieving GST returns… · Retrieving ITR details… · Retrieving company and director records… · Creating consent request… · Something went wrong. Try again. |
+| Status (server) | Sample GST returns loaded for your GSTIN (demo data). · Sample ITR details loaded (demo data). · Sample MCA company record loaded (demo data). · [Source] already loaded. · Consent request created. Approve it in the Account Aggregator tab to share your bank statements. |
+
+**AA rule:** creating a consent request is not the same as sharing data. Never say bank data is "fetched", "connected" or "verified" until the Account Aggregator callback confirms it.
+
+**Demo-data rule:** while GST, ITR and MCA return generated sample data, every success message must say so ("demo data"). Remove the label only when a live integration replaces the generator.
 
 ### Layouts
 
@@ -162,7 +180,13 @@ Don't add new copy that relies on these until they are confirmed in code:
 | "Scores in seconds", "< 10 sec" | **Not measured.** Use the measured figures instead (e.g. 12–43 s AI investigation per demo case). |
 | "Declining consent is never treated as bad credit" | **Can't be checked.** There's no composite score to apply it to. |
 | Email code delivery | Email sending is attempted, but a failure is ignored (the check is commented out). The success message is always "OTP sent successfully to your email." |
-| Location / IP risk | Backed: the IP risk lookup exists (`IP_Get_Service`, IP Verification). There is no geolocation check of the business address, so the badge says ADDRESS ON RECORD. |
+| Location / IP risk | The IP risk lookup exists (`IpRiskService`), but with `Signzy:UseApi = false` it returns a **stored** response, not a live check of the sign-in IP. "Verified On" in the popup shows the browser's current time. There is no geolocation check of the business address, so the badge says ADDRESS ON RECORD. |
+| GST "Fetch Details" | **Sample data.** Copies a shared `dummy-data` template and rewrites the GSTIN/PAN to the customer's. |
+| ITR "Fetch Details" | **Sample data.** `DummyDataService.GetDummyItr`: real identity fields, generated financial figures. |
+| MCA "Fetch Details" | **Sample data.** `DummyDataService.GetDummyMca` / `GetDummyDin`. The companies-and-LLPs-only check is real. |
+| GST / ITR password fields | Required by the form but **never sent to the server** (a UI-only gate). Don't describe them as portal authentication. |
+| Account Aggregator | **Real API.** Finvu consent request via `InitiateAAFetch`, opened in a new tab. Configured against Finvu's test host. |
+| Customer document upload | **Real.** Files join the customer's assessment and go through the fraud pipeline; the bank sees the results. |
 
 ---
 

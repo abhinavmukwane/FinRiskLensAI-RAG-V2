@@ -10,7 +10,7 @@
 
     var uploads = (ViewBag.Uploads as List<FinRiskLensAI.Core.Models.Cases.CaseDocument>) ?? new();
 
-    // Client IP captured on the session user at login — shown in the "Secure Connection IP" badge.
+    // Client IP captured on the session user at login — shown in the "Sign-in IP" badge.
     var clientIp = currentUser?.ClientIP;
     if (string.IsNullOrWhiteSpace(clientIp)) clientIp = "N/A";
 }
@@ -26,11 +26,11 @@
             </div>
         </div>
 
-        <!-- Secure Connection IP badge — click opens the Source IP Security Audit popup -->
+        <!-- Sign-in IP badge — click opens the Source IP Security Audit popup -->
         <div class="ip-header-badge" id="ipHeaderBadge" role="button" tabindex="0"
-             data-bs-toggle="modal" data-bs-target="#ipAuditModal">
+             data-bs-toggle="modal" data-bs-target="#ipAuditModal" title="IP address used to sign in. Select to see the IP risk check.">
             <span class="ip-pulse-dot"></span>
-            <span class="ip-badge-text">Secure Connection IP:</span>
+            <span class="ip-badge-text">Sign-in IP:</span>
             <span class="ip-badge-value" id="ipBadgeValue">@clientIp</span>
         </div>
         @* @if (currentUser != null)
@@ -56,16 +56,17 @@
         <div class="col-12 col-md-8 mb-4 mb-md-0">
             <div class="verify-panel p-4">
 
-                <h4 class="fw-bold mb-4">Lets get start</h4>
+                <h4 class="fw-bold mb-1">Connect Your Data Sources</h4>
+                <p class="small text-muted mb-4">Each source is checked separately. Your bank reviews the results.</p>
 
                 <div class="verify-card mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">GST</h6>
-                            <small class="text-muted">Goods & Services Tax Verification</small>
+                            <small class="text-muted">Tax &amp; Sales Compliance</small>
                         </div>
 
-                        <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#verificationModal" data-title="Fetch GSTR Details">
+                        <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#verificationModal" data-title="Fetch GST Returns">
                             Fetch Details
                         </button>
                     </div>
@@ -75,7 +76,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">Account Aggregator</h6>
-                            <small class="text-muted">Bank Statement Verification</small>
+                            <small class="text-muted">Consent-Based Bank Data</small>
                         </div>
 
                         <button type="button"
@@ -92,12 +93,12 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">ITR</h6>
-                            <small class="text-muted">Income Tax Return Verification</small>
+                            <small class="text-muted">Income Tax Filing</small>
                         </div>
                         @if (ViewBag.ItrFetched == true)
                         {
-                            <button class="btn btn-submit" disabled title="ITR details already fetched">
-                                <i class="bi bi-check-circle me-1"></i>Already Fetched
+                            <button class="btn btn-submit" disabled title="ITR details already retrieved">
+                                <i class="bi bi-check-circle me-1"></i>Retrieved
                             </button>
                         }
                         else
@@ -113,7 +114,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">MCA</h6>
-                            <small class="text-muted">Corporate Affairs &amp; Director Verification</small>
+                            <small class="text-muted">Corporate Registry</small>
                             @if (ViewBag.McaApplicable == false)
                             {
                                 <div class="small text-muted mt-1">
@@ -133,8 +134,8 @@
                         }
                         else if (ViewBag.McaFetched == true)
                         {
-                            <button class="btn btn-submit" disabled title="MCA details already fetched">
-                                <i class="bi bi-check-circle me-1"></i>Already Fetched
+                            <button class="btn btn-submit" disabled title="MCA details already retrieved">
+                                <i class="bi bi-check-circle me-1"></i>Retrieved
                             </button>
                         }
                         else
@@ -151,7 +152,7 @@
                     <form method="post" asp-controller="Dashboard" asp-action="UploadDocuments" enctype="multipart/form-data">
                         <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
                             <div>
-                                <h6 class="mb-1">Upload documents</h6>
+                                <h6 class="mb-1">Upload Documents</h6>
                                 <small class="text-muted">Statements of other bank accounts, ITR, GST returns, financials — PDF, PNG or JPEG, up to 8 at a time</small>
                             </div>
                             <div class="d-flex align-items-center gap-2">
@@ -201,14 +202,14 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="bi bi-receipt-cutoff text-danger fs-4"></i>
                             <span class="fw-bold text-dark text-uppercase small">
-                                Goods & Services Tax
+                                GST · Tax &amp; Sales
                             </span>
                         </div>
 
                         <p class="card-text text-muted mb-0 d-flex gap-2" style="font-size:0.82rem; line-height:1.6;">
                             @* <i class="bi bi-info-circle-fill text-primary mt-1"></i> *@
                             <span>
-                                View GST filings, turnover, tax payments, and compliance history.
+                                Filing regularity, turnover and tax paid, from GSTR-2B and GSTR-3B returns.
                             </span>
                         </p>
                     </div>
@@ -227,7 +228,7 @@
                         <p class="card-text text-muted mb-0 d-flex gap-2" style="font-size:0.82rem; line-height:1.6;">
                             @* <i class="bi bi-info-circle-fill text-primary mt-1"></i> *@
                             <span>
-                                Securely access bank account data to analyze cash flow and transactions.
+                                Bank statements for cash-flow analysis, shared only after you approve the consent request in the Account Aggregator.
                             </span>
                         </p>
                     </div>
@@ -239,14 +240,14 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="bi bi-file-earmark-text-fill text-warning fs-4"></i>
                             <span class="fw-bold text-dark text-uppercase small">
-                                Income Tax Return
+                                ITR · Income Tax Filing
                             </span>
                         </div>
 
                         <p class="card-text text-muted mb-0 d-flex gap-2" style="font-size:0.82rem; line-height:1.6;">
                             @* <i class="bi bi-info-circle-fill text-primary mt-1"></i> *@
                             <span>
-                                Verify declared income, tax filings, and financial stability.
+                                Declared income and filing history from income-tax returns.
                             </span>
                         </p>
                     </div>
@@ -258,13 +259,13 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="bi bi-building-check text-info fs-4"></i>
                             <span class="fw-bold text-dark text-uppercase small">
-                                Corporate Affairs
+                                MCA · Corporate Registry
                             </span>
                         </div>
 
                         <p class="card-text text-muted mb-0 d-flex gap-2" style="font-size:0.82rem; line-height:1.6;">
                             <span>
-                                Confirm company status, paid-up capital, registered charges and director DIN records.
+                                Company status, paid-up capital, registered charges and directors. Companies and LLPs only.
                             </span>
                         </p>
                     </div>
@@ -455,7 +456,7 @@
             <div class="modal-header border-0 pb-0">
                 <div>
                     <h5 class="modal-title " id="verificationModalLabel">
-                        Fetch GSTR Details
+                        Fetch GST Returns
                     </h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -465,9 +466,9 @@
                 <!-- User ID -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold">
-                        GST Number
+                        GSTIN
                     </label>
-                    <input type="text" id="gstNumber" class="form-control custom-input" placeholder="Enter User ID" value="@gstn" disabled readonly>
+                    <input type="text" id="gstNumber" class="form-control custom-input" placeholder="GSTIN" value="@gstn" disabled readonly>
                 </div>
 
                 <!-- Password -->
@@ -485,11 +486,9 @@
                         <input class="form-check-input rv-checkbox" type="checkbox" id="gstConsent">
 
                         <label class="form-check-label" for="gstConsent">
-                            I authorize the platform to securely access my
-                            <strong>GSTR details</strong> for
-                            verification purposes. I understand that my data
-                            will only be used for verification and handled
-                            securely.
+                            I authorize FinRiskLens AI to retrieve my
+                            <strong>GST returns (GSTR-2B and GSTR-3B)</strong>
+                            to assess tax and sales compliance for my bank.
                         </label>
                     </div>
 
@@ -498,7 +497,7 @@
 
             </div>
             <div class="modal-footer border-0 pt-0">
-                <button type="button" id="fetchGstrBtn" class="btn btn-theme w-100">Fetch GSTR Details</button>
+                <button type="button" id="fetchGstrBtn" class="btn btn-theme w-100">Fetch GST Returns</button>
             </div>
 
         </div>
@@ -533,11 +532,9 @@
                     <div class="form-check">
                         <input class="form-check-input rv-checkbox" type="checkbox" id="mcaConsent">
                         <label class="form-check-label" for="mcaConsent">
-                            I authorize the platform to securely retrieve my
-                            <strong>Ministry of Corporate Affairs (MCA)</strong> company record
-                            and the <strong>DIN details of my directors</strong> for verification
-                            purposes. I understand this data will be used only for credit
-                            assessment and handled securely.
+                            I authorize FinRiskLens AI to retrieve my company record and my
+                            <strong>directors' DIN details</strong> from the corporate registry
+                            (<strong>MCA</strong>) for this credit assessment.
                         </label>
                     </div>
                 </div>
@@ -576,11 +573,9 @@
                         <input class="form-check-input rv-checkbox" type="checkbox" id="aaConsent">
 
                         <label class="form-check-label" for="aaConsent">
-                            I authorize the platform to securely access my
-                            <strong>Bank Account Statements</strong> for
-                            verification purposes. I understand that my data
-                            will only be used for verification and handled
-                            securely.
+                            I agree to receive an <strong>Account Aggregator consent request</strong>.
+                            My bank statements are shared only after I approve that request
+                            in the Account Aggregator.
                         </label>
                     </div>
 
@@ -589,7 +584,7 @@
             </div>
 
             <div class="modal-footer border-0 pt-0">
-                <button type="button" id="fetchAaBtn" class="btn btn-theme w-100"> Fetch AA Details</button>
+                <button type="button" id="fetchAaBtn" class="btn btn-theme w-100">Request Consent</button>
             </div>
 
         </div>
@@ -602,7 +597,7 @@
 
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title" id="itrModalLabel">
-                    Income Tax Return Verification
+                    Fetch ITR Details
                 </h5>
 
                 <button type="button"
@@ -637,11 +632,9 @@
                         <input class="form-check-input rv-checkbox" type="checkbox" id="itrConsent">
 
                         <label class="form-check-label" for="itrConsent">
-                            I authorize the platform to securely access my
-                            <strong>ITR Registration details</strong> for
-                            verification purposes. I understand that my data
-                            will only be used for verification and handled
-                            securely.
+                            I authorize FinRiskLens AI to retrieve my
+                            <strong>income-tax return details</strong> to assess
+                            declared income and filing history for my bank.
                         </label>
                     </div>
 
@@ -678,15 +671,15 @@
 
             // Validate every field.
             let ok = true;
-            if (!gst.value.trim()) { status.innerHTML = '<span class="text-danger">No GST number linked to your account.</span>'; ok = false; }
+            if (!gst.value.trim()) { status.innerHTML = '<span class="text-danger">No GSTIN is linked to your account.</span>'; ok = false; }
             pwd.classList.toggle('is-invalid', !pwd.value.trim());
             if (!pwd.value.trim()) ok = false;
             consent.classList.toggle('is-invalid', !consent.checked);
-            if (!consent.checked) { status.innerHTML = '<span class="text-danger">Please accept the consent to continue.</span>'; ok = false; }
+            if (!consent.checked) { status.innerHTML = '<span class="text-danger">Tick the consent box to continue.</span>'; ok = false; }
             if (!ok) return;
 
             this.disabled = true;
-            status.innerHTML = '<span class="text-muted">Fetching GSTR details…</span>';
+            status.innerHTML = '<span class="text-muted">Retrieving GST returns…</span>';
             try {
                 const resp = await fetch('/Dashboard/SeedFinancialData');
                 const res = await resp.json();
@@ -709,7 +702,7 @@
                     this.disabled = false;
                 }
             } catch (e) {
-                status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
+                status.innerHTML = '<span class="text-danger">Something went wrong. Try again.</span>';
                 this.disabled = false;
             }
         });
@@ -722,12 +715,12 @@
 
             consent.classList.toggle('is-invalid', !consent.checked);
             if (!consent.checked) {
-                status.innerHTML = '<span class="text-danger">Please accept the consent to continue.</span>';
+                status.innerHTML = '<span class="text-danger">Tick the consent box to continue.</span>';
                 return;
             }
 
             this.disabled = true;
-            status.innerHTML = '<span class="text-muted">Fetching MCA &amp; director details…</span>';
+            status.innerHTML = '<span class="text-muted">Retrieving company and director records…</span>';
             try {
                 const resp = await fetch('/Dashboard/SeedMcaData');
                 const res = await resp.json();
@@ -744,7 +737,7 @@
                     this.disabled = false;
                 }
             } catch (e) {
-                status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
+                status.innerHTML = '<span class="text-danger">Something went wrong. Try again.</span>';
                 this.disabled = false;
             }
         });
@@ -766,7 +759,7 @@
 
             consent.classList.toggle('is-invalid', !consent.checked);
             if (!consent.checked) {
-                status.innerHTML = '<span class="text-danger">Please accept the consent to continue.</span>';
+                status.innerHTML = '<span class="text-danger">Tick the consent box to continue.</span>';
                 return;
             }
 
@@ -790,7 +783,7 @@
                 }
             } catch (e) {
                 if (aaWin) aaWin.close();
-                status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
+                status.innerHTML = '<span class="text-danger">Something went wrong. Try again.</span>';
                 btn.disabled = false;
             }
         });
@@ -809,11 +802,11 @@
             pwd.classList.toggle('is-invalid', !pwd.value.trim());
             if (!pwd.value.trim()) ok = false;
             consent.classList.toggle('is-invalid', !consent.checked);
-            if (!consent.checked) { status.innerHTML = '<span class="text-danger">Please accept the consent to continue.</span>'; ok = false; }
+            if (!consent.checked) { status.innerHTML = '<span class="text-danger">Tick the consent box to continue.</span>'; ok = false; }
             if (!ok) return;
 
             this.disabled = true;
-            status.innerHTML = '<span class="text-muted">Fetching ITR details…</span>';
+            status.innerHTML = '<span class="text-muted">Retrieving ITR details…</span>';
             try {
                 const resp = await fetch('/Dashboard/SeedItrData');
                 const res = await resp.json();
@@ -825,7 +818,7 @@
                     this.disabled = false;
                 }
             } catch (e) {
-                status.innerHTML = '<span class="text-danger">Something went wrong. Please try again.</span>';
+                status.innerHTML = '<span class="text-danger">Something went wrong. Try again.</span>';
                 this.disabled = false;
             }
         });
