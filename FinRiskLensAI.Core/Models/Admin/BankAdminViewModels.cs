@@ -41,6 +41,9 @@ namespace FinRiskLensAI.Core.Models.Admin
         /// <summary>The customer's assessment — findings, documents, AI investigation — or null before any upload.</summary>
         public CaseDetailViewModel? Risk { get; set; }
 
+        /// <summary>The latest AI credit decision — shown on the Risk Lens once the customer is Clear.</summary>
+        public CreditDecision? Decision { get; set; }
+
         public UdyamDetailsViewModel? Udyam { get; set; }
         public GSTAnalysisViewModel? Gst { get; set; }
         public McaDetailsViewModel? Mca { get; set; }

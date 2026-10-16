@@ -1352,3 +1352,13 @@
 .rl-summary { margin: 0 0 6px; }
 .rl-more { font-size: .82rem; }
 .rl-section .bp-finding { margin-top: 12px; }
+.rl-loan-form { margin: 10px 0 4px; }
+.rl-loan-form .bp-form-actions { margin-top: 0; align-self: end; }
+.rl-decision { margin-top: 14px; border-top: 1px dashed var(--brand-tint-border); padding-top: 12px; }
+.rl-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 18px; margin: 12px 0 8px; }
+.rl-figures dt { font-size: .74rem; font-weight: 600; color: #6b7c88; }
+.rl-figures dd { margin: 0; font-weight: 600; }
+.rl-reasons { margin: 6px 0 10px; padding-left: 18px; }
+.rl-reasons li { margin: 4px 0; }
+.rl-accept { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.rl-accept .bp-select { width: 160px; padding: 6px 10px; }

@@ -1,4 +1,5 @@
 using FinRiskLensAI.Common;
+using FinRiskLensAI.Core.Interfaces.IServices.Cases;
 using FinRiskLensAI.Core.Interfaces.IServices.LoanCase;
 using FinRiskLensAI.Core.Models.LoanCase;
 using FinRiskLensAI.Utility;
@@ -21,10 +22,12 @@ namespace FinRiskLensAI.Controllers
     {
         private readonly ILoanCaseService _loanCase;
         private readonly ILogger<LoanCaseController> _logger;
+        private readonly ICreditDecisionService _credit;
 
-        public LoanCaseController(ILoanCaseService loanCase, ILogger<LoanCaseController> logger)
+        public LoanCaseController(ILoanCaseService loanCase, ILogger<LoanCaseController> logger, ICreditDecisionService credit)
         {
             _loanCase = loanCase;
+            _credit = credit;
             _logger = logger;
         }
 
@@ -56,6 +59,9 @@ namespace FinRiskLensAI.Controllers
         {
             if (!TryChannel(channel, out var ch))
                 return View("Payload", PayloadPageModel.Error($"Unknown channel '{channel}'."));
+            // T10: only a Clear customer with an accepted Approve goes downstream
+            if (await _credit.PushBlockedAsync(uan, ct) is string blocked)
+                return View("Payload", PayloadPageModel.Error(blocked));
 
             var user = HttpContext.Session.GetCurrentBankUser()!;
             var preview = await _loanCase.PreviewAsync(uan, ch, user, ct);
@@ -83,6 +89,8 @@ namespace FinRiskLensAI.Controllers
         {
             if (!TryChannel(channel, out var ch))
                 return Json(new { status = false, message = $"Unknown channel '{channel}'." });
+            if (await _credit.PushBlockedAsync(uan, ct) is string blocked)
+                return Json(new { status = false, message = blocked });
 
             var user = HttpContext.Session.GetCurrentBankUser()!;
             var ip = await IP_Get_Service.GetClientIPAddressAsync(HttpContext);

@@ -176,4 +176,34 @@ namespace FinRiskLensAI.Data.Configurations
             builder.HasIndex(x => new { x.CaseDocumentID, x.Name });
         }
     }
+
+    /// <summary>AI credit decisions — Doc/DB_SCRIPTS.md, 2026-10-16.</summary>
+    public class CreditDecisionConfiguration : IEntityTypeConfiguration<CreditDecision>
+    {
+        public void Configure(EntityTypeBuilder<CreditDecision> builder)
+        {
+            builder.ToTable("credit_decisions");
+            builder.HasKey(x => x.CreditDecisionID);
+
+            builder.Property(x => x.Uan).HasMaxLength(30).IsRequired();
+            builder.Property(x => x.Product).HasConversion<string>().HasMaxLength(20);
+            builder.Property(x => x.RequestedAmount).HasPrecision(14, 2);
+            builder.Property(x => x.RatePct).HasPrecision(5, 2);
+            builder.Property(x => x.Capacity).HasColumnType("jsonb").IsRequired();
+            builder.Property(x => x.Outcome).HasConversion<string>().HasMaxLength(10);
+            builder.Property(x => x.RecommendedAmount).HasPrecision(14, 2);
+            builder.Property(x => x.Reasons).HasColumnType("jsonb").IsRequired();
+            builder.Property(x => x.Conditions).HasColumnType("jsonb").IsRequired();
+            builder.Property(x => x.Dropped).HasColumnType("jsonb").IsRequired();
+            builder.Property(x => x.Model).HasMaxLength(60).IsRequired();
+            builder.Property(x => x.AcceptedAmount).HasPrecision(14, 2);
+            builder.Property(x => x.AcceptedBy).HasMaxLength(100);
+            builder.Property(x => x.CreatedBy).HasMaxLength(100);
+            builder.Property(x => x.UpdatedBy).HasMaxLength(100);
+
+            builder.HasOne<LoanApplication>().WithMany()
+                   .HasForeignKey(x => x.LoanApplicationID).OnDelete(DeleteBehavior.Restrict);
+            builder.HasIndex(x => x.LoanApplicationID);
+        }
+    }
 }

@@ -563,6 +563,123 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                     b.ToTable("documents", (string)null);
                 });
 
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.CreditDecision", b =>
+                {
+                    b.Property<int>("CreditDecisionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("credit_decision_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CreditDecisionID"));
+
+                    b.Property<decimal?>("AcceptedAmount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("accepted_amount");
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("accepted_at");
+
+                    b.Property<string>("AcceptedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("accepted_by");
+
+                    b.Property<string>("Capacity")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("capacity");
+
+                    b.Property<string>("Conditions")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("conditions");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Dropped")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("dropped");
+
+                    b.Property<int>("LoanApplicationID")
+                        .HasColumnType("integer")
+                        .HasColumnName("loan_application_id");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("model");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("Product")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("product");
+
+                    b.Property<decimal>("RatePct")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("rate_pct");
+
+                    b.Property<string>("Reasons")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("reasons");
+
+                    b.Property<decimal>("RecommendedAmount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("recommended_amount");
+
+                    b.Property<decimal>("RequestedAmount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("requested_amount");
+
+                    b.Property<int>("TenureMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenure_months");
+
+                    b.Property<string>("Uan")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("uan");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("CreditDecisionID")
+                        .HasName("pk_credit_decisions");
+
+                    b.HasIndex("LoanApplicationID")
+                        .HasDatabaseName("ix_credit_decisions_loan_application_id");
+
+                    b.ToTable("credit_decisions", (string)null);
+                });
+
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.DocField", b =>
                 {
                     b.Property<long>("DocFieldID")
@@ -2002,6 +2119,16 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         .HasConstraintName("fk_documents_loan_applications_loan_application_id");
 
                     b.Navigation("LoanApplication");
+                });
+
+            modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.CreditDecision", b =>
+                {
+                    b.HasOne("FinRiskLensAI.Core.Models.Cases.LoanApplication", null)
+                        .WithMany()
+                        .HasForeignKey("LoanApplicationID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_credit_decisions_loan_applications_loan_application_id");
                 });
 
             modelBuilder.Entity("FinRiskLensAI.Core.Models.Cases.DocField", b =>

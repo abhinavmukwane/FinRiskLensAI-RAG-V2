@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
+using System.Text.Json;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IRepositories.Cases;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
@@ -94,6 +96,7 @@ namespace FinRiskLensAI.Fraud.Cases
         public async Task<int> EnsureAssessmentAsync(string uan, string? enterpriseName, string actor, CancellationToken ct = default)
         {
             uan = uan.Trim().ToUpperInvariant();
+            SourceLinkCache.TryRemove(uan, out _);   // a source just arrived: its directors or buyers may have changed
             return await _cases.FindByUanAsync(uan, ct) ?? await _cases.AddAsync(NewAssessment(uan, enterpriseName, actor, new()), ct);
         }
 
@@ -213,7 +216,74 @@ namespace FinRiskLensAI.Fraud.Cases
         }
 
         public async Task<IReadOnlyList<Ring>> ListRingsAsync(CancellationToken ct = default)
-            => NetworkLens.Find(await _cases.GetNetworkAsync(ct));
+        {
+            var network = await _cases.GetNetworkAsync(ct);
+            if (_sources == null) return NetworkLens.Find(network);
+
+            // Registered customers: add what their sources say — directors, own GSTIN, the buyers they invoice
+            var enriched = await Task.WhenAll(network.Select(async a =>
+            {
+                if (a.Uan == null || a.Entities == null) return a;
+                var s = await SourceLinksAsync(a.Uan, ct);
+                return a with { Entities = a.Entities with { Gstin = a.Entities.Gstin ?? s.Gstin, Directors = s.Directors, InvoicedGstins = s.InvoicedGstins } };
+            }));
+            return NetworkLens.Find(enriched);
+        }
+
+        private sealed record SourceLinks(string? Gstin, IReadOnlyList<Director> Directors, IReadOnlyList<string> InvoicedGstins);
+
+        // ponytail: each customer's source links are read once and kept 10 minutes (dropped when a source arrives).
+        // Fine to a few hundred customers; past that, write them to an application_entities table when sources arrive.
+        private static readonly ConcurrentDictionary<string, (DateTime At, SourceLinks Links)> SourceLinkCache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly SemaphoreSlim SourceReads = new(8);
+
+        /// <summary>Active MCA directors, and from the GSTR-1 B2B returns the business's own GSTIN and the buyers it invoices.</summary>
+        private async Task<SourceLinks> SourceLinksAsync(string uan, CancellationToken ct)
+        {
+            if (SourceLinkCache.TryGetValue(uan, out var cached) && cached.At > DateTime.UtcNow.AddMinutes(-10)) return cached.Links;
+
+            var files = await _sources!.ListFilesAsync(uan, ct);
+            async Task<JsonDocument?> ReadAsync(string file)
+            {
+                await SourceReads.WaitAsync(ct);
+                try { return await _sources.DownloadAsync(uan, file, ct) is { } json ? JsonDocument.Parse(json) : null; }
+                catch (JsonException) { return null; }   // a malformed payload links nothing; it is not this check's to report
+                finally { SourceReads.Release(); }
+            }
+
+            var directors = new List<Director>();
+            if (files.Contains(MsmeDataFiles.Mca, StringComparer.OrdinalIgnoreCase) && await ReadAsync(MsmeDataFiles.Mca) is { } mca)
+                using (mca)
+                    foreach (var d in Items(At(mca.RootElement, "message", "details", "directors")))
+                        if (Text(d, "din_number") is { Length: > 0 } din && string.IsNullOrWhiteSpace(Text(d, "end_date")))
+                            directors.Add(new Director(din.Trim(), Text(d, "director_name")?.Trim() ?? din));
+
+            string? gstin = null;
+            var buyers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var invoices = await Task.WhenAll(files.Where(f => f.StartsWith("gstr1_b2b_", StringComparison.OrdinalIgnoreCase)).Select(ReadAsync));
+            foreach (var doc in invoices.OfType<JsonDocument>())
+                using (doc)
+                {
+                    var data = At(doc.RootElement, "response", "message", "data");
+                    gstin ??= Text(data, "gstin");
+                    foreach (var invoice in Items(At(data, "b2b")))
+                        if (Text(invoice, "ctin") is { Length: > 0 } buyer) buyers.Add(buyer.Trim().ToUpperInvariant());
+                }
+
+            var links = new SourceLinks(gstin, directors, buyers.ToList());
+            SourceLinkCache[uan] = (DateTime.UtcNow, links);
+            return links;
+        }
+
+        private static JsonElement At(JsonElement e, params string[] path)
+        {
+            foreach (var p in path)
+                if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty(p, out e)) return default;
+            return e;
+        }
+        private static IEnumerable<JsonElement> Items(JsonElement e) => e.ValueKind == JsonValueKind.Array ? e.EnumerateArray() : Enumerable.Empty<JsonElement>();
+        private static string? Text(JsonElement e, string name)
+            => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
         /// <summary>This application's checks and its ring finding; returns the other members of its ring.</summary>
         private async Task<IReadOnlyList<int>> RunChecksOnceAsync(int loanApplicationId, CancellationToken ct)

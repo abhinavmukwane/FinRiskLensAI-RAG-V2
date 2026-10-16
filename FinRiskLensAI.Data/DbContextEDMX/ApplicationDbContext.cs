@@ -42,6 +42,7 @@ namespace FinRiskLensAI.Data.DbContextEDMX
 
         // Cases — Doc/10_FRAUD_LENS_BUILD.md §4
         public DbSet<LoanApplication> LoanApplications => Set<LoanApplication>();
+        public DbSet<CreditDecision> CreditDecisions => Set<CreditDecision>();
         public DbSet<CaseDocument> CaseDocuments => Set<CaseDocument>();
         public DbSet<StatementRow> StatementRows => Set<StatementRow>();
         public DbSet<PageSummary> PageSummaries => Set<PageSummary>();

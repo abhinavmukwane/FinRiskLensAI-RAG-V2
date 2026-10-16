@@ -1,5 +1,6 @@
 @model FinRiskLensAI.Core.Models.Admin.BankCustomerDetailViewModel
 @using FinRiskLensAI.Core.Models.Cases
+@using FinRiskLensAI.Fraud.Credit
 @*
     Risk Lens — one customer's fraud and risk assessment, section by section
     (Doc/12_CUSTOMER_RISK_LENS.md §4). Findings come from the customer's one assessment; the
@@ -12,8 +13,7 @@
     var open = findings.Where(f => f.ReviewStatus == ReviewStatus.Open).ToList();
     int Open(FindingSeverity s) => open.Count(f => f.Severity == s);
     var assessing = app != null && (app.Status == CaseStatus.Processing || app.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending));
-    var verdict = app == null ? RiskVerdict.AwaitingData
-                : RiskSummary.Decide(assessing, Open(FindingSeverity.High), Open(FindingSeverity.Medium) + Open(FindingSeverity.Low), RiskSummary.HasBankEvidence(app));
+    var verdict = app == null ? RiskVerdict.AwaitingData : RiskSummary.Of(app, findings);
     var docsById = app?.Documents.ToDictionary(d => d.CaseDocumentID) ?? new Dictionary<int, CaseDocument>();
     var back = Url.Action("Customer", "BankAdmin", new { uan = Model.Uan, tab = "risk" });
 
@@ -118,6 +118,109 @@
 @if (assessing)
 {
     <meta http-equiv="refresh" content="8" />
+}
+
+@* ── Loan case: the AI credit decision, once Clear (Doc/13_TEAM_WORK_PLAN.md T9) ── *@
+@if (verdict == RiskVerdict.Clear)
+{
+    var d = Model.Decision;
+    var web = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+    var outcomeCss = d?.Outcome switch { CreditOutcome.Approve => "bp-case-clear", CreditOutcome.Decline => "bp-case-hold", _ => "bp-case-review" };
+    <section class="bp-card rl-section" id="rl-loan">
+        <div class="rl-section-head">
+            <span class="bp-strong"><i class="bi bi-cash-stack"></i> Loan case</span>
+            @if (d != null) { <span class="bp-case-status @outcomeCss">@d.Outcome</span> }
+        </div>
+        <p class="bp-muted rl-summary">The AI decides within the credit capacity computed from bank and ITR data under the credit policy. Every figure is checked against that capacity before it is shown.</p>
+        @if (TempData["CreditError"] is string creditError)
+        {
+            <div class="bp-alert"><i class="bi bi-exclamation-triangle-fill"></i>@creditError</div>
+        }
+        <form method="post" asp-controller="BankAdmin" asp-action="DecideCredit" asp-route-uan="@Model.Uan" class="bp-form-grid rl-loan-form">
+            <label><span>Product</span>
+                <select name="product" class="bp-select">
+                    <option value="WorkingCapital">Working capital</option>
+                    <option value="TermLoan" selected="@(d?.Product == LoanProduct.TermLoan)">Term loan</option>
+                </select>
+            </label>
+            <label><span>Amount (₹)</span><input name="amount" type="number" min="1" step="1" required class="bp-select" value="@d?.RequestedAmount.ToString("0")" /></label>
+            <label><span>Tenure (months)</span><input name="tenureMonths" type="number" min="1" max="360" required class="bp-select" value="@(d?.TenureMonths ?? 36)" /></label>
+            <label><span>Rate (% a year)</span><input name="ratePct" type="number" min="0.01" max="50" step="0.01" required class="bp-select" value="@((d?.RatePct ?? 11m).ToString("0.##"))" /></label>
+            <div class="bp-form-actions"><button type="submit" class="bp-btn bp-btn-sm"><i class="bi bi-stars"></i> @(d == null ? "Generate" : "Regenerate") credit decision</button></div>
+        </form>
+
+        @if (d != null)
+        {
+            var cap = System.Text.Json.JsonSerializer.Deserialize<CreditCapacity>(d.Capacity, web);
+            var reasons = System.Text.Json.JsonSerializer.Deserialize<List<DecisionReason>>(d.Reasons, web) ?? new();
+            var conditions = System.Text.Json.JsonSerializer.Deserialize<List<string>>(d.Conditions, web) ?? new();
+            var dropped = System.Text.Json.JsonSerializer.Deserialize<List<DroppedReason>>(d.Dropped, web) ?? new();
+            <div class="rl-decision">
+                <div class="bp-strong">
+                    @(d.Outcome == CreditOutcome.Decline ? "Decline" : $"{d.Outcome} · {Money(d.RecommendedAmount)}")
+                    <span class="bp-muted">· @(d.Product == LoanProduct.TermLoan ? "Term loan" : "Working capital"), @d.TenureMonths months at @d.RatePct.ToString("0.##")% · requested @Money(d.RequestedAmount)</span>
+                </div>
+                <div class="bp-muted bp-investigated">@d.Model · @d.CreatedAt.ToString("dd MMM yyyy HH:mm") UTC by @d.CreatedBy</div>
+                @if (cap != null)
+                {
+                    <dl class="rl-figures">
+                        <div><dt>Bank monthly income</dt><dd>@Money(cap.BankMonthlyIncome)</dd></div>
+                        <div><dt>ITR monthly income</dt><dd>@Money(cap.ItrMonthlyIncome)</dd></div>
+                        <div><dt>Assessed monthly income</dt><dd>@Money(cap.AssessedMonthlyIncome)</dd></div>
+                        <div><dt>FOIR limit</dt><dd>@cap.MaxFoirPct.ToString("0.#")%</dd></div>
+                        <div><dt>Existing EMIs</dt><dd>@Money(cap.ExistingMonthlyEmi)</dd></div>
+                        <div><dt>Room for a new EMI</dt><dd>@Money(cap.MaxNewMonthlyEmi)</dd></div>
+                        <div><dt>EMI of the request</dt><dd>@Money(cap.RequestedMonthlyEmi)</dd></div>
+                        <div><dt>FOIR with the request</dt><dd>@cap.FoirWithRequestedPct.ToString("0.#")%</dd></div>
+                        <div><dt>Eligible amount</dt><dd>@Money(cap.EligibleAmount)</dd></div>
+                        <div><dt>Maximum loan</dt><dd>@Money(cap.MaxLoanAmount)@(cap.AuditCapAmount != null ? " (tax audit cap)" : "")</dd></div>
+                    </dl>
+                    @if (cap.PolicyClauses.Count > 0)
+                    {
+                        <div class="bp-muted bp-investigated">Credit policy applied: @string.Join(", ", cap.PolicyClauses)</div>
+                    }
+                }
+                @if (reasons.Count > 0)
+                {
+                    <ul class="rl-reasons">
+                        @foreach (var r in reasons)
+                        {
+                            <li>@r.Text @if (r.Sources.Count > 0) { <span class="bp-policy">— @string.Join("; ", r.Sources)</span> }</li>
+                        }
+                    </ul>
+                }
+                @if (conditions.Count > 0)
+                {
+                    <div class="bp-strong">Conditions</div>
+                    <ul class="rl-reasons">@foreach (var c in conditions) { <li>@c</li> }</ul>
+                }
+                @if (dropped.Count > 0)
+                {
+                    <details class="bp-rejected">
+                        <summary><i class="bi bi-shield-x"></i> @dropped.Count AI point@(dropped.Count == 1 ? "" : "s") removed by grounding verification</summary>
+                        <ul>@foreach (var x in dropped) { <li>@x.Text — <span class="bp-muted">@x.Why</span></li> }</ul>
+                    </details>
+                }
+
+                @if (d.AcceptedAt != null)
+                {
+                    <div class="rl-accept">
+                        <span class="bp-case-status bp-case-clear"><i class="bi bi-check2-circle"></i> Accepted</span>
+                        <span>@Money(d.AcceptedAmount ?? 0) by @d.AcceptedBy on @d.AcceptedAt.Value.ToString("dd MMM yyyy HH:mm") UTC — ready to push to LOS / ULI / ONDC.</span>
+                    </div>
+                }
+                else if (d.Outcome == CreditOutcome.Approve)
+                {
+                    <form method="post" asp-controller="BankAdmin" asp-action="AcceptCredit" asp-route-uan="@Model.Uan" class="rl-accept">
+                        <input type="hidden" name="creditDecisionId" value="@d.CreditDecisionID" />
+                        <label class="bp-muted" for="rl-accept-amount">Sanction amount (₹, up to the recommended)</label>
+                        <input id="rl-accept-amount" name="amount" type="number" min="1" max="@d.RecommendedAmount.ToString("0")" step="1" required class="bp-select" value="@d.RecommendedAmount.ToString("0")" />
+                        <button type="submit" class="bp-btn bp-btn-sm"><i class="bi bi-check2"></i> Accept decision</button>
+                    </form>
+                }
+            </div>
+        }
+    </section>
 }
 
 @* ── Sources ───────────────────────────────────────────────────────────────── *@

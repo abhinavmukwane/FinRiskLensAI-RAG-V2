@@ -19,6 +19,16 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Cases
         /// <summary>The customer's assessment — the latest application for this Udyam number — or null.</summary>
         Task<int?> FindByUanAsync(string uan, CancellationToken ct = default);
 
+        /// <summary>Stores a new credit decision (append-only) and returns its id.</summary>
+        Task<int> AddCreditDecisionAsync(CreditDecision decision, CancellationToken ct = default);
+
+        /// <summary>The latest credit decision for an assessment, or null.</summary>
+        Task<CreditDecision?> GetLatestCreditDecisionAsync(int loanApplicationId, CancellationToken ct = default);
+
+        /// <summary>Records the officer's acceptance. False when the decision is not this assessment's.</summary>
+        Task<bool> AcceptCreditDecisionAsync(int creditDecisionId, int loanApplicationId, decimal amount, string acceptedBy,
+                                             CancellationToken ct = default);
+
         /// <summary>Records whether the last run read the bank's own record (Account Aggregator).</summary>
         Task SetBankDataAsync(int loanApplicationId, DateTime? at, CancellationToken ct = default);
 

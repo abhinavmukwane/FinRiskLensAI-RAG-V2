@@ -66,9 +66,28 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                 .ToListAsync(ct);
             var byApp = salary.ToLookup(x => x.LoanApplicationID, x => x.Row);
 
-            return apps.Select(a => new NetworkApplication(a.LoanApplicationID, a.ApplicantRef, a.DeclaredEmployer,
-                                                           a.Documents, byApp[a.LoanApplicationID].ToList(), a.Uan))
-                       .ToList();
+            // Registration details of the customers among them: GSTIN, contacts, address
+            var uans = apps.Where(a => a.Uan != null).Select(a => a.Uan!).Distinct().ToList();
+            var registered = (await _context.MsmeEnquiries.AsNoTracking()
+                    .Where(e => uans.Contains(e.Uan))
+                    .OrderByDescending(e => e.MsmeEnquiryID)
+                    .Select(e => new { e.Uan, e.GstinNumber, e.MobileNumber, e.Email, e.Flat, e.NameOfBuilding, e.Road, e.City, e.Pin })
+                    .ToListAsync(ct))
+                .GroupBy(e => e.Uan.Trim().ToUpperInvariant())
+                .ToDictionary(g => g.Key, g => g.First());
+
+            return apps.Select(a =>
+            {
+                CustomerEntities? entities = null;
+                if (a.Uan != null && registered.TryGetValue(a.Uan.ToUpperInvariant(), out var e))
+                {
+                    var address = string.Join(", ", new[] { e.Flat, e.NameOfBuilding, e.Road, e.City, e.Pin }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                    entities = new CustomerEntities(e.GstinNumber, e.MobileNumber, e.Email, address.Length == 0 ? null : address,
+                                                    Array.Empty<Director>(), Array.Empty<string>());
+                }
+                return new NetworkApplication(a.LoanApplicationID, a.ApplicantRef, a.DeclaredEmployer,
+                                              a.Documents, byApp[a.LoanApplicationID].ToList(), a.Uan, entities);
+            }).ToList();
         }
 
         public Task<int?> FindByUanAsync(string uan, CancellationToken ct = default)
@@ -77,6 +96,29 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                    .OrderByDescending(a => a.LoanApplicationID)
                    .Select(a => (int?)a.LoanApplicationID)
                    .FirstOrDefaultAsync(ct);
+
+        public async Task<int> AddCreditDecisionAsync(CreditDecision decision, CancellationToken ct = default)
+        {
+            _context.CreditDecisions.Add(decision);
+            await _context.SaveChangesAsync(ct);
+            return decision.CreditDecisionID;
+        }
+
+        public Task<CreditDecision?> GetLatestCreditDecisionAsync(int loanApplicationId, CancellationToken ct = default)
+            => _context.CreditDecisions.AsNoTracking()
+                   .Where(d => d.LoanApplicationID == loanApplicationId)
+                   .OrderByDescending(d => d.CreditDecisionID)
+                   .FirstOrDefaultAsync(ct);
+
+        public async Task<bool> AcceptCreditDecisionAsync(int creditDecisionId, int loanApplicationId, decimal amount, string acceptedBy,
+                                                          CancellationToken ct = default)
+            => await _context.CreditDecisions
+                   .Where(d => d.CreditDecisionID == creditDecisionId && d.LoanApplicationID == loanApplicationId)
+                   .ExecuteUpdateAsync(s => s.SetProperty(d => d.AcceptedAmount, amount)
+                                             .SetProperty(d => d.AcceptedAt, DateTime.UtcNow)
+                                             .SetProperty(d => d.AcceptedBy, acceptedBy)
+                                             .SetProperty(d => d.UpdatedAt, DateTime.UtcNow)
+                                             .SetProperty(d => d.UpdatedBy, acceptedBy), ct) == 1;
 
         public Task SetBankDataAsync(int loanApplicationId, DateTime? at, CancellationToken ct = default)
             => _context.LoanApplications.Where(a => a.LoanApplicationID == loanApplicationId)

@@ -25,10 +25,10 @@ calculator, demo data, docs). Status: ⏸ to do · 🔨 in progress · 👀 in r
 | T4 | Identity check: Udyam, GST, ITR and MCA agree; company active | B | Oct 16 | T1 (merge) | ⏸ |
 | T5 | Dismissing a finding needs a written reason (policy §6.3) | B | Oct 16 | — | ⏸ |
 | T6 | Credit capacity calculator: FOIR and eligible limit (policy §3) | B | Oct 16–17 | — | ⏸ |
-| T7 | Network links for businesses: shared director, contact, address; circular trading | A | Oct 17 | T1 | ⏸ |
+| T7 | Network links for businesses: shared director, contact, address; circular trading | A | Oct 17 | T1 | ✅ |
 | T8 | Uploaded ITR vs the filed return | B | Oct 17 | T1 | ⏸ |
-| T9 | AI credit decision: service, `credit_decisions` table, Risk Lens loan-case panel | A | Oct 17 | T6 | ⏸ |
-| T10 | Gate the loan-case push; risk and decision blocks in the LOS, ULI and ONDC payloads | A gate · B payloads | Oct 17 | T9 | ⏸ |
+| T9 | AI credit decision: service, `credit_decisions` table, Risk Lens loan-case panel | A | Oct 17 | T6 | 🔨 built; live run waits on T6 |
+| T10 | Gate the loan-case push; risk and decision blocks in the LOS, ULI and ONDC payloads | A gate · B payloads | Oct 17 | T9 | 🔨 gate ✅ · payloads ⏸ |
 | T11 | Demo customers: generator, registrations, sources, uploads | B builds · A seeds prod | Oct 17–18 | T2–T8 | ⏸ |
 | T12 | Live eval and investigation re-run; numbers into README | A | Oct 18 | T11 | ⏸ |
 | T13 | README and ARCHITECTURE to the customer flow | B | Oct 18 | T11 | ⏸ |
@@ -249,10 +249,15 @@ computed in code; the model only explains and decides within them.
 - Above ₹50 lakh needs a tax audit report if the borrower is 44AB-liable (§5.3.2):
   `ItrAuditApplicable` / `ItrAuditCompleted`.
 
-**Steps:** `FinRiskLensAI.Fraud/Credit/CreditCapacity.cs` — pure static
-`Compute(facts, requestedAmount, tenureMonths, annualRatePct)` → a record with every figure
-(income from each source, assessed income, FOIR limit, existing EMIs, proposed EMI, FOIR with the
-loan, eligible limit, the audit cap, and a list of policy clauses applied). No Gemini, no database.
+**Steps:** the contract is already in `FinRiskLensAI.Fraud/Credit/CreditCapacity.cs` (added
+2026-10-16 so T9 could be built first): the `CreditCapacity` record, one field per figure with its
+policy clause in a comment, and `CreditCapacityCalculator.Compute(facts, bank, requestedAmount,
+tenureMonths, annualRatePct)`, which throws `NotImplementedException` until filled in. Fill in the
+body only — T9 reads every field, and the Risk Lens shows them. `bank` is the customer's
+`AaAnalysisResult`, null when no Account Aggregator data was shared (then bank income is zero, and so
+is the assessed income). Rupee figures rounded to whole rupees; `PolicyClauses` lists what was
+applied, e.g. `"§3.1.2"`. No Gemini, no database. Once it returns figures, **Generate credit
+decision** on a Clear customer works end to end — nothing else to wire.
 
 **Done when** unit tests cover each income band, a borrower with no room for a new EMI, and the
 audit cap.
@@ -275,6 +280,17 @@ write them to an `application_entities` table when sources arrive.
 
 **Done when** the circular-trading demo ring (T11) shows *Circular trading* and *Same director*,
 and `DemoScenarioTests` still finds exactly the planted rings.
+
+**✅ Done 2026-10-16.** `CustomerEntities` on `NetworkApplication`: GSTIN, mobile, email and address from
+the registration (`MsmeEnquiry`), active directors from `mca.json`, own GSTIN and buyers from the
+`gstr1_b2b_*` returns (read in `CaseService.ListRingsAsync`, cached per customer for 10 minutes and dropped
+when a source arrives). `NetworkLens.BusinessLinks` adds *Same director*, *Same mobile*, *Same email*,
+*Same address* (only when specific: a pin code and 20+ characters) and *Circular trading* (businesses that
+reach each other through their invoices, any loop length). Each business counts once, by its latest
+assessment, so it never links to itself. `NetworkLensTests` covers a three-business loop, a shared director
+and mobile, an outsider who only sells into the loop, and one business's two assessments. On development:
+still exactly the two planted rings; 2.2 s for the first ring computation, 0.3 s cached. The demo loop
+itself comes with T11.
 
 ### T8 — Uploaded ITR vs the filed return (B)
 
@@ -311,6 +327,26 @@ reads the rendered ITR's five fields correctly in `eval`.
 **Done when** the clear demo customer gets an *Approve* with a limit equal to or below the T6
 figure and reasons citing §3.1.
 
+**🔨 Built 2026-10-16 against the T6 contract; the live run waits on T6.** `ICreditDecisionService`
+(Core) and `CreditDecisionService` in `FinRiskLensAI.Fraud/Credit/`. Decide: the verdict must be
+*Clear* (`RiskSummary.Of`, the same rule as the Risk Lens) → facts and the AA analysis →
+`CreditCapacityCalculator.Compute` (until T6 lands the officer sees "the credit capacity calculator
+(T6) is not built yet") → five policy searches (FOIR, assessed income, EMIs on the statement,
+escalation, tax audit) → Gemini Pro with the capacity and the extracts, falling back to 2.5 Pro →
+`CreditDecisionService.Ground`: amount capped at `MaxLoanAmount`, every rupee figure in a reason or
+condition must be a capacity figure or the recommended amount (±₹1), citations only to retrieved
+chunks, an unknown outcome or *Approve* with nothing to lend or no reason left becomes *Refer*.
+What it removes is stored in `dropped` and shown under the decision. Findings are not sent: a
+*Clear* customer has none open. Table `credit_decisions` (migration `CreditDecisions`, on
+development; production with the next deploy). Risk Lens *Loan case* panel (only when *Clear*):
+product, amount, tenure, rate → **Generate** → outcome, the capacity figures, reasons with policy
+sources, conditions, removed points → **Accept** at the recommended amount or lower (refused if the
+customer is no longer *Clear*, a newer decision exists, or it is not an *Approve*).
+`CreditDecisionTests` cover the cap, untraced figures, stripped citations and the *Refer* fallbacks.
+Checked on development with a hand-made decision row (removed afterwards): the panel, accepting at
+a lower amount, the gate before and after, and the T6 message on **Generate**; no overflow at phone
+width.
+
 ### T10 — Gate and payload blocks (A gate · B payloads)
 
 - **Gate (A):** `LoanCaseController.Preview` and `Push` refuse unless the latest assessment is
@@ -326,6 +362,12 @@ figure and reasons citing §3.1.
 
 **Done when** the clear customer's preview shows both blocks on all three channels and a risky
 customer's push is refused.
+
+**Gate ✅ 2026-10-16.** `ICreditDecisionService.PushBlockedAsync` — no assessment, a verdict other than
+*Clear*, no decision, the latest not an *Approve*, or not accepted each return the reason, which
+`Preview` shows as its error page and `Push` returns as its message. For the payloads: read the
+accepted decision with `ICreditDecisionService.GetLatestAsync(uan)` (its `Capacity`, `Reasons` and
+`Conditions` are JSON, camelCase) and the verdict with `ICaseService.GetByUanAsync` + `RiskSummary.Of`.
 
 ### T11 — Demo customers (B builds · A seeds production)
 

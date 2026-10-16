@@ -3,6 +3,8 @@ using FinRiskLensAI.Common;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.Admin;
+using FinRiskLensAI.Core.Interfaces.IServices.Cases;
+using FinRiskLensAI.Core.Models.Cases;
 using FinRiskLensAI.Core.Models.Admin;
 using FinRiskLensAI.Utility;
 using Microsoft.AspNetCore.Mvc;
@@ -28,13 +30,15 @@ namespace FinRiskLensAI.Controllers
         private readonly ILogger<BankAdminController> _logger;
         private readonly FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService _cases;
         private readonly FinRiskLensAI.Fraud.Pipeline.CaseQueue _queue;
+        private readonly ICreditDecisionService _credit;
 
         public BankAdminController(IBankAdminService bankAdmin,
             CustomerProfileBuilder profile, FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService loanCase,
             ILogger<BankAdminController> logger, FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService cases,
-            FinRiskLensAI.Fraud.Pipeline.CaseQueue queue)
+            FinRiskLensAI.Fraud.Pipeline.CaseQueue queue, ICreditDecisionService credit)
         {
             _cases = cases;
+            _credit = credit;
             _queue = queue;
             _bankAdmin = bankAdmin;
             _profile = profile;
@@ -119,6 +123,31 @@ namespace FinRiskLensAI.Controllers
             return RedirectToAction(nameof(Customer), new { uan = customer.Uan, tab = "risk" });
         }
 
+        /// <summary>The AI credit decision for a Clear customer (Doc/13_TEAM_WORK_PLAN.md T9). Gemini Pro takes ~20 s.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DecideCredit(string uan, LoanProduct product, decimal amount, int tenureMonths, decimal ratePct,
+                                                      CancellationToken ct)
+        {
+            var (_, error) = await _credit.DecideAsync(uan?.Trim() ?? "", new CreditRequest(product, amount, tenureMonths, ratePct),
+                                                       HttpContext.Session.GetCurrentBankUser()!.UserId, ct);
+            if (error != null) TempData["CreditError"] = error;
+            return LoanCaseSection(uan);
+        }
+
+        /// <summary>The officer accepts the decision — at the recommended amount or lower.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptCredit(string uan, int creditDecisionId, decimal amount, CancellationToken ct)
+        {
+            var error = await _credit.AcceptAsync(uan?.Trim() ?? "", creditDecisionId, amount, HttpContext.Session.GetCurrentBankUser()!.UserId, ct);
+            if (error != null) TempData["CreditError"] = error;
+            return LoanCaseSection(uan);
+        }
+
+        private IActionResult LoanCaseSection(string? uan)
+            => Redirect(Url.Action(nameof(Customer), new { uan = uan?.Trim(), tab = "risk" }) + "#rl-loan");
+
         [HttpGet]
         public async Task<IActionResult> Customer(string uan, string? tab, CancellationToken ct)
         {
@@ -164,6 +193,7 @@ namespace FinRiskLensAI.Controllers
 
                 // The Risk Lens: this customer's one assessment, if they have shared anything to assess
                 model.Risk = await _cases.GetByUanAsync(model.Uan, ct);
+                model.Decision = await _credit.GetLatestAsync(model.Uan, ct);
             }
             catch (OperationCanceledException)
             {

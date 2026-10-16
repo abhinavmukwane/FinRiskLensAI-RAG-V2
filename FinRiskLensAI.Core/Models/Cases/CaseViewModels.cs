@@ -49,7 +49,17 @@ namespace FinRiskLensAI.Core.Models.Cases
     /// <summary>What the network lens reads of one application: who it names, its documents' fingerprints, its salary credits.</summary>
     public sealed record NetworkApplication(int LoanApplicationID, string ApplicantRef, string? DeclaredEmployer,
                                             IReadOnlyList<CaseDocument> Documents, IReadOnlyList<StatementRow> SalaryCredits,
-                                            string? Uan = null);
+                                            string? Uan = null, CustomerEntities? Entities = null);
+
+    /// <summary>
+    /// What identifies a business beyond its documents — from its registration (GSTIN, contacts, address) and
+    /// its sources (MCA directors, the buyers on its GSTR-1 invoices). Separate businesses that share these
+    /// are linked by the network lens.
+    /// </summary>
+    public sealed record CustomerEntities(string? Gstin, string? Mobile, string? Email, string? Address,
+                                          IReadOnlyList<Director> Directors, IReadOnlyList<string> InvoicedGstins);
+
+    public sealed record Director(string Din, string Name);
 
     /// <summary>A customer's overall state on the bank side (Doc/12_CUSTOMER_RISK_LENS.md).</summary>
     public enum RiskVerdict { AwaitingData, Assessing, Clear, Review, HighRisk }
@@ -70,6 +80,15 @@ namespace FinRiskLensAI.Core.Models.Cases
              : openOther > 0 ? RiskVerdict.Review
              : hasBankEvidence ? RiskVerdict.Clear
              : RiskVerdict.AwaitingData;
+
+        /// <summary>The verdict of one assessment from its findings — the Risk Lens, the credit decision and the push gate all use this.</summary>
+        public static RiskVerdict Of(LoanApplication app, IEnumerable<Finding> findings)
+        {
+            var open = findings.Where(f => f.ReviewStatus == ReviewStatus.Open).ToList();
+            var assessing = app.Status == CaseStatus.Processing || app.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending);
+            var high = open.Count(f => f.Severity == FindingSeverity.High);
+            return Decide(assessing, high, open.Count - high, HasBankEvidence(app));
+        }
 
         /// <summary>Bank evidence for <see cref="Decide"/>: the AA record was read, or an uploaded statement was.</summary>
         public static bool HasBankEvidence(LoanApplication a)
