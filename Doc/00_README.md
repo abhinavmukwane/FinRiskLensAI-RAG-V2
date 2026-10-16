@@ -7,6 +7,7 @@ repository [`README.md`](../README.md).
 | Document | What it covers |
 |---|---|
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | How the system is put together — pipeline, projects, Google Cloud, data, verification sources, security |
+| [`13_TEAM_WORK_PLAN.md`](13_TEAM_WORK_PLAN.md) | **Who does what until submission:** the task board, setup for a new team member, working rules, every task with its files and *done when* |
 | [`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md) | **The plan in force:** one assessment per customer — customer and bank journeys, Risk Lens sections, AI credit decision, loan case to LOS / ULI / ONDC |
 | [`10_FRAUD_LENS_BUILD.md`](10_FRAUD_LENS_BUILD.md) | Build plan and status by phase, every measurement, the deploy command |
 | [`11_RAG_ARCHITECTURE.md`](11_RAG_ARCHITECTURE.md) | Retrieval in depth — corpora, chunking, embeddings, hybrid search, rerank, grounding |

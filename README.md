@@ -25,7 +25,7 @@ integrations.
 | **Build plan and status** | [`Doc/10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) |
 | **RAG architecture** | [`Doc/11_RAG_ARCHITECTURE.md`](Doc/11_RAG_ARCHITECTURE.md) |
 | **Database changes** | [`Doc/DB_SCRIPTS.md`](Doc/DB_SCRIPTS.md) |
-| **Next: one assessment per customer** | [`Doc/12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) |
+| **Next: one assessment per customer** | [`Doc/12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) · team tasks in [`Doc/13_TEAM_WORK_PLAN.md`](Doc/13_TEAM_WORK_PLAN.md) |
 
 ---
 

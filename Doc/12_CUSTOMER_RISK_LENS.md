@@ -7,7 +7,8 @@ customer**, with every source combined and analysed section by section. When not
 the bank raises the **loan case** with an **AI credit decision** and sends it to its **LOS**, to
 **ULI (OCEN)** or to **ONDC**.
 
-This document is the plan. What is built is tracked in
+This document is the plan; the task-by-task split between team members is
+[`13_TEAM_WORK_PLAN.md`](13_TEAM_WORK_PLAN.md). What is built is tracked in
 [`10_FRAUD_LENS_BUILD.md`](10_FRAUD_LENS_BUILD.md) (Phase 7); the system design is in
 [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
