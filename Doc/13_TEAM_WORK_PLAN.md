@@ -12,8 +12,9 @@ branch, open a pull request when its *Done when* list is all true, and tick it h
 
 ## 1. Board
 
-**A** = Abhinav (lead: production, deploys, secrets, core engine) · **B** = teammate (checks,
-calculator, demo data, docs). Status: ⏸ to do · 🔨 in progress · 👀 in review · ✅ done.
+**A** = Abhinav (lead: production, deploys, secrets, core engine) · **B** = Sourabh (checks,
+calculator, demo data, docs, **user-facing content and UI copy** — §8). Status: ⏸ to do ·
+🔨 in progress · 👀 in review · ✅ done.
 
 | ID | Task | Owner | Day | Needs | Status |
 |---|---|---|---|---|---|
@@ -34,6 +35,9 @@ calculator, demo data, docs). Status: ⏸ to do · 🔨 in progress · 👀 in r
 | T13 | README and ARCHITECTURE to the customer flow | B | Oct 18 | T11 | ⏸ |
 | T14 | Deck and video script to the customer flow; record the video | A deck · B records | Oct 18 | T11 | ⏸ |
 | T15 | Deploy, smoke test, **submit** | A | Oct 18 | all | ⏸ |
+| C1 | Content guidelines (`CONTENT_GUIDELINES.md`); onboarding, Sign In and dashboard copy | B | Oct 15–16 | — | ✅ |
+| C2 | Home page: headline, hero, feature cards (§8.3) | B | Oct 16 | C1 | ✅ |
+| C3 | Customer dashboard: targeted fixes, existing design kept (§8.4) | B | Oct 16 | C1 | ⏸ |
 
 **Order of play.** Oct 16: T1–T6. Oct 17: T7–T10, start T11. Oct 18: finish T11, then
 T12–T15. Submit **by the evening of Oct 18**, with the deploy done by midday so there is time to
@@ -387,3 +391,100 @@ finding, and the smoke test.
 
 Fifteen minutes each morning and evening: what moved on the board, what is blocked, what the next
 pull request is. Anything blocked for more than an hour goes to the other person at once.
+
+---
+
+## 8. Content and UI copy (B)
+
+For A's clarity: what B changes on the user-facing pages, the rules B follows, and where each
+page stands. The rules live in [`CONTENT_GUIDELINES.md`](../CONTENT_GUIDELINES.md) at the
+repository root. **Read it before changing any text the user sees.**
+
+### 8.1 What B can change, and what B leaves alone
+
+| B changes | B does not change |
+|---|---|
+| Headings, body text, button labels, field labels, helper text | Routes, controller actions, element IDs, CSS classes, `onclick` / `data-*` hooks |
+| Loading, success, error and empty-state messages (view, JS and `res.message` text in controllers) | Business logic, scoring, checks, database, migrations |
+| Small layout additions inside a page (a status label, a note) using existing CSS | New pages, new APIs, new integrations |
+| `CONTENT_GUIDELINES.md` | Secrets, `appsettings.*.json`, production |
+
+Every content change is text-only unless the task says otherwise, and goes through a pull request
+that A merges (§4). *Note:* on Oct 16, B merged `content/onboarding-copy-guidelines` into `main`
+directly, without a PR, at commit `5af7c41`. Review it there; later content work goes through PRs.
+
+### 8.2 The guideline rules in one screen
+
+1. **Terms.** Lead with the international label and keep the Indian name as a short tag:
+   Udyam → *Business Registry & Identity* · GST → *Tax & Sales Compliance* · Account Aggregator →
+   *Consent-Based Bank Data* · ITR → *Income Tax Filing* · MCA → *Corporate Registry* · PAN →
+   *Taxpayer / Business Identity*.
+2. **Only claim what the code does.** Per-source 0–100 scores, fraud findings with evidence,
+   grounded AI. **Not built, never shown:** a combined Financial Health Score, a 0–1000 scale,
+   dimension weights. §4b of the guidelines lists every claim still waiting on code.
+3. **Demo data is labelled.** GST, ITR and MCA "Fetch Details" load generated sample data, so
+   their success messages say "(demo data)". The IP risk check reads a stored response until
+   `Signzy:UseApi` is true.
+4. **Consent is exact.** Account Aggregator: creating a consent request is not sharing data.
+   Never say bank data is "fetched" or "verified" before the AA callback stores it.
+5. **Short and plain.** Headings ≤ 8 words, descriptions ≤ 2 sentences, buttons 1–3 words in
+   title case, US spelling, "Sign In" (never "Login").
+6. **Positive wording** (§4 above): "fraud detection", "risk analysis", "every finding backed by
+   evidence". No "not a score"-style contrasts in product text.
+
+### 8.3 Home page, step by step (C2, done)
+
+File: `FinRiskLensAI-RAG-V2/Views/Home/Index.cshtml`.
+
+1. **Headline and supporting text:** *AI-Powered Credit Intelligence for MSMEs* · "Verify business
+   identity and analyze tax, banking and corporate data to understand financial health and credit
+   risk."
+2. **Buttons:** *Start MSME Assessment* → `/Onboarding/CustOnboarding`; *How It Works* → scrolls to
+   the pipeline section (`#how-it-works`). The lender sign-in stays in the header menu.
+3. **Hero visual:** the animated mockup from the earlier FinRiskLens design (styles already in
+   `wwwroot/css/Index.css`). It shows a **demo per-source 0–100 score** with the guideline bands
+   (Low Risk 85–100, Moderate 65–84, High Risk below 65), plus *Business Registry · Udyam* and
+   *Monthly Cash Flow* cards. The panel label keeps "DEMO".
+4. **Pipeline section** *Every claim traced to its evidence* (Ingest → Extract → Check → Link →
+   Investigate → Verify → Review) sits directly under the hero.
+5. **Feature cards** *Built for New-to-Credit MSMEs*: the earlier design's layout and two images,
+   reworded to built features: consented data, 12–43 s AI investigation per demo case, explainable
+   findings, the lender's case view.
+6. **Removed:** the *Measured, not assumed* stats. The figures are kept in the guidelines §1 and the
+   README (T12 updates them).
+
+**For A:** the browser title (`_Layout.cshtml`) still says *Evidence-based fraud detection*. Change
+it only if we agree to.
+
+### 8.4 Customer dashboard (C3, on hold for B's decisions)
+
+Files: `Views/Dashboard/CustDashboard.cshtml`, `Controllers/DashboardController.cs`,
+`wwwroot/FRLScripts/Dashboard/IpVerification.js`, `wwwroot/css/Dashboard.css`.
+
+**Decision (Oct 16):** keep the existing dashboard design: the *Welcome back* banner with the
+dynamic business name, the sign-in IP section and popup, the four source cards and the side panels.
+A redesign was tried and rolled back; nothing from it is in the code. The committed labels stay:
+*Sign-in IP*, *Connect Your Data Sources*, *Retrieved*. Changes here are targeted and need B's
+approval first.
+
+| Area | What is real today | Status |
+|---|---|---|
+| Business name | `NameOfEnterprise` from the session (set at sign-in) | Keep |
+| Sign-in IP badge and popup | The badge shows the IP captured at sign-in. The popup's risk details come from a **stored** response (`Signzy:UseApi = false`), or a built-in sample when none is stored, yet it reads "Verified & Trusted" / "SECURE" | Keep the section; a wording-only fix is proposed, awaiting B |
+| GST card | Sample returns from the `dummy-data` template; no *Retrieved* state yet | Proposed: show *Retrieved* once returns exist, awaiting B |
+| Account Aggregator card | **Real** Finvu consent request; data stored by the callback | Proposed: show *Retrieved* only once `aa.json` is stored, awaiting B |
+| ITR / MCA cards | Sample data; MCA's companies-only rule is real | Keep |
+| Upload Documents | **Real**: documents join the assessment and the fraud pipeline | Keep |
+
+**Open for A (not content work):** the GST and ITR modals ask for a portal password that is never
+sent to the server. Either wire it to a real portal flow or remove the fields.
+
+### 8.5 Next pages, in order
+
+Each one: read the guidelines, change text only on that page, show the diff, wait for review.
+
+1. Business details review and OTP verification (copy approved; check the runtime messages)
+2. Udyam analysis
+3. GST, Account Aggregator, ITR and MCA analysis pages
+4. Risk Lens and the bank-side pages (only with A, since they show the findings)
+
