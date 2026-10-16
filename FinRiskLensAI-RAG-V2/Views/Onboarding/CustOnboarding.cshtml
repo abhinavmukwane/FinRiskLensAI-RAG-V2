@@ -16,18 +16,18 @@
 
                     <div class="rail-step active" data-step="1">
                         <div class="node"><i class="bi bi-fingerprint"></i></div>
-                        <div class="label">Udyam Number</div>
-                        <div class="sub">Verify enterprise</div>
+                        <div class="label">Business Registry</div>
+                        <div class="sub">Udyam number</div>
                     </div>
                     <div class="rail-step" data-step="2">
                         <div class="node"><i class="bi bi-clipboard2-check"></i></div>
-                        <div class="label">Review & Proceed</div>
+                        <div class="label">Review Business Details</div>
                         <div class="sub">Confirm details</div>
                     </div>
                     <div class="rail-step" data-step="3">
                         <div class="node"><i class="bi bi-shield-check"></i></div>
-                        <div class="label">OTP Verification</div>
-                        <div class="sub">Confirm it's you</div>
+                        <div class="label">Verify Contact</div>
+                        <div class="sub">One-time code</div>
                     </div>
 
                 </div>
@@ -41,7 +41,7 @@
                         <div class="stage-icon"><i class="bi bi-fingerprint"></i></div>
                         <div>
                             <div class="eyebrow">Step 01</div>
-                            <h2 class="stage-title">Enter your Udyam Registration Number</h2>
+                            <h2 class="stage-title">Verify Business Identity</h2>
 
                         </div>
                     </div>
@@ -55,16 +55,14 @@
                                    placeholder="UDYAM-XX-00-0000000" maxlength="19" autocomplete="off">
                         </div>
                         <div class="help-text mb-4">
-                            <i class="bi bi-info-circle-fill"></i> Format: UDYAM-State
-                            Code-District
-                            Code-Registration Number. Find it on your Udyam certificate.
+                            <i class="bi bi-info-circle-fill"></i> Udyam is India's government registry for MSMEs. Enter the number shown on your Udyam certificate.
                         </div>
 
                         <div class="d-flex justify-content-end align-items-center">
                             <button class="btn btn-maroon btn-lg px-4" id="btnFetch">
                                 <span id="fetchBtnLabel">
                                     <i class="bi bi-arrow-right-circle me-1"></i>
-                                    Fetch & Continue
+                                    Verify Business
                                 </span>
                             </button>
                         </div>
@@ -81,23 +79,23 @@
 
                 <div class="screen-title"
                      style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:var(--maroon-deep);">
-                    Verifying Udyam details...
+                    Verifying business identity…
                 </div>
 
                 <div class="loading-steps">
                     <div class="li" id="ls1">
                         <i class="bi bi-check-circle-fill"></i>
-                        Validating Udyam number
+                        Checking registration number
                     </div>
 
                     <div class="li" id="ls2">
                         <i class="bi bi-check-circle-fill"></i>
-                        Fetching enterprise information
+                        Retrieving business registry record
                     </div>
 
                     <div class="li" id="ls3">
                         <i class="bi bi-check-circle-fill"></i>
-                        Preparing verification details
+                        Preparing details for review
                     </div>
                 </div>
             </div>
@@ -109,7 +107,7 @@
                         <div class="stage-icon"><i class="bi bi-clipboard2-check"></i></div>
                         <div>
                             <div class="eyebrow">Step 02</div>
-                            <h2 class="stage-title mb-0">Review &amp; Proceed</h2>
+                            <h2 class="stage-title mb-0">Review Business Details</h2>
                         </div>
                     </div>
                     <!-- === Enterprise Details Card === -->
@@ -117,7 +115,7 @@
                         <div class="rv-card-header">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-building-fill rv-card-icon"></i>
-                                <span class="rv-card-title">Enterprise Details</span>
+                                <span class="rv-card-title">Business Details</span>
                             </div>
 
                         </div>
@@ -128,7 +126,7 @@
                                     <div class="rv-field-value" id="rv_entName">Sharma Precision Engineering Works</div>
                                 </div>
                                 <div class="col-md-6 rv-field">
-                                    <div class="rv-field-label">Constitution</div>
+                                    <div class="rv-field-label">Legal Structure</div>
                                     <div class="rv-field-value" id="rv_orgType">Proprietorship</div>
                                 </div>
                                 <div class="col-12">
@@ -149,25 +147,25 @@
                         <div class="rv-card-header">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-building-fill rv-card-icon"></i>
-                                <span class="rv-card-title">Personal Details</span>
+                                <span class="rv-card-title">Registration &amp; Tax Details</span>
                             </div>
                         <input type="hidden" id="hdnMsmeEnquiryID" />
                         </div>
                         <div class="rv-card-body">
                             <div class="row g-0">
                                 <div class="col-md-6 rv-field rv-border-end">
-                                    <div class="rv-field-label">Udyam Number</div>
+                                    <div class="rv-field-label">Udyam Registration Number</div>
                                     <div class="rv-field-value" id="rv_udyam_number"></div>
                                 </div>
                                 <div class="col-md-6 rv-field">
-                                    <div class="rv-field-label">GSTN Number</div>
+                                    <div class="rv-field-label">GSTIN</div>
                                     <div class="rv-field-value" id="rv_gstnNumber"></div>
                                 </div>
                                 <div class="col-12">
                                     <div class="rv-divider"></div>
                                 </div>
                                 <div class="col-md-6 rv-field rv-border-end">
-                                    <div class="rv-field-label">PAN Number</div>
+                                    <div class="rv-field-label">PAN</div>
                                     <div class="rv-field-value" id="rv_panNo"></div>
                                 </div>
                                 
@@ -183,7 +181,7 @@
                                 <div class="rv-card-header">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="bi bi-geo-alt-fill rv-card-icon"></i>
-                                        <span class="rv-card-title">Registered Location</span>
+                                        <span class="rv-card-title">Registered Address</span>
                                     </div>
                                     
                                 </div>
@@ -196,8 +194,8 @@
                                         <div class="rv-map-gradient"></div>
                                         <div class="rv-map-pin"><i class="bi bi-geo-alt-fill"></i></div>
                                         <div class="rv-map-badge">
-                                            <i class="bi bi-grid-3x3-gap-fill me-1"></i>VERIFIED
-                                            GEOTAG
+                                            <i class="bi bi-grid-3x3-gap-fill me-1"></i>ADDRESS
+                                            ON RECORD
                                         </div>
                                     </div>
                                 </div>
@@ -209,7 +207,7 @@
                                 <div class="rv-card-header">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="bi bi-person-lines-fill rv-card-icon"></i>
-                                        <span class="rv-card-title">Contact Details</span>
+                                        <span class="rv-card-title">Contact Verification</span>
                                     </div>
                                 </div>
                             <div class="rv-card-body">
@@ -239,7 +237,7 @@
                                 <div style="margin-top: 20px;">
                                     <div>
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <div class="rv-field-label">Primary Mobile Number</div>
+                                            <div class="rv-field-label">Mobile Number</div>
                                             <span class="rv-badge rv-badge-required">REQUIRED</span>
                                         </div>
                                         <div class="rv-mobile-input-wrap">
@@ -260,14 +258,14 @@
                            <div class=" mb-3" style="padding-left: 5px;">
                             <input class="form-check-input rv-checkbox" type="checkbox" id="consentCheck">
                             <label class="form-check-label small text-muted" for="consentCheck">
-                                I confirm the above details are correct and consent to FinRiskLens AI accessing my
-                                MSME credit profile.
+                                I confirm these business details are correct and agree to receive a
+                                verification code by email. This step doesn't give access to my financial data.
                             </label>
                              </div>
                             <div class="d-flex justify-content-end align-items-center flex-wrap gap-2">
                                
                                 <button class="btn btn-maroon btn-lg px-5" id="btnProceedToOtp" disabled>
-                                    <i class="bi bi-send me-1"></i> Register
+                                    <i class="bi bi-send me-1"></i> Send Code
                                 </button>
                             </div>
                             <div class="alert alert-danger d-none mt-3 py-2 small" id="reviewError">
@@ -285,9 +283,9 @@
                     <div class="stage-icon"><i class="bi bi-shield-check"></i></div>
                     <div>
                         <div class="eyebrow">Step 03</div>
-                        <h2 class="stage-title">Verify with OTP</h2>
+                        <h2 class="stage-title">Verify Contact</h2>
                         <p class="stage-desc mb-0">
-                            We've sent a 6-digit code to <span class="fw-semibold" id="otpEmailTarget" style="color:var(--maroon-dark)"></span>
+                            Enter the 6-digit code sent to <span class="fw-semibold" id="otpEmailTarget" style="color:var(--maroon-dark)"></span>
                         </p>
                     </div>
                 </div>
@@ -301,7 +299,7 @@
                         <input type="text" inputmode="numeric" maxlength="1" class="otp-box otp-input">
                     </div>
                     <div class="alert alert-danger d-none py-2 small mx-auto" style="max-width:380px;" id="otpError">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Incorrect code. Please try again.
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> This code is incorrect. Try again.
                     </div>
 
                     <div class="d-flex justify-content-center align-items-center gap-3 mb-4">
@@ -328,7 +326,7 @@
 
     <div class="text-center mt-5">
         <footer class="brand-footer">
-            <i class="bi bi-lock-fill"></i> Your data is processed in compliance with RBI data protection guidelines
+            <i class="bi bi-lock-fill"></i> Your data is shared only with your consent
             · FinRiskLens AI © 2026
         </footer>
     </div>
@@ -353,12 +351,12 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="bi bi-shield-lock-fill"></i>
-                    Your one-time password
+                    Your Verification Code
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <p class="mb-2">Use this OTP to continue:</p>
+                <p class="mb-2">Use this code to continue:</p>
 
                 <div class="otp-display-box">
                     <h2 id="otpDisplayValue" class="fw-bold"></h2>

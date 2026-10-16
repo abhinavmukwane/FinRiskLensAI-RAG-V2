@@ -9,6 +9,16 @@ $(function () {
         new bootstrap.Toast(document.getElementById('liveToast'), { delay: 2600 }).show();
     }
 
+    // Display-only: "2019-06-14T00:00:00" → "14 Jun 2019". Parsed from the string
+    // (not new Date()) so the browser's timezone can't shift the day.
+    function formatDisplayDate(value) {
+        if (!value) return '-';
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+        if (!m) return value;
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return parseInt(m[3], 10) + ' ' + months[parseInt(m[2], 10) - 1] + ' ' + m[1];
+    }
+
     // ---------- LOGIN MODE DETECTION ----------
     const urlParams = new URLSearchParams(window.location.search);
     const isLoginMode = urlParams.get('mode') === 'login';
@@ -17,25 +27,25 @@ $(function () {
         $('body').addClass('login-mode');
 
         // Adjust Step 1 UI text
-        $('#step1 .eyebrow').text('Secure Access');
-        $('#step1 .stage-title').text('Login to your MSME Credit Dashboard');
-        $('#step1 label[for="udyamInput"]').text('Registered Udyam Number or Mobile');
-        $('#udyamInput').attr('placeholder', 'UDYAM-XX-00-0000000 or 10-digit Mobile');
-        $('#step1 .help-text').html('<i class="bi bi-info-circle-fill"></i> Enter the Udyam registration ID or mobile number associated with your profile.');
-        $('#fetchBtnLabel').html('<i class="bi bi-arrow-right-circle me-1"></i> Send OTP');
+        $('#step1 .eyebrow').text('Sign In');
+        $('#step1 .stage-title').text('Sign In to Your Dashboard');
+        $('#step1 label[for="udyamInput"]').text('Udyam Registration Number or Mobile Number');
+        $('#udyamInput').attr('placeholder', 'UDYAM-XX-00-0000000 or 10-digit mobile');
+        $('#step1 .help-text').html('<i class="bi bi-info-circle-fill"></i> Enter the Udyam Registration Number or mobile number linked to your account.');
+        $('#fetchBtnLabel').html('<i class="bi bi-arrow-right-circle me-1"></i> Send Code');
 
         // Adjust Step 3 UI text
-        $('#step3 .eyebrow').text('Authentication');
-        $('#step3 .stage-title').text('Enter Verification Code');
-        $('#step3 .stage-desc').html('Enter the 6-digit OTP sent to your registered contact.');
+        $('#step3 .eyebrow').text('Verification');
+        $('#step3 .stage-title').text('Verify Contact');
+        $('#step3 .stage-desc').html('Enter the 6-digit code sent to your registered contact.');
 
         // Adjust Step 4 UI text
-        $('#step4 .eyebrow').text('Access Granted');
-        $('#step4 .stage-title').text('Login Successful 🎉');
-        $('#step4 .stage-desc').text('Welcome back! Your identity has been authenticated.');
-        $('#step4 .stage-body h3').text('Welcome Back!');
-        $('#step4 .stage-body .text-muted').text('Your secure session has been initialized. Click below to load your credit risk intelligence dashboard.');
-        $('#btnGoToDashboard').html('<i class="bi bi-speedometer2 me-1"></i> Load Dashboard');
+        $('#step4 .eyebrow').text('Signed In');
+        $('#step4 .stage-title').text('Sign-In Complete');
+        $('#step4 .stage-desc').text('Your contact has been verified.');
+        $('#step4 .stage-body h3').text('Welcome Back');
+        $('#step4 .stage-body .text-muted').text('Open your dashboard to view your risk checks and findings.');
+        $('#btnGoToDashboard').html('<i class="bi bi-speedometer2 me-1"></i> View Dashboard');
     }
 
     // 4-step rail: fill percentages at 0%, 33%, 66%, 100%
@@ -86,17 +96,17 @@ $(function () {
             const isMobile = /^\d{10}$/.test(val);
 
             if (!isUdyam && !isMobile) {
-                $('#udyamError').removeClass('d-none').find('span').text('Please enter a valid Udyam number (UDYAM-XX-00-0000000) or a 10-digit mobile number.');
+                $('#udyamError').removeClass('d-none').find('span').text('Enter a valid Udyam Registration Number (UDYAM-XX-00-0000000) or 10-digit mobile number.');
                 return;
             }
             $('#udyamError').addClass('d-none');
 
             // Hide Step 1, show loader
             $('#step1').addClass('d-none');
-            $('#fetchLoader .screen-title').text('Authenticating session credentials…');
-            $('#ls1').html('<i class="bi bi-check-circle-fill"></i> Checking credential registry');
-            $('#ls2').html('<i class="bi bi-check-circle-fill"></i> Locating active credit files');
-            $('#ls3').html('<i class="bi bi-check-circle-fill"></i> Sending security verification code');
+            $('#fetchLoader .screen-title').text('Checking your details…');
+            $('#ls1').html('<i class="bi bi-check-circle-fill"></i> Finding your account');
+            $('#ls2').html('<i class="bi bi-check-circle-fill"></i> Checking registered contact');
+            $('#ls3').html('<i class="bi bi-check-circle-fill"></i> Sending verification code');
             $('#ls1, #ls2, #ls3').removeClass('active done');
             $('#fetchLoader').show();
             $('html,body').animate({ scrollTop: 0 }, 200);
@@ -135,7 +145,7 @@ $(function () {
 
                 startOtpTimer();
                 $('.otp-input').first().focus();
-                showToast('OTP sent to your registered contact.');
+                showToast('Verification code sent to your registered contact.');
                 $('html,body').animate({ scrollTop: 0 }, 300);
             }, 3200);
 
@@ -147,7 +157,7 @@ $(function () {
                 $('#udyamError')
                     .removeClass('d-none')
                     .find('span')
-                    .text('Please enter a valid Udyam number in the format UDYAM-XX-00-0000000.');
+                    .text('Enter a valid Udyam Registration Number (e.g. UDYAM-MH-01-0000001).');
                 return;
             }
 
@@ -156,11 +166,11 @@ $(function () {
             // Hide Step1 & Show Loader
             $('#step1').addClass('d-none');
 
-            $('#fetchLoader .screen-title').text('Initiating the Udyam check...');
+            $('#fetchLoader .screen-title').text('Verifying business identity…');
 
-            $('#ls1').html('<i class="bi bi-check-circle-fill"></i> Validating Enterprise Identity');
-            $('#ls2').html('<i class="bi bi-check-circle-fill"></i> Retrieving Official Records');
-            $('#ls3').html('<i class="bi bi-check-circle-fill"></i> Validating Udyam Details');
+            $('#ls1').html('<i class="bi bi-check-circle-fill"></i> Checking registration number');
+            $('#ls2').html('<i class="bi bi-check-circle-fill"></i> Retrieving business registry record');
+            $('#ls3').html('<i class="bi bi-check-circle-fill"></i> Preparing details for review');
 
             $('#ls1,#ls2,#ls3').removeClass('active done');
 
@@ -222,7 +232,7 @@ $(function () {
                                 var d = response.data;
                                 $("#rv_entName").text(d.enterpriseName);
                                 $("#rv_orgType").text(d.organizationType);
-                                $("#rv_dob").text(d.dateOfIncorporation);
+                                $("#rv_dob").text(formatDisplayDate(d.dateOfIncorporation));
                                 $("#rv_msme").text(d.enterpriseType);
                                 $("#rv_msme").text(d.enterpriseType);
 
@@ -249,7 +259,7 @@ $(function () {
 
                                 goToRailStep(2);
 
-                                showToast('Enterprise details fetched successfully.');
+                                showToast('Business details retrieved.');
 
                                 $('html,body').animate({
                                     scrollTop: 0
@@ -260,7 +270,7 @@ $(function () {
                                 $('#fetchLoader').hide();
                                 $('#step1').removeClass('d-none');
 
-                                showToast("Failed to load enterprise details.");
+                                showToast("We couldn't load business details. Try again.");
                             });
                     }
 
@@ -270,7 +280,7 @@ $(function () {
 
                         $('#step1').removeClass('d-none');
 
-                        showToast(res.message || "Unable to fetch Udyam details.");
+                        showToast(res.message || "We couldn't verify this registration number. Check it and try again.");
                     }
                 },
 
@@ -280,7 +290,7 @@ $(function () {
 
                     $('#step1').removeClass('d-none');
 
-                    showToast("Something went wrong while fetching Udyam details.");
+                    showToast("Something went wrong. Try again in a moment.");
                 }
 
             });
@@ -325,7 +335,7 @@ $(function () {
         };
         const $btn = $(this);
         $btn.prop('disabled', true)
-            .html('<span class="spin-loader"></span> Sending OTP...');
+            .html('<span class="spin-loader"></span> Sending code…');
         var nameOfEnterprise = $('#rv_entName').text().trim();
         $.ajax({
             url: '/Onboarding/GenerateOtp',
@@ -337,7 +347,7 @@ $(function () {
             },
             success: function (response) {
                 $btn.prop('disabled', false)
-                    .html('<i class="bi bi-send me-1"></i> Proceed & Send OTP');
+                    .html('<i class="bi bi-send me-1"></i> Send Code');
                 if (response.status) {
                     $('#step2').addClass('d-none');
                     $('#step3').removeClass('d-none');
@@ -367,9 +377,9 @@ $(function () {
             },
             error: function () {
                 $btn.prop('disabled', false)
-                    .html('<i class="bi bi-send me-1"></i> Proceed & Send OTP');
+                    .html('<i class="bi bi-send me-1"></i> Send Code');
                 $('#reviewError').removeClass('d-none');
-                $('#reviewError span').text('Something went wrong.');
+                $('#reviewError span').text('Something went wrong. Try again.');
             }
         });
     });
@@ -495,7 +505,7 @@ $(function () {
         var email = $("#otpEmailTarget").text().trim();
 
         if (!email) {
-            showToast('Email not found. Please restart the process.');
+            showToast("We couldn't find your contact details. Start again.");
             return;
         }
 
@@ -506,7 +516,7 @@ $(function () {
 
         // Disable + show sending state while the call is in flight
         $btn.addClass('disabled');
-        $btn.html('<i class="bi bi-arrow-repeat me-1"></i>Sending...');
+        $btn.html('<i class="bi bi-arrow-repeat me-1"></i>Sending…');
 
         $.ajax({
             url: "/Auth/GenCustomerOtp",
@@ -516,18 +526,18 @@ $(function () {
                 if (response && response.status) {
                     $('.otp-input').val('');
                     $('.otp-input').first().focus();
-                    showToast('A new OTP has been sent.');
+                    showToast('A new code has been sent.');
 
                     $btn.html(originalHtml);
                     startOtpTimer();
                 } else {
-                    showToast('Failed to resend OTP. Try again.');
+                    showToast("We couldn't resend the code. Try again.");
                     $btn.html(originalHtml);
                     $btn.removeClass('disabled');
                 }
             },
             error: function () {
-                showToast('Something went wrong while resending OTP.');
+                showToast("We couldn't resend the code. Try again in a moment.");
                 $btn.html(originalHtml);
                 $btn.removeClass('disabled');
             }
@@ -560,7 +570,7 @@ $(function () {
         if (code.length != 6) {
             $('#otpError')
                 .removeClass('d-none')
-                .html('<i class="bi bi-exclamation-triangle-fill me-1"></i> Please enter all 6 digits.');
+                .html('<i class="bi bi-exclamation-triangle-fill me-1"></i> Enter all 6 digits.');
             return;
         }
         var model = {
@@ -573,7 +583,7 @@ $(function () {
         };
         var $btn = $(this);
         $btn.prop("disabled", true)
-            .html('<span class="spin-loader"></span> Verifying...');
+            .html('<span class="spin-loader"></span> Verifying…');
         $.ajax({
             url: "/Onboarding/FetchUserOTPDet",
             type: "POST",
@@ -599,7 +609,7 @@ $(function () {
             error: function () {
                 $btn.prop("disabled", false)
                     .html('<i class="bi bi-check-circle me-1"></i> Verify & Continue');
-                alert("Something went wrong.");
+                alert("Something went wrong. Try again.");
             }
         });
     });

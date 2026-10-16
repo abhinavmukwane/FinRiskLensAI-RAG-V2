@@ -51,7 +51,7 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>
-        /// Source-IP security audit for the "Secure Connection IP" popup. Reads
+        /// Source-IP security audit for the "Sign-in IP" popup. Reads
         /// the client IP captured in session at login and hands it to the single
         /// IP risk service (currently sourced from m_StaticResponces.IPResponce;
         /// the Signzy API once the production key is live). Called only when the
@@ -86,7 +86,7 @@ namespace FinRiskLensAI.Controllers
                 if (string.IsNullOrWhiteSpace(url))
                     return Json(new { status = false, message = "Could not initiate the Account Aggregator consent. Please try again." });
 
-                return Json(new { status = true, url, message = "Consent request created — opening the Account Aggregator." });
+                return Json(new { status = true, url, message = "Consent request created. Approve it in the Account Aggregator tab to share your bank statements." });
             }
             catch (Exception ex)
             {
@@ -96,7 +96,7 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>
-        /// The "Lets get start" verification hub. ViewBag.ItrFetched / McaFetched tell
+        /// The "Connect Your Data Sources" verification hub. ViewBag.ItrFetched / McaFetched tell
         /// the view whether to grey out those "Fetch Details" launchers — once itr.json
         /// / mca.json exist for this UAN there is nothing left to fetch until a real
         /// re-fetch flow exists.
@@ -197,7 +197,7 @@ namespace FinRiskLensAI.Controllers
             var user = HttpContext.Session.GetCurrentUser();
             var uan = user?.UdyamNumber;
             if (string.IsNullOrWhiteSpace(uan) || string.IsNullOrWhiteSpace(user!.GstinNumber))
-                return Json(new { status = false, message = "No Udyam/GSTIN in session." });
+                return Json(new { status = false, message = "No Udyam number or GSTIN on your session. Sign in again." });
 
             var existing = await _store.ListFilesAsync(uan, ct);
             var gstPresent = existing.Any(f => f.StartsWith("gstr", StringComparison.OrdinalIgnoreCase));
@@ -253,15 +253,19 @@ namespace FinRiskLensAI.Controllers
                 uan, copied, gstPresent);
 
             if (gstError != null)
-                return Json(new { status = false, copied, message = gstError });
+            {
+                // The template detail is for the log, not the customer
+                _logger.LogWarning("Seed GST {Uan}: {Error}", uan, gstError);
+                return Json(new { status = false, copied, message = "GST returns aren't available right now. Try again later." });
+            }
 
             return Json(new
             {
                 status = true,
                 copied,
                 message = copied > 0
-                    ? $"Copied {copied} GST file(s)."
-                    : "GST data already present."
+                    ? "Sample GST returns loaded for your GSTIN (demo data)."
+                    : "GST returns already loaded."
             });
         }
 
@@ -358,9 +362,9 @@ namespace FinRiskLensAI.Controllers
 
                 // Say what actually changed, so a repeat click is never a silent no-op.
                 var parts = new List<string>();
-                parts.Add(mcaCreated ? "MCA record fetched" : "MCA record already present");
-                if (dinCreated > 0) parts.Add($"{dinCreated} director DIN record(s) fetched");
-                else if (directorCount > 0) parts.Add("DIN records already present");
+                parts.Add(mcaCreated ? "Sample MCA company record loaded (demo data)" : "MCA company record already loaded");
+                if (dinCreated > 0) parts.Add($"{dinCreated} director record(s) loaded");
+                else if (directorCount > 0) parts.Add("director records already loaded");
 
                 return Json(new
                 {
@@ -374,7 +378,7 @@ namespace FinRiskLensAI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "MCA seed failed for {Uan}", uan);
-                return Json(new { status = false, message = "Could not fetch the MCA details. Please try again." });
+                return Json(new { status = false, message = "We couldn't load the MCA details. Try again." });
             }
         }
 
@@ -445,13 +449,13 @@ namespace FinRiskLensAI.Controllers
                 return Json(new
                 {
                     status = true,
-                    message = alreadyPresent ? "ITR record already present." : "ITR details fetched and verified."
+                    message = alreadyPresent ? "ITR details already loaded." : "Sample ITR details loaded (demo data)."
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ITR seed failed for {Uan}", uan);
-                return Json(new { status = false, message = "Could not fetch the ITR details. Please try again." });
+                return Json(new { status = false, message = "We couldn't load the ITR details. Try again." });
             }
         }
     }
