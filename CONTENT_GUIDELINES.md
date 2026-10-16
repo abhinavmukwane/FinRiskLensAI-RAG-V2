@@ -20,7 +20,7 @@ Single source of truth for all user-facing text. Read this before changing copy 
 - An IP fraud score (VPN, proxy and high-risk IP activity).
 - Gemini AI fraud investigation: tampered statements, undeclared EMIs, loan stacking, round-tripping, pass-through, gambling/crypto exposure. Each finding cites the row, field, page or policy clause behind it.
 - Grounding: AI claims that can't be traced to the case data are dropped and shown on the case page.
-- Measured on the synthetic demo set: 12–43 s per case for AI investigation; see the Home page on `main` for the current accuracy figures.
+- Measured on the synthetic demo set: 12–43 s per case for AI investigation; 99.8–100% of 1,298 statement rows read exactly in two consecutive runs; 14 / 14 demo cases raise exactly the expected findings; 0 false alarms on genuine applicants.
 
 **Not built: never claim.** A combined Financial Health Score, a 0–1000 scale, dimension weights, or a Financial Health Card. If a composite score is added back, update this section first.
 
@@ -77,7 +77,7 @@ Format: **Title** (2–6 words, title case) + **subtitle** (one sentence, ≤ 20
 
 | Page | Title | Subtitle |
 |---|---|---|
-| Home | Evidence-based fraud detection | Findings that explain each risk in rupees and point to the exact row, field or page behind it. (Owned by the Home page on `main`; treat it as the reference for tone.) |
+| Home | AI-Powered Credit Intelligence for MSMEs | Verify business identity and analyze tax, banking and corporate data to understand financial health and credit risk. |
 | Onboarding — Udyam | Verify Business Identity | Enter the registration number shown on your Udyam certificate. |
 | Business details review | Review Business Details | Check the details retrieved from the business registry before continuing. |
 | OTP verification | Verify Contact | Enter the 6-digit code sent to [masked contact]. |
@@ -90,6 +90,26 @@ Format: **Title** (2–6 words, title case) + **subtitle** (one sentence, ≤ 20
 | Case page (lender) | Case Findings | What was found, where, and the evidence behind it. |
 
 These are the defaults. A page may adjust its subtitle to match what it actually shows. It must never describe data the page doesn't show.
+
+### Approved: Home page (`Home/Index.cshtml`)
+
+| Element | Wording |
+|---|---|
+| Badge | Google AI Builder Cup 2026 · BFSI |
+| Headline | AI-Powered Credit Intelligence **for MSMEs** (second line in the secondary colour) |
+| Supporting text | Verify business identity and analyze tax, banking and corporate data to understand financial health and credit risk. |
+| Primary / secondary CTA | Start MSME Assessment (`/Onboarding/CustOnboarding`) · How It Works (`#how-it-works`, the pipeline section). Lenders sign in from the header menu. |
+| Hero visual | Animated mockup copied from the earlier FinRiskLens design: panel BANKING_HEALTH_CHECK · DEMO with a 0–100 dial cycling demo values (bands LOW RISK / MODERATE / HIGH RISK); floating cards BUSINESS REGISTRY · UDYAM — Identity ✓ and MONTHLY CASH FLOW |
+| Bento section | Built for New-to-Credit MSMEs · Consented Data, Not a Bureau File · Findings in Seconds (AI Investigation, 12–43 s per case) · Explainable by Design (badges ACCOUNT AGGREGATOR, GROUNDED AI) · One case view for the lender (button Start Assessment) |
+| Section order | Hero → Every claim traced to its evidence (pipeline: Ingest · Extract · Check · Link · Investigate · Verify · Review) → Built for New-to-Credit MSMEs (bento). The "Measured, not assumed" stats section was removed. |
+
+**Hero-visual rule:** the mockup may look like a live AI app, but it shows a **per-source 0–100 score** (never a 0–1000 or composite Financial Health Score), and its bands must match §3. Keep "DEMO" in the panel label while the values are illustrative.
+
+**Bento rule:** the earlier design's claims (five sources incl. UPI and EPFO, "under five seconds", "< 10 sec", IDBI LOS, ULI/OCEN, CGTMSE/MUDRA mapping, "the score adapts") are not built here. Reuse the layout and images, not those claims.
+
+"Credit risk" in the supporting text refers to the per-source risk checks and fraud findings. It doesn't mean a composite credit score; see §1.
+
+The browser title stays `FinRiskLens AI | Evidence-based fraud detection` (set in `_Layout.cshtml`, out of scope for the Home page step).
 
 ### Approved: customer onboarding (`CustOnboarding.cshtml`)
 
@@ -198,7 +218,7 @@ Don't add new copy that relies on these until they are confirmed in code:
 
 | Action | Label |
 |---|---|
-| Start the flow | Start Assessment |
+| Start the flow | Start Assessment (Home hero: Start MSME Assessment) |
 | Learn more | How It Works |
 | Move forward | Continue |
 | Go back | Back |

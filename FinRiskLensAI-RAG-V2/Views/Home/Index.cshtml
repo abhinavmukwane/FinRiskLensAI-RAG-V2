@@ -1,5 +1,5 @@
 @{
-    ViewBag.Title = "Evidence-based fraud detection";
+    ViewBag.Title = "AI-Powered Credit Intelligence for MSMEs";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -16,67 +16,178 @@
                     </span>
                 </div>
                 <h2 class="display-4 text-primary font-heading fw-bold mb-3" style="line-height: 1.15;">
-                    Evidence-based <br />
-                    <span class="text-secondary">fraud detection</span>
+                    AI-Powered Credit Intelligence <br />
+                    <span class="text-secondary">for MSMEs</span>
                 </h2>
                 <p class="text-secondary lead mb-4" style="max-width: 520px;">
-                    FinRiskLens brings fraud detection and risk analysis to every loan application. It reads
-                    the bank statements, salary slips and ITRs submitted, and returns findings that explain each
-                    risk in rupees and point to the exact row, field or page behind it.
+                    Verify business identity and analyze tax, banking and corporate data to understand
+                    financial health and credit risk.
                 </p>
                 <div class="d-flex flex-column flex-sm-row gap-3 mb-4">
                     <a class="btn btn-primary-maroon px-4 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2 font-heading"
-                       href="/Auth/BankLogin">
-                        Open the bank portal <i class="bi bi-arrow-right"></i>
+                       href="/Onboarding/CustOnboarding">
+                        Start MSME Assessment <i class="bi bi-arrow-right"></i>
                     </a>
-                    <a class="btn btn-outline-maroon px-4 py-3 rounded-3 font-heading" href="/Onboarding/CustOnboarding">
-                        MSME: share your data
+                    <a class="btn btn-outline-maroon px-4 py-3 rounded-3 font-heading" href="#how-it-works">
+                        How It Works
                     </a>
                 </div>
             </div>
 
-            <!-- A real finding from the demo set: what the officer sees -->
-            <div class="col-lg-6">
-                <div class="card-premium p-4 mx-auto" style="max-width: 480px;">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-                        <span class="badge bg-danger">High · Tampering</span>
-                        <span class="font-data small text-secondary text-break">STATEMENT_VS_AA_MISMATCH</span>
+            @* Decorative animated mockup (demo values only). dont-translate + bhashini-skip-mutation
+               keep the translation plugin from re-hitting its API on every animation frame. *@
+            <div class="col-lg-6 position-relative d-none d-lg-block hero-cluster dont-translate bhashini-skip-mutation"
+                 translate="no" style="height: 520px;">
+                <!-- Main preview panel -->
+                <div class="position-absolute top-50 start-50 translate-middle w-100 card-premium overflow-hidden"
+                     style="max-width: 440px; z-index: 10;">
+                    <div class="bg-light border-bottom p-3 d-flex align-items-center justify-content-between">
+                        <div class="d-flex gap-1">
+                            <div class="rounded-circle bg-danger bg-opacity-50" style="width: 8px; height: 8px;"></div>
+                            <div class="rounded-circle bg-warning bg-opacity-75" style="width: 8px; height: 8px;"></div>
+                            <div class="rounded-circle bg-success bg-opacity-75" style="width: 8px; height: 8px;"></div>
+                        </div>
+                        <span class="font-data text-secondary uppercase opacity-50" style="font-size: 8px; font-weight: 700;">BANKING_HEALTH_CHECK · DEMO</span>
                     </div>
-                    <h4 class="h6 text-primary font-heading fw-bold mb-2">Statement disagrees with the bank's own record</h4>
-                    <p class="small text-secondary mb-3">
-                        91 of 93 rows agree with what the bank reported through Account Aggregator, with
-                        2 amounts changed and 4 loan EMIs left out. Net effect: the PDF shows ₹3,65,800 more
-                        in credits and ₹1,30,000 less in debits. Every balance and page total on the PDF adds up.
-                    </p>
-                    <ul class="list-unstyled small mb-0 font-data">
-                        <li class="py-1 border-top"><i class="bi bi-file-earmark-text me-2"></i>Page 2, row 28 · credit ₹3,28,500 — bank recorded ₹1,09,500</li>
-                        <li class="py-1 border-top"><i class="bi bi-file-earmark-text me-2"></i>Page 3, row 54 · credit ₹2,20,200 — bank recorded ₹73,400</li>
-                        <li class="py-1 border-top"><i class="bi bi-bank2 me-2"></i>05 Jun · NACH EMI ₹32,500 — not on the statement</li>
-                    </ul>
+
+                    <div class="p-4 row g-3">
+                        <div class="col-7">
+                            <div class="bg-light rounded mb-3" style="height: 12px; width: 80%;"></div>
+                            <div class="bg-white border rounded-3 p-3 d-flex flex-column align-items-center justify-content-center">
+                                <!-- Dial: per-source 0–100 score -->
+                                <div class="position-relative d-flex align-items-center justify-content-center rounded-circle risk-gauge-gradient p-1"
+                                     style="width: 100px; height: 100px;">
+                                    <div class="w-100 h-100 rounded-circle bg-white d-flex flex-column align-items-center justify-content-center">
+                                        <span id="heroScore" class="h4 text-primary font-heading mb-0 fw-bold dont-translate" translate="no">88</span>
+                                        <span id="heroBand" class="font-data text-secondary uppercase dont-translate" translate="no"
+                                              style="font-size: 6px; letter-spacing: 1px;">LOW RISK</span>
+                                    </div>
+                                    <div id="heroNeedle" class="position-absolute top-50 start-50 translate-middle w-100 h-100"
+                                         style="transform: rotate(189deg); transition: transform 1.4s cubic-bezier(.34,1.56,.64,1);">
+                                        <div class="bg-primary rounded-circle mx-auto" style="width: 3px; height: 8px; margin-top: -3px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-5 pt-3 d-flex flex-column justify-content-center gap-2">
+                            <div class="bg-light rounded w-100" style="height: 8px;"></div>
+                            <div class="bg-light rounded w-75" style="height: 8px;"></div>
+                            <div class="bg-light rounded w-50" style="height: 8px;"></div>
+                            <div class="row g-2 pt-3">
+                                <div class="col-6">
+                                    <div class="bg-primary bg-opacity-10 rounded hero-pulse" style="height: 36px;"></div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-success bg-opacity-10 rounded hero-pulse" style="height: 36px; animation-delay: .8s;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating identity card -->
+                <div class="position-absolute top-0 end-0 glass-card-float p-3 rounded-3 hero-float hero-float-id"
+                     style="width: 190px; z-index: 20;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-shield-check text-primary" style="font-size:1.25rem;"></i>
+                        <span class="font-data small text-secondary" style="font-size: 9px; font-weight: 700; text-transform: uppercase;">
+                            Business Registry · Udyam
+                        </span>
+                    </div>
+                    <div class="h4 font-heading text-dark mb-0 fw-bold">Identity ✓</div>
+                </div>
+
+                <!-- Floating chart card -->
+                <div class="position-absolute bottom-0 start-0 glass-card-float p-3 rounded-3 hero-float hero-float-chart"
+                     style="width: 220px; z-index: 20;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-graph-up-arrow text-secondary" style="font-size:1.25rem;"></i>
+                        <span class="font-data small text-secondary" style="font-size: 9px; font-weight: 700; text-transform: uppercase;">
+                            Monthly Cash Flow
+                        </span>
+                    </div>
+                    <div id="heroBars" class="d-flex align-items-end gap-1" style="height: 60px;">
+                        <div class="bg-secondary bg-opacity-25 rounded-top hero-bar" style="flex: 1;"></div>
+                        <div class="bg-secondary bg-opacity-50 rounded-top hero-bar" style="flex: 1;"></div>
+                        <div class="bg-secondary bg-opacity-25 rounded-top hero-bar" style="flex: 1;"></div>
+                        <div class="bg-secondary bg-opacity-75 rounded-top hero-bar" style="flex: 1;"></div>
+                        <div class="bg-secondary rounded-top hero-bar" style="flex: 1;"></div>
+                    </div>
                 </div>
             </div>
+
+            @* Cycles the dial through demo 0–100 scores; bands follow CONTENT_GUIDELINES.md §3 *@
+            <script>
+                (function () {
+                    var scoreEl = document.getElementById('heroScore');
+                    var bandEl = document.getElementById('heroBand');
+                    var needleEl = document.getElementById('heroNeedle');
+                    var barsWrap = document.getElementById('heroBars');
+                    if (!scoreEl) return;
+
+                    var bars = barsWrap ? Array.prototype.slice.call(barsWrap.querySelectorAll('.hero-bar')) : [];
+                    var scenarios = [88, 74, 91, 62, 81];
+                    var idx = 0, current = 88;
+
+                    function bandFor(s) {
+                        if (s >= 85) return 'LOW RISK';
+                        if (s >= 65) return 'MODERATE';
+                        return 'HIGH RISK';
+                    }
+
+                    function tweenTo(target) {
+                        var start = current, startT = performance.now(), dur = 1200;
+                        var lastVal = null, lastBand = null;
+                        function step(now) {
+                            var p = Math.min(1, (now - startT) / dur);
+                            var eased = 1 - Math.pow(1 - p, 3);
+                            var val = Math.round(start + (target - start) * eased);
+                            // Only touch the DOM when the value actually changes
+                            if (val !== lastVal) { scoreEl.textContent = val; lastVal = val; }
+                            var band = bandFor(val);
+                            if (band !== lastBand) { bandEl.textContent = band; lastBand = band; }
+                            if (p < 1) requestAnimationFrame(step); else current = target;
+                        }
+                        requestAnimationFrame(step);
+                        if (needleEl) needleEl.style.transform = 'rotate(' + (-40 + (target / 100) * 260) + 'deg)';
+                        randomizeBars();
+                    }
+
+                    function randomizeBars() {
+                        bars.forEach(function (b, i) {
+                            setTimeout(function () { b.style.height = (30 + Math.random() * 70) + '%'; }, i * 90);
+                        });
+                    }
+
+                    randomizeBars();
+                    setInterval(function () {
+                        idx = (idx + 1) % scenarios.length;
+                        tweenTo(scenarios[idx]);
+                    }, 3200);
+                })();
+            </script>
         </div>
     </section>
 
     <!-- Pipeline -->
-    <section class="mx-auto px-margin-desktop py-5" style="max-width: 1440px;">
+    <section id="how-it-works" class="mx-auto px-margin-desktop py-5" style="max-width: 1440px; scroll-margin-top: 90px;">
         <div class="text-center mb-5">
             <h3 class="h2 text-primary font-heading fw-bold mb-2">Every claim traced to its evidence</h3>
             <p class="text-secondary mx-auto" style="max-width: 640px;">
-                Arithmetic first, then the bank's own record, then AI judgement — with every AI claim
-                backed by rows of the case.
+                Arithmetic first, then the bank's own record, then AI judgment. Every AI claim is
+                backed by rows from the case.
             </p>
         </div>
         <div class="row g-4">
             @foreach (var (icon, title, text) in new[]
             {
-                ("bi-cloud-upload", "Ingest", "File type from the bytes, SHA-256, PDF producer and edit history. Stored in Cloud Storage, Mumbai."),
-                ("bi-file-earmark-text", "Extract", "Gemini Flash in Mumbai reads every page in parallel and copies numbers exactly as printed — never corrected."),
-                ("bi-calculator", "Check", "Nine deterministic checks: running balances, page totals, slip arithmetic, round-tripping, window dressing, pass-through, metadata, and the bank's Account Aggregator record."),
-                ("bi-diagram-3", "Link", "A network lens across every application: a shared file, a shared template or one salary account behind different employers exposes a fraud ring."),
-                ("bi-search", "Investigate", "A Gemini Pro agent with tools scoped to one application: its rows, its counterparties, its registry facts and the lender's policy."),
-                ("bi-shield-check", "Verify", "An AI claim that cites nothing in the case, or quotes a rupee amount it cannot trace, is dropped — and the drop is shown."),
-                ("bi-person-check", "Review", "The credit officer confirms or dismisses each finding, with the evidence and the policy clause one click away.")
+                ("bi-cloud-upload", "Ingest", "Detects file type from the bytes and records the SHA-256 hash, PDF producer and edit history. Stored in Cloud Storage, Mumbai."),
+                ("bi-file-earmark-text", "Extract", "Gemini Flash in Mumbai reads every page in parallel and copies numbers exactly as printed, never corrected."),
+                ("bi-calculator", "Check", "Nine rule-based checks: running balances, page totals, salary-slip arithmetic, round-tripping, window dressing, pass-through, metadata and the bank's Account Aggregator record."),
+                ("bi-diagram-3", "Link", "Looks across all applications. A shared file, a shared template or one salary account behind different employers points to a fraud ring."),
+                ("bi-search", "Investigate", "A Gemini Pro agent works within one application: its rows, counterparties, registry facts and the lender's policy."),
+                ("bi-shield-check", "Verify", "An AI claim that cites nothing in the case, or quotes an amount it can't trace, is dropped, and the drop is shown."),
+                ("bi-person-check", "Review", "The credit officer confirms or dismisses each finding, with the evidence and policy clause one click away.")
             })
             {
                 <div class="col-md-6 col-lg-4">
@@ -89,30 +200,122 @@
         </div>
     </section>
 
-    <!-- Measured -->
+    <!-- Features bento -->
     <section class="mx-auto px-margin-desktop py-5" style="max-width: 1440px;">
         <div class="text-center mb-5">
-            <h3 class="h2 text-primary font-heading fw-bold mb-2">Measured, not assumed</h3>
-            <p class="text-secondary mx-auto" style="max-width: 640px;">
-                Live Gemini against synthetic cases whose ground truth is known, row by row.
+            <h3 class="h2 text-primary font-heading fw-bold mb-2">Built for New-to-Credit MSMEs</h3>
+            <p class="text-secondary mx-auto" style="max-width: 600px;">
+                No credit bureau file needed. FinRiskLens AI checks the records a registered business
+                already has, with the owner's consent at every step.
             </p>
         </div>
-        <div class="row g-4 text-center">
-            @foreach (var (value, label) in new[]
-            {
-                ("99.8–100%", "of 1,298 statement rows read exactly, in two consecutive runs"),
-                ("14 / 14", "demo cases raise exactly their expected findings"),
-                ("0", "false alarms on genuine applicants"),
-                ("Mumbai", "where documents are stored, read and embedded")
-            })
-            {
-                <div class="col-6 col-lg-3">
-                    <div class="card-premium p-4 h-100">
-                        <div class="h3 text-primary font-heading fw-bold mb-1">@value</div>
-                        <div class="small text-secondary">@label</div>
+
+        <div class="row g-4">
+            <!-- Consented data (wide) -->
+            <div class="col-lg-8">
+                <div class="card-premium p-4 p-md-5 h-100 d-flex flex-column flex-md-row align-items-center gap-4">
+                    <div class="flex-grow-1" style="flex: 1;">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center border border-primary border-opacity-25 mb-3"
+                             style="width: 3.5rem; height: 3.5rem;">
+                            <i class="bi bi-diagram-3 fs-2"></i>
+                        </div>
+                        <h4 class="h5 text-primary font-heading fw-bold">Consented Data, Not a Bureau File</h4>
+                        <p class="small text-secondary mb-4">
+                            Business registry, tax and sales, income tax, banking and corporate registry
+                            records, each checked separately and scored 0–100 with reasons.
+                        </p>
+                        <ul class="list-unstyled mb-0">
+                            <li class="d-flex align-items-center gap-2 small text-dark font-data fw-semibold mb-2">
+                                <i class="bi bi-check-circle-fill text-secondary fs-5"></i>
+                                Start with your Udyam Registration Number
+                            </li>
+                            <li class="d-flex align-items-center gap-2 small text-dark font-data fw-semibold">
+                                <i class="bi bi-check-circle-fill text-secondary fs-5"></i>
+                                Bank statements shared only after Account Aggregator consent
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="rounded-3 overflow-hidden border" style="height: 250px; flex: 1; min-width: 250px; max-width: 100%;">
+                        <img class="w-100 h-100" style="object-fit: cover;"
+                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7gb6ryYHbGR6Uw8WjxXUV38px-69zbd-891aCZIOKJgoGpQstTGxZo-xXCA9bwDURZ-vOYJZpcVIpTeH6o5nokorKnekQgClS_ZykGYgtPMWd8apiiUYLVxiLD9UVs3bem3Yzm3o24WMRumpyy83t4xKDTqP3jkkqr0L48JjPpOtbixTt6Ymjos8Ds9nKAFVJPJB313Xp46XkkRfMO_B9PKLEHDAehsufcVumOKGU_AOjo0gg9LVNa23GCK32gtXM9OkEYo0FhjE"
+                             alt="Network of connected data points" loading="lazy" />
                     </div>
                 </div>
-            }
+            </div>
+
+            <!-- AI investigation timing -->
+            <div class="col-lg-4">
+                <div class="card-premium p-4 p-md-5 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="bg-secondary bg-opacity-10 text-secondary rounded-3 d-flex align-items-center justify-content-center border border-secondary border-opacity-25 mb-3"
+                             style="width: 3.5rem; height: 3.5rem;">
+                            <i class="bi bi-speedometer2 fs-2"></i>
+                        </div>
+                        <h4 class="h5 text-primary font-heading fw-bold">Findings in Seconds</h4>
+                        <p class="small text-secondary mb-0">
+                            The Gemini investigation agent reviews a full case and returns its findings with
+                            evidence, measured on the synthetic demo set.
+                        </p>
+                    </div>
+                    <div class="pt-4 border-top border-light mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="font-data small uppercase text-secondary">AI Investigation</span>
+                            <span class="font-data small fw-bold text-secondary">12–43 s per case</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-secondary" role="progressbar" style="width: 80%;"
+                                 aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Explainable -->
+            <div class="col-lg-4">
+                <div class="card-premium p-4 p-md-5 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center border border-success border-opacity-25 mb-3"
+                             style="width: 3.5rem; height: 3.5rem;">
+                            <i class="bi bi-clipboard2-check fs-2" style="color: var(--success-custom);"></i>
+                        </div>
+                        <h4 class="h5 text-primary font-heading fw-bold">Explainable by Design</h4>
+                        <p class="small text-secondary mb-4">
+                            Every finding cites the row, field or page behind it. An AI claim that can't be
+                            traced to the case is dropped, and the drop is shown.
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-light text-dark font-data uppercase p-2 border border-secondary border-opacity-10" style="font-size: 9px;">ACCOUNT AGGREGATOR</span>
+                        <span class="badge bg-light text-dark font-data uppercase p-2 border border-secondary border-opacity-10" style="font-size: 9px;">GROUNDED AI</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lender view (wide) -->
+            <div class="col-lg-8">
+                <div class="card-premium p-4 p-md-5 h-100 bg-primary text-white d-flex flex-column flex-md-row align-items-center gap-4 position-relative overflow-hidden"
+                     style="border: none;">
+                    <div class="position-absolute end-0 bottom-0 bg-secondary bg-opacity-25 rounded-circle"
+                         style="width: 250px; height: 250px; filter: blur(50px); pointer-events: none; transform: translate(50px, 50px);"></div>
+
+                    <div class="flex-grow-1" style="flex: 1; z-index: 2;">
+                        <h4 class="h3 text-white font-heading fw-bold">One case view for the lender</h4>
+                        <p class="small text-white text-opacity-75 mb-4">
+                            The credit officer sees each source's 0–100 score and every fraud finding with
+                            its evidence, then confirms or dismisses it.
+                        </p>
+                        <a class="btn btn-light text-primary px-4 py-2 rounded-3 font-heading fw-bold" href="/Onboarding/CustOnboarding">
+                            Start Assessment
+                        </a>
+                    </div>
+                    <div class="rounded-3 overflow-hidden shadow-lg border border-white border-opacity-10"
+                         style="height: 200px; flex: 1; min-width: 220px; z-index: 2;">
+                        <img class="w-100 h-100" style="object-fit: cover;"
+                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx6bsCOWHZAuyTwX8FpSlyOdrmGvZVySCwK4NRUWV79Kl5YnqJb02fn8xBOYugxWgQCzodeJOtaO0HKKxGdbtqa7Sv5FvYISSgD94F3XzT-W2Dvu7_04LTJJG78-FxQQ2fvtRikAUp5vTeWqhOQpxjerAyVp95-mKcLd1aV7xf_z2ejB0A3TdGGcJL5S8jVjisA4IREYGC7F2QXPdtrMEQboajRmETnPDZx8Plix88-7Ia3oAirdwWsEclpAPXUw8zIAsyFktdC8o"
+                             alt="Gold bar chart on a pedestal" loading="lazy" />
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
