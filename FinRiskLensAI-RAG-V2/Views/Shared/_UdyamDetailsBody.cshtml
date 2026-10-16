@@ -40,14 +40,17 @@
     var duplicatePlants = Model.PlantLocations.Count - plants.Count;
 
     var strengths = new List<string>();
-    if (Model.IsRegistered) strengths.Add($"Udyam registration on record (registered {Fmt(Model.RegistrationDate)})");
+    if (Model.IsRegistered) strengths.Add($"Business registration (Udyam) on record (registered {Fmt(Model.RegistrationDate)})");
     if (Model.DateOfCommencement != default) strengths.Add($"Operating since {Model.DateOfCommencement.Year} ({Model.BusinessAgeYears} years)");
-    if (historyUnchanged) strengths.Add($"Same classification ({Model.LatestEnterpriseType}) in all {history.Count} recorded years");
-    if (plants.Count > 1) strengths.Add($"{plants.Count} registered plant locations");
-    if (!string.IsNullOrWhiteSpace(Model.Gstin)) strengths.Add("GSTIN listed on the Udyam record");
-    if (!string.IsNullOrWhiteSpace(Model.Pan)) strengths.Add("PAN listed on the Udyam record");
+    if (historyUnchanged) strengths.Add($"Same enterprise classification ({Model.LatestEnterpriseType}) in all {history.Count} recorded years");
+    if (plants.Count > 1) strengths.Add($"{plants.Count} registered business locations");
     if (Model.OrganizationType.Equals("Public Limited Company", StringComparison.OrdinalIgnoreCase)) strengths.Add("Public limited company");
     if (Model.DistinctNicCodes > 1) strengths.Add($"{Model.DistinctNicCodes} distinct NIC activity codes registered");
+
+    // Listed on the record but not checked against GST or PAN records: shown apart from the strengths
+    var listedOnly = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.Gstin)) listedOnly.Add("GSTIN listed on the Udyam record");
+    if (!string.IsNullOrWhiteSpace(Model.Pan)) listedOnly.Add("PAN listed on the Udyam record");
 }
 
 <div class="container-fluid py-4 udyam-dashboard">
@@ -74,7 +77,7 @@
                 <span style="font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; opacity:0.7;">
                     @if (Model.IsRegistered)
                     {
-                        <i class="bi bi-patch-check-fill me-1"></i><text>UDYAM REGISTRATION ON RECORD</text>
+                        <i class="bi bi-file-earmark-text me-1"></i><text>BUSINESS REGISTRATION (UDYAM) ON RECORD</text>
                     }
                     else
                     {
@@ -83,10 +86,11 @@
                 </span>
             </div>
 
-            <h3 class="fhc-title mb-1">Udyam Registration Profile</h3>
-            <p class="fhc-sub mb-0">@Model.EnterpriseName &middot; Registration No: <span id="udyamRegNumber">@Model.Uan</span></p>
+            @* The customer page sets its own heading; the bank's Customer 360 keeps the default *@
+            <h3 class="fhc-title mb-1">@(ViewData["UdyamHeading"] as string ?? "Udyam Registration Profile")</h3>
+            <p class="fhc-sub mb-0">@Model.EnterpriseName &middot; Udyam Registration Number: <span id="udyamRegNumber">@Model.Uan</span></p>
             <p class="fhc-sub mb-0 mt-1" style="font-size:12px; opacity:.85;">
-                Registration profile score, rule-based, from the Udyam record only. It confirms business identity and registration context, not creditworthiness.
+                Registration profile score, rule-based, from the Udyam record (India's Government MSME Business Registry) only. It confirms business identity and registration context, not creditworthiness.
             </p>
         </div>
         @* <div class="d-flex flex-column gap-2 flex-shrink-0">
@@ -112,7 +116,7 @@
                         <h6 class="card-heading"><i class="bi bi-building me-2"></i>Business Identity</h6>
                         <ul class="profile-list list-unstyled mb-0">
                             <li><span>Business Name</span><strong class="text-end">@Model.EnterpriseName</strong></li>
-                            <li><span>Enterprise Type</span><strong>@(Model.LatestEnterpriseType == "-" ? "Not available" : Model.LatestEnterpriseType)</strong></li>
+                            <li><span>Enterprise Classification</span><strong>@(Model.LatestEnterpriseType == "-" ? "Not available" : Model.LatestEnterpriseType)</strong></li>
                             <li>
                                 <span>Business Age</span>
                                 <strong class="text-end" title="Counted from the date of commencement on the Udyam record, or the date of incorporation when commencement is missing. Not from the registration date.">
@@ -123,7 +127,7 @@
                             </li>
                             <li><span>Registration Date</span><strong>@Fmt(Model.RegistrationDate)</strong></li>
                             <li><span>Organization Type</span><strong class="text-end">@Model.OrganizationType</strong></li>
-                            <li class="no-border"><span>Major Activity</span><strong>@Model.MajorActivity</strong></li>
+                            <li class="no-border"><span>Primary Business Activity</span><strong>@Model.MajorActivity</strong></li>
                         </ul>
                     </div>
                 </div>
@@ -145,6 +149,13 @@
                             @if (strengths.Count == 0)
                             {
                                 <li><div><p class="signal-title mb-0 text-muted">No strengths can be confirmed from the Udyam record.</p></div></li>
+                            }
+                            @foreach (var s in listedOnly)
+                            {
+                                <li>
+                                    <i class="bi bi-info-circle text-muted" aria-hidden="true"></i>
+                                    <div><p class="signal-title mb-0">@s <span class="text-muted fw-normal">· not checked</span></p></div>
+                                </li>
                             }
                         </ul>
                     </div>
@@ -193,8 +204,9 @@
                     <li><span>District (first plant)</span><strong>@(Model.District == "-" ? "Not available" : Model.District)</strong></li>
                     <li><span>City</span><strong>@(Model.City == "-" ? "Not available" : Model.City)</strong></li>
                     <li><span>PIN</span><strong>@(Model.Pin == "-" ? "Not available" : Model.Pin)</strong></li>
-                    <li><span>Registered Plant Locations</span><strong>@plants.Count</strong></li>
+                    <li><span>Registered Business Locations</span><strong>@plants.Count</strong></li>
                 </ul>
+                <p class="small text-muted mb-0 mt-2">Address as listed in the Udyam record. Not geolocation-verified.</p>
             </div>
         </div>
 
@@ -203,16 +215,17 @@
             <div class="dash-card compliance-card h-100">
                 <div class="fhc-section-label">Compliance Summary</div>
                 <ul class="mini-list">
-                    <li><span>GSTIN (on Udyam record)</span><strong>@(string.IsNullOrWhiteSpace(Model.GstinMasked) ? "Not available" : Model.GstinMasked)</strong></li>
-                    <li><span>PAN (on Udyam record)</span><strong>@(string.IsNullOrWhiteSpace(Model.PanMasked) ? "Not available" : Model.PanMasked)</strong></li>
+                    <li><span title="Tax & Sales Compliance (GST): Indian Goods and Services Tax records">GSTIN (listed on Udyam)</span><strong>@(string.IsNullOrWhiteSpace(Model.GstinMasked) ? "Not available" : Model.GstinMasked)</strong></li>
+                    <li><span title="Taxpayer / Business Identity (PAN): Indian tax identity identifier">PAN (listed on Udyam)</span><strong>@(string.IsNullOrWhiteSpace(Model.PanMasked) ? "Not available" : Model.PanMasked)</strong></li>
                     <li><span>GST / PAN verification</span><strong>Not checked on this page</strong></li>
                     @if (Model.IsRegistered)
                     {
-                        <li><span>Udyam Registration</span><strong class="status-active"><i class="bi bi-dot"></i>Registered</strong></li>
+                        @* IsRegistered means the record carries a registration date; no live status check is made *@
+                        <li><span>Business Registration (Udyam)</span><strong>On record</strong></li>
                     }
                     else
                     {
-                        <li><span>Udyam Registration</span><strong>Not available</strong></li>
+                        <li><span>Business Registration (Udyam)</span><strong>Not available</strong></li>
                     }
                 </ul>
             </div>
@@ -221,9 +234,9 @@
         <!-- Plant Location Card -->
         <div class="col-12 col-lg-6">
             <div class="dash-card h-100">
-                <div class="fhc-section-label mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Registered Plant Locations (@plants.Count)</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Registered Business Locations (@plants.Count)</div>
                 <p class="small text-muted mb-2 mt-1">
-                    Addresses as registered on Udyam. Not geolocation-verified.@(duplicatePlants > 0 ? $" {duplicatePlants} repeated entr{(duplicatePlants == 1 ? "y" : "ies")} hidden." : "")
+                    Locations listed in the Udyam record. Not geolocation-verified.@(duplicatePlants > 0 ? $" {duplicatePlants} repeated entr{(duplicatePlants == 1 ? "y" : "ies")} hidden." : "")
                 </p>
                 @* <h6 class="card-heading"><i class="bi bi-geo-alt-fill me-2"></i>Registered Plant Locations (@Model.PlantLocations.Count)</h6> *@
                 <div class="table-responsive">
@@ -255,6 +268,7 @@
         <div class="col-12 col-lg-6">
             <div class="dash-card h-100">
                 <div class="fhc-section-label mb-0"><i class="bi bi-diagram-3-fill me-2"></i>NIC Activities (@Model.NicActivities.Count)</div>
+                <p class="small text-muted mb-2 mt-1">NIC: India's National Industrial Classification of business activities.</p>
                 @* <h6 class="card-heading"><i class="bi bi-diagram-3-fill me-2"></i>NIC Activities (@Model.NicActivities.Count)</h6> *@
                 <div class="table-responsive">
                     <table class="table dash-table mb-0">
@@ -453,6 +467,7 @@
             PlantLocations = plants,
             Model.NicActivities,
             Strengths = strengths,
+            ListedNotChecked = listedOnly,
             Model.State,
             Model.City,
             Model.Pin

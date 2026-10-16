@@ -62,8 +62,8 @@
                 <div class="verify-card mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-1">GST</h6>
-                            <small class="text-muted">Tax &amp; Sales Compliance</small>
+                            <h6 class="mb-1">Tax &amp; Sales Compliance (GST)</h6>
+                            <small class="text-muted">Indian Goods and Services Tax records</small>
                         </div>
 
                         <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#verificationModal" data-title="Fetch GST Returns">
@@ -75,8 +75,8 @@
                 <div class="verify-card mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-1">Account Aggregator</h6>
-                            <small class="text-muted">Consent-Based Bank Data</small>
+                            <h6 class="mb-1">Consent-Based Banking Data (AA)</h6>
+                            <small class="text-muted">Banking data shared with your consent</small>
                         </div>
 
                         <button type="button"
@@ -92,8 +92,8 @@
                 <div class="verify-card mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-1">ITR</h6>
-                            <small class="text-muted">Income Tax Filing</small>
+                            <h6 class="mb-1">Income Tax Filing (ITR)</h6>
+                            <small class="text-muted">Indian income-tax returns and filing records</small>
                         </div>
                         @if (ViewBag.ItrFetched == true)
                         {
@@ -113,8 +113,8 @@
                 <div class="verify-card">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-1">MCA</h6>
-                            <small class="text-muted">Corporate Registry</small>
+                            <h6 class="mb-1">Corporate Registry (MCA)</h6>
+                            <small class="text-muted">India's Ministry of Corporate Affairs records</small>
                             @if (ViewBag.McaApplicable == false)
                             {
                                 <div class="small text-muted mt-1">
@@ -202,7 +202,7 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="bi bi-receipt-cutoff text-danger fs-4"></i>
                             <span class="fw-bold text-dark text-uppercase small">
-                                GST · Tax &amp; Sales
+                                Tax &amp; Sales (GST)
                             </span>
                         </div>
 
@@ -221,7 +221,7 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="bi bi-bank2 text-success fs-4"></i>
                             <span class="fw-bold text-dark text-uppercase small">
-                                Account Aggregator
+                                Banking Data (AA)
                             </span>
                         </div>
 
@@ -240,7 +240,7 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="bi bi-file-earmark-text-fill text-warning fs-4"></i>
                             <span class="fw-bold text-dark text-uppercase small">
-                                ITR · Income Tax Filing
+                                Income Tax (ITR)
                             </span>
                         </div>
 
@@ -259,7 +259,7 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <i class="bi bi-building-check text-info fs-4"></i>
                             <span class="fw-bold text-dark text-uppercase small">
-                                MCA · Corporate Registry
+                                Corporate Registry (MCA)
                             </span>
                         </div>
 

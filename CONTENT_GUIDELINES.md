@@ -28,25 +28,47 @@ Single source of truth for all user-facing text. Read this before changing copy 
 
 ---
 
-## 2. Data-source terminology
+## 2. Terminology for an international audience (approved Oct 17)
 
-Lead with the international label. Add the Indian source name as a short contextual tag where it helps users recognise the document they need.
+Keep the Indian name recognizable and put it in brackets after a short English label. Judges and
+bankers outside India should understand the term; Indian users should still recognize their document.
 
-| Indian source | International label | Source description (tooltips, helper text) | Short tag (when needed) |
-|---|---|---|---|
-| Udyam | Business Registry & Identity | Government MSME Business Registry | Udyam |
-| GST | Tax & Sales Compliance | Tax / sales compliance records | GST / GSTIN |
-| Account Aggregator (AA) | Banking & Cash-Flow Analysis | Consent-Based Bank Data | Account Aggregator |
-| ITR | Income Tax Filing | Income tax returns | ITR |
-| MCA | Corporate Registry | Corporate registry filings | MCA |
-| PAN | Taxpayer / Business Identity | Taxpayer / business identity | PAN |
+| Existing term | Approved user-facing display | Explanation (tooltips, helper text) |
+|---|---|---|
+| Udyam Registration | Business Registration (Udyam) | India's Government MSME Business Registry |
+| GST | Tax & Sales Compliance (GST) | Indian Goods and Services Tax records |
+| PAN | Taxpayer / Business Identity (PAN) | Indian tax identity identifier |
+| Account Aggregator | Consent-Based Banking Data (AA) | Banking data shared with customer consent |
+| ITR | Income Tax Filing (ITR) | Indian income-tax returns and filing records |
+| MCA | Corporate Registry (MCA) | India's Ministry of Corporate Affairs records |
+| Enterprise Type | Enterprise Classification | The recorded MSME enterprise category |
+| Major Activity | Primary Business Activity | The business's recorded primary activity |
+| Registered Plant Locations | Registered Business Locations | Locations listed in the Udyam record |
 
 **Patterns**
 
-- Headings / nav: `Banking & Cash-Flow Analysis`
-- With context: `Banking & Cash-Flow Analysis (Account Aggregator)` or a small badge `Account Aggregator`
-- Field labels keep the official identifier name, because users must type it: `Udyam Registration Number`, `GSTIN`, `PAN`, `CIN`.
-- Don't use bare abbreviations (AA, ITR, MCA) in headings. They're fine in badges, tables and tooltips once the full label is visible on the page.
+- **Card and page titles:** the approved display, e.g. `Tax & Sales Compliance (GST)`. The explanation goes underneath as the subtitle or helper text.
+- **Sidebar navigation** (280px wide, one line each): `Business Registration (Udyam)` is too long, so use the short forms
+  `Registration (Udyam)` · `Tax & Sales (GST)` · `Banking Data (AA)` · `Income Tax (ITR)` · `Corporate Registry (MCA)`.
+- **Identifiers keep their Indian names** because users must type or recognize them: `Udyam Registration Number`, `GSTIN`, `PAN`, `CIN`, `DIN`, `NIC code`. Explain them where useful (e.g. NIC = National Industrial Classification); never replace them with foreign equivalents.
+- **Bare abbreviations** (AA, ITR, MCA) appear only in brackets, badges, tables and tooltips, once the full label is visible on the page.
+- **Udyam page heading:** `AI-Powered Business Registration Analysis` (see §4).
+- Older labels still in code (`Business Registry & Identity`, `Consent-Based Bank Data`, `Banking & Cash-Flow Analysis`) are replaced page by page as each page is updated. Don't use them in new text.
+
+### 2a. Content rules (approved Oct 17)
+
+1. Use the Indian source name with a short English explanation in brackets wherever it helps understanding.
+2. Prefer concise, plain English suitable for bankers, MSME customers and international judges.
+3. Use the same terminology across the application.
+4. Keep Indian identifiers (GSTIN, PAN, Udyam Registration Number, NIC code). Explain them; don't replace them.
+5. Distinguish data **listed** in a registry from data **independently verified** by another source.
+6. Distinguish contact verification (one-time code) from consent to access financial data.
+7. Never claim an integration, verification, score or security feature works unless the code supports it (§4b).
+8. Keep the Financial Health Score (not built, §1) separate from the Udyam registration-profile score.
+9. Don't hardcode customer names, registration numbers, scores, addresses or other dynamic values.
+10. Keep text concise. Don't add long explanations to every card.
+11. Preserve language switching (the Bhashini translation plugin).
+12. This document is the single source of truth for user-facing terminology. Every page change follows it.
 
 ---
 
@@ -81,7 +103,7 @@ Format: **Title** (2–6 words, title case) + **subtitle** (one sentence, ≤ 20
 | Onboarding — Udyam | Verify Business Identity | Enter the registration number shown on your Udyam certificate. |
 | Business details review | Review Business Details | Check the details retrieved from the business registry before continuing. |
 | OTP verification | Verify Contact | Enter the 6-digit code sent to [masked contact]. |
-| Udyam analysis | Business Registry & Identity | Registration, classification and activity details from Udyam. |
+| Udyam analysis | AI-Powered Business Registration Analysis (customer page, approved Oct 17; the bank's Customer 360 keeps "Udyam Registration Profile") | Keep the existing line: registration profile score, rule-based, from the Udyam record (India's Government MSME Business Registry) only; not creditworthiness. "AI-Powered" refers to the assistant that answers questions about this record, never to the score. Labels: Business Registration (Udyam) on record · Udyam Registration Number · Enterprise Classification · Primary Business Activity · Registered Business Locations · GSTIN / PAN (listed on Udyam) · Business Registration (Udyam): On record (never a green "Registered": the record only carries a registration date) · GSTIN and PAN shown under Identified Strengths with an info icon and "· not checked", never a green check · NIC: India's National Industrial Classification. These labels are in the shared body, so Customer 360 shows them too. |
 | GST analysis | Tax & Sales Compliance | Filing regularity, turnover trends and tax compliance from GST returns. |
 | AA analysis | Banking & Cash-Flow Analysis | Balances, inflows, outflows and repayment capacity from consented bank data. |
 | ITR analysis | Income Tax Filing | Declared income and filing history from income tax returns. |
@@ -155,9 +177,9 @@ Server messages (`res.message` from controllers) are not covered yet for onboard
 |---|---|
 | Banner | Welcome back · [business name from session] · **Sign-in IP:** [IP] (tooltip: IP address used to sign in. Select to see the IP risk check.) |
 | Panel title / sub | Connect Your Data Sources / Each source is checked separately. Your bank reviews the results. |
-| Source cards | GST · Tax & Sales Compliance — Account Aggregator · Consent-Based Bank Data — ITR · Income Tax Filing — MCA · Corporate Registry |
+| Source cards | Title = approved display, subtitle = explanation: Tax & Sales Compliance (GST) — Indian Goods and Services Tax records · Consent-Based Banking Data (AA) — Banking data shared with your consent · Income Tax Filing (ITR) — Indian income-tax returns and filing records · Corporate Registry (MCA) — India's Ministry of Corporate Affairs records |
 | Card buttons | Fetch Details · Retrieved (done) · Not Applicable (MCA for non-companies) |
-| Side panels | GST · Tax & Sales — Filing regularity, turnover and tax paid, from GSTR-2B and GSTR-3B returns. · Account Aggregator — Bank statements for cash-flow analysis, shared only after you approve the consent request in the Account Aggregator. · ITR · Income Tax Filing — Declared income and filing history from income-tax returns. · MCA · Corporate Registry — Company status, paid-up capital, registered charges and directors. Companies and LLPs only. |
+| Side panels | Titles use the short forms: Tax & Sales (GST) · Banking Data (AA) · Income Tax (ITR) · Corporate Registry (MCA). Text: Filing regularity, turnover and tax paid, from GSTR-2B and GSTR-3B returns. · Bank statements for cash-flow analysis, shared only after you approve the consent request in the Account Aggregator. · Declared income and filing history from income-tax returns. · Company status, paid-up capital, registered charges and directors. Companies and LLPs only. |
 | AA consent | I agree to receive an Account Aggregator consent request. My bank statements are shared only after I approve that request in the Account Aggregator. Button: Request Consent |
 | GST / ITR / MCA consent | I authorize FinRiskLens AI to retrieve my [source] to assess [what it shows] for my bank / for this credit assessment. |
 | Status (client) | Tick the consent box to continue. · Retrieving GST returns… · Retrieving ITR details… · Retrieving company and director records… · Creating consent request… · Something went wrong. Try again. |
@@ -174,11 +196,12 @@ Server messages (`res.message` from controllers) are not covered yet for onboard
 | Header brand line (`.brand-sub`) | Main layout: Evidence-based fraud detection · Onboarding layout: MSME Onboarding |
 | Browser title | Main: FinRiskLens AI \| Evidence-based fraud detection · Onboarding: FinRiskLens AI \| MSME Onboarding |
 | Header sign-in link | Sign In (onboarding) · Sign In menu with **MSME Sign In** / **Lender Sign In** (main layout) |
+| Customer sidebar (`_DashboardLayout.cshtml`) | Dashboard · Registration (Udyam) · Tax & Sales (GST) · Banking Data (AA) · Income Tax (ITR) · Corporate Registry (MCA) · Sign Out |
 | Footer tagline | Explainable credit intelligence for MSMEs, built on consented business, tax and banking data. |
 
 Sign-in labels are applied in both `_Layout.cshtml` and `_CustOnboardingLayout.cshtml`. The footer tagline is applied in `_CustOnboardingLayout.cshtml` only so far. The brand lines and browser titles are as set on `main`. Change them only with the team's agreement.
 
-**Never use "Login" or "Log in"** in visible text. Use Sign In everywhere: buttons, menus, page titles. URLs and route names such as `/Auth/CustLogin` stay unchanged.
+**Never use "Login", "Log in" or "Logout"** in visible text. Use Sign In and Sign Out everywhere: buttons, menus, page titles. URLs and route names such as `/Auth/CustLogin` stay unchanged.
 
 ---
 
