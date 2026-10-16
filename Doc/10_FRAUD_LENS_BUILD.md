@@ -572,7 +572,8 @@ and the risk summary read High risk; in the browser the Customers risk column, t
 Clear customer, and the review return (a local return URL honoured, an outside one refused) were
 checked. **Do not deploy before the demo customers (Oct 17–18):** without the case inbox the demo
 cases have no entry point except Rings.
-| Account Aggregator risk flags as findings · GST–ITR–bank turnover reconciliation · identity consistency · uploaded ITR vs filed | ⏸ Oct 16–17 |
+| Assessment for every customer when a source arrives; Account Aggregator risk flags as findings | ✅ 2026-10-16 — `EnsureAssessmentAsync`, `SourceChecks.BankFlags`; the verdict needs bank evidence (`applications.bank_data_at`). Details in `13_TEAM_WORK_PLAN.md` T1–T2 |
+| GST–ITR–bank turnover reconciliation · identity consistency · uploaded ITR vs filed | ⏸ Oct 16–17 (T3, T4, T8) |
 | Network lens: shared director, shared mobile / email / address, circular GST trading | ⏸ Oct 16–17 |
 | AI credit decision (Gemini Pro, grounded) + `credit_decisions` table + gate on the verdict | ⏸ Oct 17 |
 | `riskAssessment` and `creditDecision` blocks in the LOS, ULI and ONDC payloads | ⏸ Oct 17 |

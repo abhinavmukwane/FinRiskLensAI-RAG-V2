@@ -646,6 +646,20 @@ AI findings use the existing `findings` table with
 
 ---
 
+## 2026-10-16 — `applications.bank_data_at`
+
+Migration `BankDataAt`. When the assessment last read the bank's own record (Account Aggregator):
+
+```sql
+ALTER TABLE applications ADD bank_data_at timestamp NULL;   -- null: no AA data was part of the last run
+```
+
+A customer's verdict is *Clear* only with bank evidence — AA data or a bank statement read from an
+upload (credit policy §5.1). The AA payload lives in Cloud Storage, so without this column the
+Customers list could not tell a checked customer from one who shared nothing about their bank.
+Set by `CaseService.RunChecksOnceAsync` on every run. Production: applied with the next deploy,
+through the Cloud SQL Auth Proxy.
+
 ## Applying changes
 
 Preferred — EF migration from the repository root:

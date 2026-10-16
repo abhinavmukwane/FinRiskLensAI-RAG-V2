@@ -138,6 +138,7 @@ evidence links on every finding.
 |---|---|
 | Can the bank still upload for a customer? | No — the customer uploads; a branch can help the customer do it |
 | What blocks the loan case? | Any **open** High or Medium finding; confirmed findings block, dismissed do not |
+| When is a customer *Clear*? | No open finding **and** bank evidence — the Account Aggregator record or a statement read from an upload (policy §5.1). Without it: *Awaiting data* |
 | Can the officer override a Decline? | No — Refer goes to a senior officer outside the system; the officer can lower a recommended limit, not raise it |
 | Does the customer see findings? | No — they see their data and that the bank is reviewing |
 | Existing demo cases | Replaced by demo customers; the case pages go with the Cases menu |

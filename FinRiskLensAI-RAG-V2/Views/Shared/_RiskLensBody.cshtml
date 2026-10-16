@@ -12,7 +12,8 @@
     var open = findings.Where(f => f.ReviewStatus == ReviewStatus.Open).ToList();
     int Open(FindingSeverity s) => open.Count(f => f.Severity == s);
     var assessing = app != null && (app.Status == CaseStatus.Processing || app.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending));
-    var verdict = app == null ? RiskVerdict.AwaitingData : RiskSummary.Decide(assessing, Open(FindingSeverity.High), Open(FindingSeverity.Medium) + Open(FindingSeverity.Low));
+    var verdict = app == null ? RiskVerdict.AwaitingData
+                : RiskSummary.Decide(assessing, Open(FindingSeverity.High), Open(FindingSeverity.Medium) + Open(FindingSeverity.Low), RiskSummary.HasBankEvidence(app));
     var docsById = app?.Documents.ToDictionary(d => d.CaseDocumentID) ?? new Dictionary<int, CaseDocument>();
     var back = Url.Action("Customer", "BankAdmin", new { uan = Model.Uan, tab = "risk" });
 
@@ -60,8 +61,8 @@
         <div>
             @if (app == null)
             {
-                <div class="bp-strong">Nothing to assess yet</div>
-                <div class="bp-muted">The customer has not uploaded documents. Shared sources are in the tabs; their checks join this page as they are built.</div>
+                <div class="bp-strong">Not assessed yet</div>
+                <div class="bp-muted">Assessments start on their own when the customer shares data or uploads documents. Data shared earlier can be assessed now.</div>
             }
             else
             {
@@ -73,6 +74,10 @@
                     @if (verdict == RiskVerdict.Clear)
                     {
                         <span><i class="bi bi-check2-circle"></i> No open risk — this customer can go forward to a loan case.</span>
+                    }
+                    else if (verdict == RiskVerdict.AwaitingData)
+                    {
+                        <span><i class="bi bi-bank"></i> No bank evidence yet — the customer shares bank data through Account Aggregator or uploads statements.</span>
                     }
                     else if (verdict == RiskVerdict.Assessing)
                     {
@@ -90,7 +95,13 @@
             }
         </div>
     </div>
-    @if (app != null)
+    @if (app == null)
+    {
+        <form method="post" asp-controller="BankAdmin" asp-action="Assess" asp-route-uan="@Model.Uan">
+            <button type="submit" class="bp-btn bp-btn-sm"><i class="bi bi-play-circle"></i> Assess shared data</button>
+        </form>
+    }
+    else
     {
         <div class="bp-findings-actions">
             <form method="post" asp-controller="Cases" asp-action="RunChecks" asp-route-id="@app.LoanApplicationID">

@@ -123,6 +123,23 @@ namespace FinRiskLensAI.Controllers
         }
 
         /// <summary>
+        /// A source just arrived: the customer's assessment runs again with it (opened first if this is
+        /// the first thing they shared). Never fails the fetch — the data is stored either way.
+        /// </summary>
+        private async Task ReassessAsync(string uan, CancellationToken ct)
+        {
+            try
+            {
+                var id = await _cases.EnsureAssessmentAsync(uan, HttpContext.Session.GetCurrentUser()?.NameOfEnterprise, $"customer:{uan}", ct);
+                _queue.Enqueue(id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Re-assessment after a source fetch failed for {Uan}", uan);
+            }
+        }
+
+        /// <summary>
         /// The customer's own documents — statements of accounts not shared through Account Aggregator,
         /// ITR copies, GST returns, financials. They join the customer's one assessment and go through
         /// the same pipeline a bank upload does; the bank sees the result on its Risk Lens.
@@ -259,6 +276,8 @@ namespace FinRiskLensAI.Controllers
                 return Json(new { status = false, copied, message = "GST returns aren't available right now. Try again later." });
             }
 
+            if (copied > 0) await ReassessAsync(uan, ct);
+
             return Json(new
             {
                 status = true,
@@ -361,6 +380,8 @@ namespace FinRiskLensAI.Controllers
                     uan, mcaCreated, directorCount, dinCreated);
 
                 // Say what actually changed, so a repeat click is never a silent no-op.
+                if (mcaCreated || dinCreated > 0) await ReassessAsync(uan, ct);
+
                 var parts = new List<string>();
                 parts.Add(mcaCreated ? "Sample MCA company record loaded (demo data)" : "MCA company record already loaded");
                 if (dinCreated > 0) parts.Add($"{dinCreated} director record(s) loaded");
@@ -445,6 +466,7 @@ namespace FinRiskLensAI.Controllers
                 }
 
                 _logger.LogInformation("Seed ITR {Uan}: {Result}.", uan, alreadyPresent ? "already present" : "fetched");
+                if (!alreadyPresent) await ReassessAsync(uan, ct);
 
                 return Json(new
                 {

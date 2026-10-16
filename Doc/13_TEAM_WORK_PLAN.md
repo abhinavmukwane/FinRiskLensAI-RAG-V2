@@ -19,8 +19,8 @@ calculator, demo data, docs). Status: ⏸ to do · 🔨 in progress · 👀 in r
 |---|---|---|---|---|---|
 | M1 | Customer uploads, risk per customer, Risk Lens tab, Cases menu out | A | Oct 15 | — | ✅ |
 | S0 | Set up a working copy (§3) and click through the Risk Lens locally | B | Oct 16 | — | ⏸ |
-| T1 | Every registered customer has an assessment; re-assess when a source arrives | A | Oct 16 | — | ⏸ |
-| T2 | Account Aggregator risk flags become findings | A | Oct 16 | T1 | ⏸ |
+| T1 | Every registered customer has an assessment; re-assess when a source arrives | A | Oct 16 | — | ✅ |
+| T2 | Account Aggregator risk flags become findings | A | Oct 16 | T1 | ✅ |
 | T3 | Turnover check: GST vs ITR vs bank credits | B | Oct 16 | T1 (merge) | ⏸ |
 | T4 | Identity check: Udyam, GST, ITR and MCA agree; company active | B | Oct 16 | T1 (merge) | ⏸ |
 | T5 | Dismissing a finding needs a written reason (policy §6.3) | B | Oct 16 | — | ⏸ |
@@ -146,6 +146,14 @@ bank data shows *Awaiting data*, and the source checks (T2–T4) would have nowh
   *Awaiting data* on the Customers list and the Risk Lens.
 - Fetching a source re-runs the assessment.
 
+**✅ Done 2026-10-16.** `EnsureAssessmentAsync`; re-assessment after AA consent stores the bank data
+(`HomeController`), and after GST, ITR or MCA data actually changes (`DashboardController`; a failure
+is logged and never fails the fetch); an **Assess shared data** button on the Risk Lens for customers
+whose data arrived earlier. Found on the way: an assessment with nothing about the bank would have read
+*Clear*. The verdict now needs **bank evidence** — the AA record read, or a statement read from an upload
+(policy §5.1) — else *Awaiting data*. New column `applications.bank_data_at` (`DB_SCRIPTS.md`,
+migration `BankDataAt`, applied to development; production at T15).
+
 ### T2 — Account Aggregator risk flags become findings (A)
 
 **Why.** The AA analysis already computes `RiskFlags` (pass-through, heavy cash withdrawal,
@@ -164,6 +172,12 @@ they only show on the AA tab, so they never reach the verdict.
 
 **Done when** the mule-like demo customer (T11) shows `AA_PASS_THROUGH` under **Bank conduct**,
 with a unit test for the title-to-type mapping.
+
+**✅ Done 2026-10-16** in `SourceChecks.BankFlags`, run on every assessment with AA data. Nine titles
+mapped (a flag the table does not know is still typed from its title, never dropped); one finding per
+pattern at its most severe; all `AA_*` types go to **Bank conduct**. The three development customers
+with bank data raise only positive indicators, so nothing changed for them; the end-to-end check is the
+mule-like demo customer in T11.
 
 ### T3 — Turnover check: GST vs ITR vs bank credits (B)
 
@@ -364,7 +378,8 @@ in `ARCHITECTURE.md` §1. Keep every number traceable to a command (T12).
 ### T15 — Deploy and submit (A)
 
 1. Merge everything; tests green.
-2. Apply the `credit_decisions` migration to production (proxy).
+2. Apply the pending migrations to production through the proxy: `BankDataAt` (T1) and the
+   `credit_decisions` table (T9).
 3. Deploy with the command in `10_FRAUD_LENS_BUILD.md` → *Deploying*.
 4. **Smoke test** on <https://finrisklensai.cloud.run>: home page, bank sign-in, Customers verdicts,
    each demo customer's Risk Lens, the clear customer's decision and a simulated LOS push, Rings,

@@ -2,6 +2,9 @@
 using FinRiskLensAI.Core.Models.Common;
 using System.Diagnostics;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
+using FinRiskLensAI.Core.Interfaces.IServices.Cases;
+using FinRiskLensAI.Fraud.Pipeline;
+using FinRiskLensAI.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinRiskLensAI.Controllers
@@ -10,11 +13,15 @@ namespace FinRiskLensAI.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IAccountAggregatorService _aaService;
+        private readonly ICaseService _cases;
+        private readonly CaseQueue _queue;
 
-        public HomeController(ILogger<HomeController> logger, IAccountAggregatorService aaService)
+        public HomeController(ILogger<HomeController> logger, IAccountAggregatorService aaService, ICaseService cases, CaseQueue queue)
         {
             _logger = logger;
             _aaService = aaService;
+            _cases = cases;
+            _queue = queue;
         }
 
         public IActionResult Index()
@@ -67,6 +74,13 @@ namespace FinRiskLensAI.Controllers
                             dataStored = await _aaService.FetchAndStoreFinancialData(trnxid, details);
                             if (!dataStored)
                                 _logger.LogWarning("AA data fetch/store did not complete for {TrnxId}.", trnxid);
+                            else if (!string.IsNullOrWhiteSpace(consent.uan))
+                            {
+                                // The bank's own record is in: assess the customer with it
+                                var name = string.Equals(HttpContext.Session.GetCurrentUser()?.UdyamNumber, consent.uan, StringComparison.OrdinalIgnoreCase)
+                                    ? HttpContext.Session.GetCurrentUser()?.NameOfEnterprise : null;
+                                _queue.Enqueue(await _cases.EnsureAssessmentAsync(consent.uan, name, $"customer:{consent.uan}"));
+                            }
                         }
                     }
                 }

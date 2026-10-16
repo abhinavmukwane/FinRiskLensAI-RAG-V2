@@ -19,6 +19,9 @@ namespace FinRiskLensAI.Core.Interfaces.IRepositories.Cases
         /// <summary>The customer's assessment — the latest application for this Udyam number — or null.</summary>
         Task<int?> FindByUanAsync(string uan, CancellationToken ct = default);
 
+        /// <summary>Records whether the last run read the bank's own record (Account Aggregator).</summary>
+        Task SetBankDataAsync(int loanApplicationId, DateTime? at, CancellationToken ct = default);
+
         /// <summary>Attaches more documents to an existing application.</summary>
         Task AddDocumentsAsync(int loanApplicationId, IReadOnlyList<CaseDocument> documents, CancellationToken ct = default);
 

@@ -79,18 +79,7 @@ namespace FinRiskLensAI.Fraud.Cases
             if (existing == null)
             {
                 // The customer's one assessment, opened by their first upload
-                var name = string.IsNullOrWhiteSpace(enterpriseName) ? null : enterpriseName.Trim();
-                id = await _cases.AddAsync(new LoanApplication
-                {
-                    ApplicantRef = uan,
-                    ProductType = CaseProduct.SmeLoan,
-                    Uan = uan,
-                    DeclaredEmployer = name?.Length > 200 ? name[..200] : name,
-                    SubmittedAt = DateTime.UtcNow,
-                    CreatedBy = actor,
-                    UpdatedBy = actor,
-                    Documents = documents
-                }, ct);
+                id = await _cases.AddAsync(NewAssessment(uan, enterpriseName, actor, documents), ct);
             }
             else
             {
@@ -100,6 +89,29 @@ namespace FinRiskLensAI.Fraud.Cases
 
             await RunChecksAsync(id, ct);
             return new(id, null);
+        }
+
+        public async Task<int> EnsureAssessmentAsync(string uan, string? enterpriseName, string actor, CancellationToken ct = default)
+        {
+            uan = uan.Trim().ToUpperInvariant();
+            return await _cases.FindByUanAsync(uan, ct) ?? await _cases.AddAsync(NewAssessment(uan, enterpriseName, actor, new()), ct);
+        }
+
+        /// <summary>A customer's one assessment: keyed by the Udyam number, the business name as the declared employer.</summary>
+        private static LoanApplication NewAssessment(string uan, string? enterpriseName, string actor, List<CaseDocument> documents)
+        {
+            var name = string.IsNullOrWhiteSpace(enterpriseName) ? null : enterpriseName.Trim();
+            return new LoanApplication
+            {
+                ApplicantRef = uan,
+                ProductType = CaseProduct.SmeLoan,
+                Uan = uan,
+                DeclaredEmployer = name?.Length > 200 ? name[..200] : name,
+                SubmittedAt = DateTime.UtcNow,
+                CreatedBy = actor,
+                UpdatedBy = actor,
+                Documents = documents
+            };
         }
 
         public async Task<CaseDetailViewModel?> GetByUanAsync(string uan, CancellationToken ct = default)
@@ -210,8 +222,11 @@ namespace FinRiskLensAI.Fraud.Cases
             if (application == null) return Array.Empty<int>();
 
             var (rows, pages, fields) = await _cases.GetExtractedAsync(loanApplicationId, ct);
-            var bankRecord = rows.Count > 0 ? await BankRecordAsync(application.Uan, ct) : null;
-            var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields, bankRecord), _options);
+            // The bank's own record: compared with any uploaded statement, and read for its own risk patterns
+            var bank = await BankAnalysisAsync(application.Uan, ct);
+            await _cases.SetBankDataAsync(loanApplicationId, bank?.HasData == true ? DateTime.UtcNow : null, ct);
+            var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields, rows.Count > 0 ? bank?.Transactions : null), _options);
+            findings.AddRange(SourceChecks.BankFlags(bank, loanApplicationId));
 
             var ring = (await ListRingsAsync(ct)).FirstOrDefault(r => r.Members.Any(m => m.LoanApplicationID == loanApplicationId));
             if (ring != null) findings.Add(NetworkLens.FindingFor(ring, loanApplicationId));
@@ -222,12 +237,12 @@ namespace FinRiskLensAI.Fraud.Cases
             return ring?.Members.Select(m => m.LoanApplicationID).Where(id => id != loanApplicationId).ToList() ?? (IReadOnlyList<int>)Array.Empty<int>();
         }
 
-        /// <summary>The bank's transactions for the linked Udyam number, as fetched through Account Aggregator; null when there are none.</summary>
-        private async Task<IReadOnlyList<AaTransaction>?> BankRecordAsync(string? uan, CancellationToken ct)
+        /// <summary>The Account Aggregator analysis for the linked Udyam number; null when no bank data was shared.</summary>
+        private async Task<AaAnalysisResult?> BankAnalysisAsync(string? uan, CancellationToken ct)
         {
             if (uan == null || _sources == null || _aa == null) return null;
             var json = await _sources.DownloadAsync(uan, MsmeDataFiles.Aa, ct);
-            return json == null ? null : _aa.Analyze(json).Transactions;
+            return json == null ? null : _aa.Analyze(json);
         }
 
         public async Task<bool> MarkProcessingAsync(int loanApplicationId, CancellationToken ct = default)

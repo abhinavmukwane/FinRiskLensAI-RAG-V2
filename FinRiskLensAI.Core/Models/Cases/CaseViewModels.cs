@@ -60,13 +60,20 @@ namespace FinRiskLensAI.Core.Models.Cases
     {
         /// <summary>
         /// The one rule for the verdict. Still reading or investigating → Assessing; any open High finding →
-        /// High risk; any other open finding → Review; otherwise Clear. Reviewed findings no longer count.
+        /// High risk; any other open finding → Review. Otherwise Clear — but only with bank evidence (the
+        /// bank's Account Aggregator record, or a statement read from an upload; credit policy §5.1). Without
+        /// it nothing material was checked, so the customer is Awaiting data. Reviewed findings no longer count.
         /// </summary>
-        public static RiskVerdict Decide(bool assessing, int openHigh, int openOther)
+        public static RiskVerdict Decide(bool assessing, int openHigh, int openOther, bool hasBankEvidence)
             => assessing ? RiskVerdict.Assessing
              : openHigh > 0 ? RiskVerdict.HighRisk
              : openOther > 0 ? RiskVerdict.Review
-             : RiskVerdict.Clear;
+             : hasBankEvidence ? RiskVerdict.Clear
+             : RiskVerdict.AwaitingData;
+
+        /// <summary>Bank evidence for <see cref="Decide"/>: the AA record was read, or an uploaded statement was.</summary>
+        public static bool HasBankEvidence(LoanApplication a)
+            => a.BankDataAt != null || a.Documents.Any(d => d.DocType == CaseDocType.BankStatement && d.ExtractStatus == ExtractStatus.Done);
 
         public static string Label(RiskVerdict v) => v switch
         {
@@ -91,6 +98,7 @@ namespace FinRiskLensAI.Core.Models.Cases
             "SALARY_ROUNDTRIP" or "PRE_APPLICATION_WINDOW_DRESSING" or "PASS_THROUGH" or "BOUNCES" or "UNDECLARED_EMI"
                 or "LOAN_STACKING" or "GAMBLING_CRYPTO_EXPOSURE" or "SALARY_SOURCE_MISMATCH" => Bank,
             "FRAUD_RING" => Network,
+            _ when findingType.StartsWith("AA_", StringComparison.Ordinal) => Bank,   // the bank's own record (SourceChecks)
             _ => Documents   // tampering, file history, the bank-record comparison
         };
     }

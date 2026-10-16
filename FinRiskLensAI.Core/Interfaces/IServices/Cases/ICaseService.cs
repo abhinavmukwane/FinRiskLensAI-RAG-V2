@@ -33,6 +33,12 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Cases
         Task<CaseIntakeResult> AddCustomerDocumentsAsync(string uan, string? enterpriseName, IReadOnlyList<CaseUpload> files,
                                                          string actor, CancellationToken ct = default);
 
+        /// <summary>
+        /// The customer's assessment, opened empty if they have none yet — called when a source (bank data,
+        /// GST, ITR, MCA) arrives, so the customer is assessed before any upload. The caller queues the pipeline.
+        /// </summary>
+        Task<int> EnsureAssessmentAsync(string uan, string? enterpriseName, string actor, CancellationToken ct = default);
+
         /// <summary>The customer's assessment with its findings, or null before they have shared anything to assess.</summary>
         Task<CaseDetailViewModel?> GetByUanAsync(string uan, CancellationToken ct = default);
 

@@ -781,6 +781,10 @@ namespace FinRiskLensAI.Data.Migrations.Postgres
                         .HasColumnType("character varying(50)")
                         .HasColumnName("applicant_ref");
 
+                    b.Property<DateTime?>("BankDataAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("bank_data_at");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");

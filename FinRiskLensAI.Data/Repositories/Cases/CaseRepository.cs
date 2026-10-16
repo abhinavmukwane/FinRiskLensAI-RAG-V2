@@ -78,6 +78,10 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                    .Select(a => (int?)a.LoanApplicationID)
                    .FirstOrDefaultAsync(ct);
 
+        public Task SetBankDataAsync(int loanApplicationId, DateTime? at, CancellationToken ct = default)
+            => _context.LoanApplications.Where(a => a.LoanApplicationID == loanApplicationId)
+                   .ExecuteUpdateAsync(s => s.SetProperty(a => a.BankDataAt, at), ct);
+
         public async Task AddDocumentsAsync(int loanApplicationId, IReadOnlyList<CaseDocument> documents, CancellationToken ct = default)
         {
             foreach (var d in documents) d.LoanApplicationID = loanApplicationId;
@@ -93,7 +97,9 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                 {
                     a.LoanApplicationID, a.Uan, a.Status, a.InvestigatedAt,
                     Documents = a.Documents.Count,
-                    Pending = a.Documents.Count(d => d.ExtractStatus == ExtractStatus.Pending)
+                    Pending = a.Documents.Count(d => d.ExtractStatus == ExtractStatus.Pending),
+                    BankEvidence = a.BankDataAt != null
+                        || a.Documents.Any(d => d.DocType == CaseDocType.BankStatement && d.ExtractStatus == ExtractStatus.Done)
                 })
                 .ToListAsync(ct);
             var open = (await _context.Findings.AsNoTracking()
@@ -110,7 +116,7 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                     int Open(FindingSeverity s) => open[a.LoanApplicationID].Where(x => x.Severity == s).Sum(x => x.Count);
                     var (high, medium, low) = (Open(FindingSeverity.High), Open(FindingSeverity.Medium), Open(FindingSeverity.Low));
                     var assessing = a.Pending > 0 || a.Status == CaseStatus.Processing;
-                    return new RiskSummary(a.LoanApplicationID, RiskSummary.Decide(assessing, high, medium + low),
+                    return new RiskSummary(a.LoanApplicationID, RiskSummary.Decide(assessing, high, medium + low, a.BankEvidence),
                                            high, medium, low, a.Documents, a.InvestigatedAt);
                 }, StringComparer.OrdinalIgnoreCase);
         }

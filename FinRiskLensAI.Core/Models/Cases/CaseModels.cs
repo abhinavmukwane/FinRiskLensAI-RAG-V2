@@ -44,6 +44,8 @@ namespace FinRiskLensAI.Core.Models.Cases
         /// <summary>Last Investigator run; its rejected claims carry the same timestamp.</summary>
         public DateTime? InvestigatedAt { get; set; }
         public string? InvestigatedBy { get; set; }
+        /// <summary>When the assessment last read the bank's own record (Account Aggregator); null when it had none.</summary>
+        public DateTime? BankDataAt { get; set; }
 
         public List<CaseDocument> Documents { get; set; } = new();
     }

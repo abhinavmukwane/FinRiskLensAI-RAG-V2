@@ -27,12 +27,15 @@ namespace FinRiskLensAI.Controllers
         private readonly FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService _loanCase;
         private readonly ILogger<BankAdminController> _logger;
         private readonly FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService _cases;
+        private readonly FinRiskLensAI.Fraud.Pipeline.CaseQueue _queue;
 
         public BankAdminController(IBankAdminService bankAdmin,
             CustomerProfileBuilder profile, FinRiskLensAI.Core.Interfaces.IServices.LoanCase.ILoanCaseService loanCase,
-            ILogger<BankAdminController> logger, FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService cases)
+            ILogger<BankAdminController> logger, FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService cases,
+            FinRiskLensAI.Fraud.Pipeline.CaseQueue queue)
         {
             _cases = cases;
+            _queue = queue;
             _bankAdmin = bankAdmin;
             _profile = profile;
             _loanCase = loanCase;
@@ -98,6 +101,24 @@ namespace FinRiskLensAI.Controllers
         /// anyone else's file.
         /// </para>
         /// </summary>
+        /// <summary>
+        /// Assesses what the customer has already shared — for customers whose sources arrived before
+        /// assessments opened on their own. The pipeline runs in the background; the Risk Lens refreshes.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Assess(string uan, CancellationToken ct)
+        {
+            var customer = string.IsNullOrWhiteSpace(uan) ? null : await _bankAdmin.GetCustomerAsync(uan.Trim(), ct);
+            if (customer == null) return NotFound();
+
+            var id = await _cases.EnsureAssessmentAsync(customer.Uan, customer.EnterpriseName,
+                                                        HttpContext.Session.GetCurrentBankUser()!.UserId, ct);
+            await _cases.MarkProcessingAsync(id, ct);
+            _queue.Enqueue(id);
+            return RedirectToAction(nameof(Customer), new { uan = customer.Uan, tab = "risk" });
+        }
+
         [HttpGet]
         public async Task<IActionResult> Customer(string uan, string? tab, CancellationToken ct)
         {

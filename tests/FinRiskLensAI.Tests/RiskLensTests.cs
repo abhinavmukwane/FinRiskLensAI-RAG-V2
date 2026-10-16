@@ -7,10 +7,13 @@ namespace FinRiskLensAI.Tests
         [Fact]
         public void The_verdict_follows_open_findings_and_waits_while_assessing()
         {
-            Assert.Equal(RiskVerdict.Assessing, RiskSummary.Decide(assessing: true, openHigh: 2, openOther: 0));
-            Assert.Equal(RiskVerdict.HighRisk, RiskSummary.Decide(false, 1, 3));
-            Assert.Equal(RiskVerdict.Review, RiskSummary.Decide(false, 0, 1));
-            Assert.Equal(RiskVerdict.Clear, RiskSummary.Decide(false, 0, 0));
+            Assert.Equal(RiskVerdict.Assessing, RiskSummary.Decide(assessing: true, openHigh: 2, openOther: 0, hasBankEvidence: true));
+            Assert.Equal(RiskVerdict.HighRisk, RiskSummary.Decide(false, 1, 3, true));
+            Assert.Equal(RiskVerdict.Review, RiskSummary.Decide(false, 0, 1, true));
+            Assert.Equal(RiskVerdict.Clear, RiskSummary.Decide(false, 0, 0, true));
+            // Nothing wrong found — but nothing about the bank was checked either
+            Assert.Equal(RiskVerdict.AwaitingData, RiskSummary.Decide(false, 0, 0, false));
+            Assert.Equal(RiskVerdict.HighRisk, RiskSummary.Decide(false, 1, 0, false));
         }
 
         [Fact]
