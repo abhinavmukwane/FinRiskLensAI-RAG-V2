@@ -19,7 +19,7 @@ Single source of truth for all user-facing text. Read this before changing copy 
 - Rule-based 0–100 scores for business identity (Udyam), income-tax filing health (ITR), banking health (Account Aggregator, eight weighted components) and corporate credibility (MCA).
 - An IP fraud score (VPN, proxy and high-risk IP activity).
 - Gemini AI fraud investigation: tampered statements, undeclared EMIs, loan stacking, round-tripping, pass-through, gambling/crypto exposure. Each finding cites the row, field, page or policy clause behind it.
-- Grounding: AI claims that can't be traced to the case data are dropped and shown on the case page.
+- Grounding: AI claims that can't be traced to the customer's data are dropped and shown on the Risk Lens.
 - Measured on the synthetic demo set: 12–43 s per case for AI investigation; 99.8–100% of 1,298 statement rows read exactly in two consecutive runs; 14 / 14 demo cases raise exactly the expected findings; 0 false alarms on genuine applicants.
 
 **Not built: never claim.** A combined Financial Health Score, a 0–1000 scale, dimension weights, or a Financial Health Card. If a composite score is added back, update this section first.
@@ -109,7 +109,7 @@ Format: **Title** (2–6 words, title case) + **subtitle** (one sentence, ≤ 20
 | ITR analysis | Income Tax Filing | Declared income and filing history from income tax returns. |
 | MCA analysis | Corporate Registry | Company status, directors and filings from the corporate registry. |
 | Dashboard | Risk Overview | Per-source checks and fraud findings, each with its reasons and evidence. |
-| Case page (lender) | Case Findings | What was found, where, and the evidence behind it. |
+| Risk Lens (lender) | Risk Lens | What was found, where, and the evidence behind it. |
 
 These are the defaults. A page may adjust its subtitle to match what it actually shows. It must never describe data the page doesn't show.
 

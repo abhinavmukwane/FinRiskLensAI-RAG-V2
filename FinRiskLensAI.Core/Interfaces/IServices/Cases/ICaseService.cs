@@ -23,9 +23,6 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.Cases
         /// <summary>Runs the deterministic checks over whatever has been extracted so far. Safe to repeat.</summary>
         Task RunChecksAsync(int loanApplicationId, CancellationToken ct = default);
 
-        /// <summary>Every fraud ring across all applications, largest first.</summary>
-        Task<IReadOnlyList<Ring>> ListRingsAsync(CancellationToken ct = default);
-
         /// <summary>
         /// The customer's own uploads: attached to their one assessment (created on the first upload), stored and
         /// checked like any upload. Files already attached are skipped. The caller queues the pipeline.

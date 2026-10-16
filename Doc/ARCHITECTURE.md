@@ -11,17 +11,17 @@ How the system is put together. The build history and every measurement are in
 
 ## 1. What it does
 
-> **Direction (2026-10-15): one assessment per customer.** Planned in
-> [`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md) and built in Phase 7. ✅ marks what runs
-> today; 🆕 what Phase 7 adds.
+> **One assessment per customer** ([`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md), Phase 7).
+> The bank works per customer only: there are no case pages and no Rings page — links between
+> customers show in each customer's Risk Lens. ✅ marks what runs today; 🆕 what Phase 7 still adds.
 
 ```
  Customer (MSME)                         Bank officer
  ① Register with Udyam ✅                ③ Customers — risk status per customer ✅
  ② Share data ──────────────────────►   ④ Risk Lens — verdict + a section per source ✅
     fetch: AA ✅ · GST ✅ · ITR ✅ · MCA ✅  ⑤ Confirm / dismiss findings ✅
-    upload documents ✅                  ⑥ Clear? → loan case + AI credit decision 🆕
-                                         ⑦ Send to LOS · ULI (OCEN) · ONDC ✅ (+ decision 🆕)
+    upload documents ✅                  ⑥ Clear? → loan case + AI credit decision ✅ (capacity: T6 🆕)
+                                         ⑦ Send to LOS · ULI (OCEN) · ONDC ✅ (+ decision blocks 🆕)
 ```
 
 The customer shares what lenders ask for — bank statements through Account Aggregator, GST,
@@ -30,9 +30,8 @@ customer: each names what is wrong, explains it in rupees, and links to the exac
 page that shows it. The officer confirms or dismisses each one; a customer with no open risk
 goes on to a loan case with an AI credit decision, sent to the bank's LOS, ULI or ONDC.
 
-*The bank no longer opens cases: the customer uploads, and every upload joins that customer's one
-assessment (§2 is the same engine either way). Source-data checks and the credit decision are the
-rest of Phase 7.*
+*The bank never opens a case: the customer shares and uploads, and everything joins that customer's
+one assessment, which §2's engine reassesses whenever a source arrives.*
 
 Three kinds of evidence, in this order:
 
@@ -40,27 +39,28 @@ Three kinds of evidence, in this order:
 |---|---|---|
 | **The document itself** | Does its own arithmetic and file history hold? | Edited balances, spliced pages, typed-in net pay, files made in Word or Canva |
 | **The source of truth** | Does it match what the bank or registry holds? | Statements that differ from the bank's Account Aggregator record |
-| **The network** | Does it share what unrelated applicants never share? | One template, one file or one salary account across separate applications — a fraud ring |
+| **The network** | Does it share what unrelated customers never share? | A director, mobile, email, address, document or salary account shared across customers, or GST invoices that go round in a loop — the linked customers, named on each one's Risk Lens |
 | **Judgement** | What does a careful investigator see across all of it? | Undeclared EMIs, loan stacking, gambling exposure, slip vs salary credited — each cited to rows and to the lender's policy |
 
 ## 2. The assessment pipeline
 
-The engine is the same whether the trigger is a bank upload (today) or a customer upload or a
-newly fetched source (Phase 7).
+The engine runs on the customer's one assessment, whenever they upload a document or a source
+(Account Aggregator, GST, ITR, MCA) arrives.
 
 ```
-Upload ──► ① INGEST ──► ② EXTRACT ──► ③ CHECK ──► ④ LINK ──► ⑤ INVESTIGATE ──► ⑥ VERIFY ──► ⑦ REVIEW
+Share / upload ──► ① INGEST ──► ② EXTRACT ──► ③ CHECK ──► ④ LINK ──► ⑤ INVESTIGATE ──► ⑥ VERIFY ──► ⑦ RISK LENS ──► ⑧ DECIDE
 ```
 
 | Step | Where | What happens |
 |---|---|---|
 | ① Ingest | `Fraud/Cases/CaseService`, `DocumentInspector` | Type sniffed from the bytes (PDF, PNG, JPEG only), SHA-256, PDF producer, creator, dates and fonts. Stored content-addressed in Cloud Storage, Mumbai |
 | ② Extract | `Fraud/Ai/DocumentExtractor` | Gemini Flash in Mumbai reads every page in parallel into a fixed schema; numbers copied as printed, never corrected. A page whose own arithmetic does not add up is read once more with more thinking — a tampered page fails both reads and is kept as printed. The statement's account number is read in a call of its own |
-| ③ Check | `Fraud/Checks/DeterministicChecks` | Nine pure C# checks: running balance, page carry-over, stated totals, slip arithmetic, round-tripping, window dressing, pass-through, PDF metadata, and the statement against the bank's own Account Aggregator record |
-| ④ Link | `Fraud/Checks/NetworkLens` | Same file, same template claiming different issuers, same salary account behind different employers — union-find joins applications into rings |
-| ⑤ Investigate | `Fraud/Ai/Investigator`, `InvestigatorTools` | Gemini Pro agent, function calling, 8-turn cap. Its tools are bound server-side to one application: overview, statement rows, counterparty summary, document fields, verification facts, policy search |
-| ⑥ Verify | `Fraud/Ai/GroundingVerifier` | An AI claim survives only if every cited row or field belongs to the case and every rupee amount traces to them. Rejected claims are logged (`ai_drop_log`) and shown on the case page |
-| ⑦ Review | `CasesController`, `Views/Cases/Detail` | Findings most severe first, evidence opening the document at its page, policy clauses by breadcrumb; confirm / dismiss / reopen with a note |
+| ③ Check | `Fraud/Checks/DeterministicChecks`, `SourceChecks` | Nine pure C# checks: running balance, page carry-over, stated totals, slip arithmetic, round-tripping, window dressing, pass-through, PDF metadata, and the statement against the bank's own Account Aggregator record; the Account Aggregator risk flags become findings |
+| ④ Link | `Fraud/Checks/NetworkLens` | Across customers: same file, same template claiming different issuers, same salary account behind different employers, same director, mobile, email or address, circular GST trading — union-find groups linked customers, and each gets a finding naming the others |
+| ⑤ Investigate | `Fraud/Ai/Investigator`, `InvestigatorTools` | Gemini Pro agent, function calling, 8-turn cap. Its tools are bound server-side to one customer's assessment: overview, statement rows, counterparty summary, document fields, verification facts, policy search |
+| ⑥ Verify | `Fraud/Ai/GroundingVerifier` | An AI claim survives only if every cited row or field belongs to this customer's assessment and every rupee amount traces to them. Rejected claims are logged (`ai_drop_log`) and shown on the Risk Lens |
+| ⑦ Risk Lens | `BankAdminController.Customer`, `Views/Shared/_RiskLensBody`, `_FindingCard`, `RiskLensController` | The verdict (`RiskSummary.Of`) and one section per source; findings most severe first, evidence opening the document at its page, policy clauses by breadcrumb; confirm / dismiss / reopen with a note. A confirmed finding blocks the loan case |
+| ⑧ Decide | `Fraud/Credit/CreditDecisionService`, `CreditCapacity` | Clear customers only: capacity computed in code, Gemini Pro decides within it, every figure verified; the accepted decision gates the push to LOS / ULI / ONDC |
 
 `Fraud/Pipeline/CasePipeline` runs ②–⑥ off the request thread (`Channel<T>` + a hosted
 worker) and re-queues anything a restart interrupted.
@@ -69,13 +69,13 @@ worker) and re-queues anything a restart interrupted.
 
 | Project | Role |
 |---|---|
-| `FinRiskLensAI-RAG-V2` | ASP.NET Core 8 MVC web app: bank portal (Cases, Rings, Customer 360), MSME onboarding and consent journeys, the source-data ingest API |
+| `FinRiskLensAI-RAG-V2` | ASP.NET Core 8 MVC web app: bank portal (Customers, Customer 360 with the Risk Lens, loan-case push), MSME onboarding, consent and upload journeys, the source-data ingest API |
 | `FinRiskLensAI.Fraud` | The product: extraction, checks, network lens, investigator, grounding, RAG, Cloud Storage stores, pipeline |
 | `FinRiskLensAI.Core` | Entities, view models, interfaces — no infrastructure |
 | `FinRiskLensAI.Data` | EF Core 8 + Npgsql, repositories, migrations (PostgreSQL + pgvector) |
 | `FinRiskLensAI.Services` | Verification-source connectors and analyses: Udyam, GST, ITR, Account Aggregator (Finvu), MCA; loan-case push to LOS / ULI / ONDC |
 | `FinRiskLensAI.ML` | Source-facts extraction from the stored registry and bank payloads (what the investigator's facts tool reads) |
-| `tools/FinRiskLensAI.DemoData` | Synthetic cases with ground truth: `generate`, `seed`, `eval` (live extraction scored row by row, rings on Gemini's reading), `investigate` |
+| `tools/FinRiskLensAI.DemoData` | The synthetic test set with ground truth: `generate`, `seed`, `eval` (live extraction scored row by row, the network lens on Gemini's reading), `investigate` |
 | `tools/FinRiskLensAI.RagCli` | Build and query the knowledge base without the UI |
 | `tests/FinRiskLensAI.Tests` | xUnit: every check, the network lens, grounding, chunking, fusion, PDF inspection, every demo case |
 
@@ -111,8 +111,8 @@ every flag are in `10_FRAUD_LENS_BUILD.md` → *Deploying*.
 | `ai_drop_log` | AI claims the grounding verifier rejected, per investigation run |
 | `knowledge_docs` · `knowledge_chunks` · `chunk_embeddings` · `rag_query_log` | The RAG corpora: credit policy, fraud typology, regulation |
 
-Snake-case naming, int identity keys, audit columns stamped on save. Rings are computed
-from these tables on demand — no ring table (see `CaseRepository.GetNetworkAsync` for the
+Snake-case naming, int identity keys, audit columns stamped on save. Links between customers are
+computed from these tables on demand — no link table (see `CaseRepository.GetNetworkAsync` for the
 ceiling and the upgrade path).
 
 ## 6. Verification sources

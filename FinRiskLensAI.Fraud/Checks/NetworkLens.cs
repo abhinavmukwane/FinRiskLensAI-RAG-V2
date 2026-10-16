@@ -83,18 +83,20 @@ namespace FinRiskLensAI.Fraud.Checks
         /// <summary>The ring's finding for one member: who it is linked to, by what, and that member's own evidence.</summary>
         public static Finding FindingFor(Ring ring, int loanApplicationId)
         {
-            var others = ring.Members.Where(m => m.LoanApplicationID != loanApplicationId).Select(m => m.ApplicantRef).ToList();
+            // A customer by business name and Udyam number; a document-only assessment by its reference
+            static string Who(NetworkApplication m) => m.Uan != null && m.DeclaredEmployer != null ? $"{m.DeclaredEmployer} ({m.Uan})" : m.ApplicantRef;
+            var others = ring.Members.Where(m => m.LoanApplicationID != loanApplicationId).Select(Who).ToList();
             return new Finding
             {
                 LoanApplicationID = loanApplicationId,
                 Type = "FRAUD_RING",
                 Category = FindingCategory.Network,
                 Severity = FindingSeverity.High,
-                Title = Clip($"Linked to {others.Count} other application{(others.Count == 1 ? "" : "s")}: {string.Join(", ", others)}", 300),
-                Explanation = $"{ring.Members.Count} separate applications share what unrelated applicants never do: " +
-                              string.Join("; ", ring.Links.Select(l => $"{l.Kind.ToLowerInvariant()} — {l.Detail} ({l.Members.Count} applications)")) +
-                              ". One fabricator supplying documents to many applicants leaves exactly these traces.",
-                RecommendedAction = "Review the linked applications together, and verify each one at source before deciding any of them.",
+                Title = Clip($"Linked to {others.Count} other customer{(others.Count == 1 ? "" : "s")}: {string.Join(", ", others)}", 300),
+                Explanation = $"{ring.Members.Count} separate customers share what unrelated businesses never do: " +
+                              string.Join("; ", ring.Links.Select(l => $"{l.Kind.ToLowerInvariant()} — {l.Detail} ({l.Members.Count} customers)")) +
+                              ". One operator behind several borrowers, or one fabricator supplying their documents, leaves exactly these traces.",
+                RecommendedAction = "Review the linked customers together, and verify each one at source before deciding any of them.",
                 DetectedBy = FindingSource.Deterministic,
                 DedupKey = "FRAUD_RING",
                 // Fresh copies: an evidence row belongs to one finding

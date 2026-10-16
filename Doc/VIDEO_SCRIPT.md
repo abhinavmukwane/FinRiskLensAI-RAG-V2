@@ -1,89 +1,85 @@
 # FinRiskLens — 3-Minute Demo Video
 
-**Google AI Builder Cup 2026 · BFSI track · Team ASM FinTech Developer**
+**Google AI Builder Cup 2026 · BFSI track · Team AS FinTech Developer**
 
-> **To be rewritten for the customer flow** ([`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md))
-> once Phase 7 is live: customer shares data → bank's Risk Lens → loan case with AI credit
-> decision → LOS / ULI / ONDC. This version walks today's case flow.
-
-Recorded on the live site (<https://finrisklensai.cloud.run>), signed in to the bank
-portal. Every case shown is synthetic and stamped as such. About 430 words of voiceover
-at a calm pace; each block lists what is on screen and what is said.
+The customer flow ([`12_CUSTOMER_RISK_LENS.md`](12_CUSTOMER_RISK_LENS.md)): the customer shares
+data → the bank's Risk Lens for that customer → a Clear customer's loan case with the AI credit
+decision → LOS / ULI / ONDC. Recorded on the live site (<https://finrisklensai.cloud.run>) with the
+demo customers (`UDYAM-MH-99-0000301` … `0308`). Every customer shown is synthetic. About 430 words
+of voiceover at a calm pace; each block lists what is on screen and what is said.
 
 ---
 
 ### 0:00 – 0:15 · Opening
 
-**Screen:** home page — "Evidence-based fraud detection".
+**Screen:** home page.
 
-> A loan officer receives a bank statement. Every balance adds up, every page total
-> matches. FinRiskLens checks it the way a forensic investigator would — and shows the
-> evidence for everything it finds.
+> An MSME applies for a loan. Its bank statements, GST returns and ITR all look right. FinRiskLens
+> checks every one of them the way a forensic investigator would — and shows the evidence for
+> everything it finds.
 
-### 0:15 – 0:35 · A new case
+### 0:15 – 0:40 · The customer shares data
 
-**Screen:** Cases → New case. Upload `demo-t04_narmada_statement_jun-sep.pdf`, Udyam
-number `UDYAM-MH-99-0000204`. The case page refreshes while Gemini reads.
+**Screen:** customer dashboard — Account Aggregator consent, GST, ITR and MCA fetched, then
+**Upload documents** with a bank statement PDF; the upload shows *Reading*.
 
-> The officer opens a case and uploads what the applicant submitted. Gemini on Vertex AI,
-> running in Mumbai, reads every page in parallel and copies each number exactly as
-> printed — so the documents never leave India.
+> The business registers with its Udyam number, shares its bank data through Account Aggregator
+> consent, fetches its GST, ITR and company records, and uploads its documents. Every new source
+> reassesses the customer. Gemini on Vertex AI reads each page in Mumbai, so the documents never
+> leave India.
 
-### 0:35 – 1:05 · The bank's own record
+### 0:40 – 0:55 · One page per customer
 
-**Screen:** DEMO-T04 findings. Expand *Statement disagrees with the bank's own record*;
-click the row-28 evidence — the PDF opens at page 2.
+**Screen:** bank portal → **Customers** — the risk column: Clear, High risk, Awaiting data.
 
-> This statement passes every arithmetic check. But the applicant linked their account
-> through Account Aggregator, so FinRiskLens compares it with the bank's own record.
-> Ninety-one of ninety-three rows agree. Two receipts were tripled and four loan EMIs
-> removed — the PDF shows three lakh sixty-five thousand more in credits than the bank
-> recorded. Every difference links to its row.
+> On the bank side, every customer has a risk status, and one page with everything they shared.
 
-### 1:05 – 1:25 · The document's own arithmetic
+### 0:55 – 1:25 · The bank's own record
 
-**Screen:** DEMO-T01, then DEMO-T02 — balance break, totals mismatch, file history.
+**Screen:** Edited statement (`…0302`) → Risk Lens. The verdict *High risk*; the finding
+*Statement disagrees with the bank's own record*; click an evidence row — the PDF opens at its page.
 
-> Simpler edits show in the document itself: a balance that no longer follows from the
-> row before, page totals that disagree, a file last saved in Word or merged in iLovePDF.
+> This statement passes every arithmetic check. But the bank's own record, fetched through Account
+> Aggregator, does not agree: receipts inflated, loan EMIs removed. Every difference is in rupees,
+> and every one links to its row.
 
-### 1:25 – 1:55 · The investigator
+### 1:25 – 1:50 · Linked customers
 
-**Screen:** DEMO-A01 → Run investigation. Findings *Undeclared EMIs* and *Loan stacking*,
-with policy evidence. Then DEMO-A02 — gambling and crypto exposure.
+**Screen:** Circular traders (`…0306`) → Risk Lens → **Network** section.
 
-> Then a Gemini Pro investigator reads the case with tools bound to this one application.
-> It finds monthly EMIs to two lenders the application never declared, and cites the
-> credit-policy clause. Every AI claim must point to rows of this case, and every rupee
-> amount must trace to them — anything that does not is set aside, and shown.
+> Across customers, FinRiskLens looks for what unrelated businesses never share. These three have
+> the same director, and their GST invoices go round in a loop — sales that only exist on paper.
+> Each one's page names the others.
 
-### 1:55 – 2:20 · Fraud rings
+### 1:50 – 2:10 · Grounded AI
 
-**Screen:** Rings → Ring 1 (DEMO-R01 … R04); open DEMO-R01's ring finding.
+**Screen:** any customer's Risk Lens → **Run investigation**; an AI finding with row and policy
+evidence; the rejected-claims panel.
 
-> Across applications, the network lens looks for what unrelated applicants never share.
-> These four statements claim two different banks and the slips three employers — yet
-> one tool made every file, and one account pays every salary. One fabricator, four
-> applications, found together.
+> A Gemini Pro investigator then reads the customer with tools bound to this one customer. Every AI
+> claim must point to the customer's own rows, and every rupee must trace to them — anything that
+> does not is set aside, and shown.
 
-### 2:20 – 2:40 · Measured
+### 2:10 – 2:45 · Clear → the loan case
 
-**Screen:** README → *Measured, not assumed*.
+**Screen:** Clear customer (`…0301`) → **Loan case**: amount, tenure, rate → **Generate credit
+decision** → the capacity figures, reasons with policy citations → **Accept** → **Push to LOS** → receipt.
 
-> Every number is measured against ground truth: up to one hundred percent of statement
-> rows read exactly, every demo case raising exactly its expected findings, and zero
-> false alarms on genuine applicants.
+> A customer with nothing open goes straight to a loan case. The credit capacity is computed in code
+> under the lender's policy; Gemini Pro decides within it and cites the clauses. The officer accepts,
+> and the loan case — with its risk assessment and decision — goes to the bank's LOS, to ULI, or to ONDC.
 
-### 2:40 – 3:00 · Close
+### 2:45 – 3:00 · Close
 
 **Screen:** home page.
 
-> FinRiskLens — evidence-based fraud detection and risk analysis, built on Gemini,
-> Cloud Run, Cloud SQL and Cloud Storage. Every finding backed by evidence.
+> FinRiskLens — fraud detection and risk analysis for every MSME customer, built on Gemini, Cloud
+> Run, Cloud SQL and Cloud Storage. Every finding backed by evidence.
 
 ---
 
-**Before recording:** sign in once so the session survives; open the cases in separate tabs
-in this order — T04, T01, T02, A01, A02, Rings — so nothing waits on a page load. Run the
-investigation on A01 beforehand too, and use **Run investigation** live only if time allows
-(12–43 s).
+**Before recording:** sign in to the bank portal once so the session survives, and open the four
+customers in tabs in this order — `…0302`, `…0306`, `…0301`, and one for the investigation — so
+nothing waits on a page load. Run the investigation beforehand too; press it live only if time allows
+(12–43 s). The demo customers' email addresses are fictional, so record the customer part with a
+registration whose email you can read for the sign-in code.

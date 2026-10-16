@@ -175,7 +175,7 @@
             <h3 class="h2 text-primary font-heading fw-bold mb-2">Every claim traced to its evidence</h3>
             <p class="text-secondary mx-auto" style="max-width: 640px;">
                 Arithmetic first, then the bank's own record, then AI judgment. Every AI claim is
-                backed by rows from the case.
+                backed by the customer's own data.
             </p>
         </div>
         <div class="row g-4">
@@ -184,10 +184,11 @@
                 ("bi-cloud-upload", "Ingest", "Detects file type from the bytes and records the SHA-256 hash, PDF producer and edit history. Stored in Cloud Storage, Mumbai."),
                 ("bi-file-earmark-text", "Extract", "Gemini Flash in Mumbai reads every page in parallel and copies numbers exactly as printed, never corrected."),
                 ("bi-calculator", "Check", "Nine rule-based checks: running balances, page totals, salary-slip arithmetic, round-tripping, window dressing, pass-through, metadata and the bank's Account Aggregator record."),
-                ("bi-diagram-3", "Link", "Looks across all applications. A shared file, a shared template or one salary account behind different employers points to a fraud ring."),
-                ("bi-search", "Investigate", "A Gemini Pro agent works within one application: its rows, counterparties, registry facts and the lender's policy."),
-                ("bi-shield-check", "Verify", "An AI claim that cites nothing in the case, or quotes an amount it can't trace, is dropped, and the drop is shown."),
-                ("bi-person-check", "Review", "The credit officer confirms or dismisses each finding, with the evidence and policy clause one click away.")
+                ("bi-diagram-3", "Link", "Looks across all customers. A shared director, mobile, email, address or document, or GST invoices that go round in a loop, links customers to review together."),
+                ("bi-search", "Investigate", "A Gemini Pro agent works within one customer: their rows, counterparties, registry facts and the lender's policy."),
+                ("bi-shield-check", "Verify", "An AI claim that cites nothing in the customer's data, or quotes an amount it can't trace, is dropped, and the drop is shown."),
+                ("bi-person-check", "Review", "The credit officer confirms or dismisses each finding on the customer's Risk Lens, with the evidence and policy clause one click away."),
+                ("bi-cash-stack", "Decide", "A Clear customer gets an AI credit decision within the capacity the credit policy allows, then the loan case goes to the LOS, ULI or ONDC.")
             })
             {
                 <div class="col-md-6 col-lg-4">
@@ -253,14 +254,14 @@
                         </div>
                         <h4 class="h5 text-primary font-heading fw-bold">Findings in Seconds</h4>
                         <p class="small text-secondary mb-0">
-                            The Gemini investigation agent reviews a full case and returns its findings with
+                            The Gemini investigation agent reviews a customer's data and returns its findings with
                             evidence, measured on the synthetic demo set.
                         </p>
                     </div>
                     <div class="pt-4 border-top border-light mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="font-data small uppercase text-secondary">AI Investigation</span>
-                            <span class="font-data small fw-bold text-secondary">12–43 s per case</span>
+                            <span class="font-data small fw-bold text-secondary">12–43 s per customer</span>
                         </div>
                         <div class="progress" style="height: 8px;">
                             <div class="progress-bar bg-secondary" role="progressbar" style="width: 80%;"
@@ -281,7 +282,7 @@
                         <h4 class="h5 text-primary font-heading fw-bold">Explainable by Design</h4>
                         <p class="small text-secondary mb-4">
                             Every finding cites the row, field or page behind it. An AI claim that can't be
-                            traced to the case is dropped, and the drop is shown.
+                            traced to the customer's data is dropped, and the drop is shown.
                         </p>
                     </div>
                     <div class="d-flex gap-2">
@@ -299,7 +300,7 @@
                          style="width: 250px; height: 250px; filter: blur(50px); pointer-events: none; transform: translate(50px, 50px);"></div>
 
                     <div class="flex-grow-1" style="flex: 1; z-index: 2;">
-                        <h4 class="h3 text-white font-heading fw-bold">One case view for the lender</h4>
+                        <h4 class="h3 text-white font-heading fw-bold">One page per customer for the lender</h4>
                         <p class="small text-white text-opacity-75 mb-4">
                             The credit officer sees each source's 0–100 score and every fraud finding with
                             its evidence, then confirms or dismisses it.

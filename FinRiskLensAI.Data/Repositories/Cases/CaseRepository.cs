@@ -144,8 +144,9 @@ namespace FinRiskLensAI.Data.Repositories.Cases
                         || a.Documents.Any(d => d.DocType == CaseDocType.BankStatement && d.ExtractStatus == ExtractStatus.Done)
                 })
                 .ToListAsync(ct);
+            // Confirmed findings stand with the open ones; only a dismissed one stops counting (RiskSummary.Decide)
             var open = (await _context.Findings.AsNoTracking()
-                    .Where(f => f.ReviewStatus == ReviewStatus.Open)
+                    .Where(f => f.ReviewStatus != ReviewStatus.Dismissed)
                     .GroupBy(f => new { f.LoanApplicationID, f.Severity })
                     .Select(g => new { g.Key.LoanApplicationID, g.Key.Severity, Count = g.Count() })
                     .ToListAsync(ct))

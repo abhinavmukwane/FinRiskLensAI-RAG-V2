@@ -1,7 +1,7 @@
 # FinRiskLens — Documentation
 
 Evidence-based fraud detection and risk analysis for lending, built on Google Cloud for the
-**Google AI Builder Cup 2026 (BFSI track)** by team ASM FinTech Developer. Start with the
+**Google AI Builder Cup 2026 (BFSI track)** by team AS FinTech Developer. Start with the
 repository [`README.md`](../README.md).
 
 | Document | What it covers |

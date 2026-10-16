@@ -572,6 +572,13 @@ and the risk summary read High risk; in the browser the Customers risk column, t
 Clear customer, and the review return (a local return URL honoured, an outside one refused) were
 checked. **Do not deploy before the demo customers (Oct 17–18):** without the case inbox the demo
 cases have no entry point except Rings.
+
+**2026-10-17 — customer-wise only.** The case page (`/cases/{id}`) and the **Rings** page and menu are
+removed: the bank works per customer. The actions the Risk Lens needs (re-run checks, investigate,
+review a finding, open a document) moved to `RiskLensController` at `/risk-lens/…`. The network lens
+stays — each linked customer gets a finding in its **Network** section naming the others by business
+name and Udyam number. The `DEMO-*` scenarios stay in the databases as the synthetic test set behind
+`DemoData eval`; the portal shows the demo customers (T11).
 | Assessment for every customer when a source arrives; Account Aggregator risk flags as findings | ✅ 2026-10-16 — `EnsureAssessmentAsync`, `SourceChecks.BankFlags`; the verdict needs bank evidence (`applications.bank_data_at`). Details in `13_TEAM_WORK_PLAN.md` T1–T2 |
 | GST–ITR–bank turnover reconciliation · identity consistency · uploaded ITR vs filed | ⏸ Oct 16–17 (T3, T4, T8) |
 | Network lens: shared director, shared mobile / email / address, circular GST trading | ✅ 2026-10-16 — `NetworkLens.BusinessLinks`; details in `13_TEAM_WORK_PLAN.md` T7 |
