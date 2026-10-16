@@ -32,7 +32,7 @@ calculator, demo data, docs). Status: ⏸ to do · 🔨 in progress · 👀 in r
 | T11 | Demo customers: generator, registrations, sources, uploads | B builds · A seeds prod | Oct 17–18 | T2–T8 | ⏸ |
 | T12 | Live eval and investigation re-run; numbers into README | A | Oct 18 | T11 | ⏸ |
 | T13 | README and ARCHITECTURE to the customer flow | B | Oct 18 | T11 | ⏸ |
-| T14 | Deck and video script to the customer flow; record the video | A deck · B records | Oct 18 | T11 | ⏸ |
+| T14 | Deck and video script to the customer flow; record the video | A deck · B records | Oct 18 | T11 | 🔨 deck updated · video ⏸ |
 | T15 | Deploy, smoke test, **submit** | A | Oct 18 | all | ⏸ |
 
 **Order of play.** Oct 16: T1–T6. Oct 17: T7–T10, start T11. Oct 18: finish T11, then
@@ -109,7 +109,7 @@ fix anything the smoke test finds. The cut list is in §6.
 | What | File |
 |---|---|
 | Per-document checks (balances, totals, slips, metadata, bank-record comparison) | `FinRiskLensAI.Fraud/Checks/DeterministicChecks.cs` |
-| Fraud rings | `FinRiskLensAI.Fraud/Checks/NetworkLens.cs` |
+| Links between customers (network) | `FinRiskLensAI.Fraud/Checks/NetworkLens.cs` |
 | Where the checks run for an assessment | `CaseService.RunChecksOnceAsync` in `FinRiskLensAI.Fraud/Cases/CaseService.cs` |
 | Background pipeline: read → check → investigate | `FinRiskLensAI.Fraud/Pipeline/CasePipeline.cs` |
 | The customer's facts from GST, ITR, AA, Udyam | `IBlobAnalysisService.GetFactsAsync(uan)` → `SourceFacts` / `MsmeFeatureSet` |
@@ -224,7 +224,7 @@ Map both types to `RiskSections.Identity`. Unit-test the name normaliser on at l
 
 ### T5 — Dismissing a finding needs a written reason (B)
 
-Credit policy §6.3. In `CasesController.Review`, refuse `Dismissed` without a note (return to
+Credit policy §6.3. In `RiskLensController.Review`, refuse `Dismissed` without a note (return to
 the page with a message). In `_FindingCard.cshtml` make the note box `required` for Dismiss only
 (the Confirm button keeps it optional).
 
@@ -368,6 +368,9 @@ customer's push is refused.
 `Preview` shows as its error page and `Push` returns as its message. For the payloads: read the
 accepted decision with `ICreditDecisionService.GetLatestAsync(uan)` (its `Capacity`, `Reasons` and
 `Conditions` are JSON, camelCase) and the verdict with `ICaseService.GetByUanAsync` + `RiskSummary.Of`.
+Fixed 2026-10-17: the verdict counted only *open* findings, so confirming a High finding turned the customer
+*Clear* and opened the loan case. Now every finding that is not dismissed counts (`RiskSummary.Of`, the
+Customers list and the Risk Lens sections); a test covers confirmed vs dismissed.
 
 ### T11 — Demo customers (B builds · A seeds production)
 
@@ -413,6 +416,12 @@ in `ARCHITECTURE.md` §1. Keep every number traceable to a command (T12).
 - **Deck:** `Doc/FinRiskLens_AI_Builder_Cup_2026.pptx` is built by a script — A regenerates it with
   Claude. Changes: the process-flow slide (customer → Risk Lens → loan case → LOS / ULI / ONDC), the
   wireframe, new snapshots, the demo table (customers), and the credit decision.
+  **🔨 Deck updated 2026-10-17:** team name *AS FinTech Developer*; every slide to the customer flow (share →
+  Risk Lens → AI credit decision → LOS / ULI / ONDC), 70 tests, business network links, AA risk flags; new
+  snapshots from development (home, Customers, the Risk Lens and loan case of a Clear customer, statement vs
+  AA, AI investigator); slide 17 lists the T11 demo customers. **Still to do after T11 and T6:**
+  retake the Customers and loan-case snapshots with the demo customers and a real credit decision, and
+  check slide 17 against what T11 actually seeds.
 - **Video:** rewrite `Doc/VIDEO_SCRIPT.md` for the customer flow (customer uploads → Risk Lens → a
   risky customer → the clear customer's loan case and decision → push to LOS); record it on the live
   site after T15's deploy; upload; put the link on the deck's links slide.
@@ -424,7 +433,7 @@ in `ARCHITECTURE.md` §1. Keep every number traceable to a command (T12).
    `credit_decisions` table (T9).
 3. Deploy with the command in `10_FRAUD_LENS_BUILD.md` → *Deploying*.
 4. **Smoke test** on <https://finrisklensai.cloud.run>: home page, bank sign-in, Customers verdicts,
-   each demo customer's Risk Lens, the clear customer's decision and a simulated LOS push, Rings,
+   each demo customer's Risk Lens, the clear customer's decision and a simulated LOS push,
    the customer dashboard upload.
 5. Submit the deck (with the video link), repository and product link on the Cup portal.
 

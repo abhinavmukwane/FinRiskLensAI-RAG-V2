@@ -1,16 +1,18 @@
 # FinRiskLens — evidence-based fraud detection for lending
 
-**Every finding backed by evidence.** FinRiskLens reads the documents submitted with a loan
-application — bank statements, salary slips, ITRs — and returns fraud findings that each
-name what is wrong and point at the exact row, field or page that shows it.
+**Every finding backed by evidence.** FinRiskLens gives a lender one fraud and risk page per
+MSME customer. The customer shares bank data through Account Aggregator, fetches GST, ITR and
+MCA, and uploads documents; FinRiskLens checks all of it together and returns findings that each
+name what is wrong and point at the exact row, field or page that shows it. A customer with
+nothing open gets a grounded AI credit decision and a loan case for the LOS, ULI (OCEN) or ONDC.
 
 A tampered statement whose running balance stops adding up, a careful forgery that
 disagrees with the bank's own record, a salary slip whose net pay was typed in, money that goes straight back to its payer, EMIs to lenders the applicant
-never declared — found, explained in rupees, and linked to the evidence, before a credit
-officer relies on the documents.
+never declared, a director shared with another borrower — found, explained in rupees, and linked to
+the evidence, before a credit officer relies on them.
 
 Built on Google Cloud with **Gemini on Vertex AI** for the **Google AI Builder Cup 2026
-(BFSI track)** by team **ASM FinTech Developer**. It grows out of
+(BFSI track)** by team **AS FinTech Developer**. It grows out of
 [FinRiskLensAI](https://github.com/abhinavmukwane/FinRiskLensAI), our MSME credit platform
 shortlisted in the top 5 at IDBI Innovate 2026, and reuses its verification-source
 integrations.
@@ -25,23 +27,44 @@ integrations.
 | **Build plan and status** | [`Doc/10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) |
 | **RAG architecture** | [`Doc/11_RAG_ARCHITECTURE.md`](Doc/11_RAG_ARCHITECTURE.md) |
 | **Database changes** | [`Doc/DB_SCRIPTS.md`](Doc/DB_SCRIPTS.md) |
-| **Next: one assessment per customer** | [`Doc/12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) · team tasks in [`Doc/13_TEAM_WORK_PLAN.md`](Doc/13_TEAM_WORK_PLAN.md) |
+| **The customer flow (Risk Lens)** | [`Doc/12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) · team tasks in [`Doc/13_TEAM_WORK_PLAN.md`](Doc/13_TEAM_WORK_PLAN.md) |
 
 ---
 
 ## Try it
 
-The live site runs on **synthetic demo cases only** — every bank and employer in them is
-fictional and every page is stamped *SYNTHETIC DOCUMENT*.
+The live site runs on **synthetic demo customers only** — every business, bank and employer is
+fictional and every document is stamped *SYNTHETIC DOCUMENT*.
 
 1. Sign in to the bank portal at <https://finrisklensai.cloud.run/Auth/BankLogin>.
    Credentials are shared with the evaluation panel directly rather than published here.
-2. Open **Cases**. Each demo case shows its findings, the evidence behind them, and the
-   documents themselves. **Rings** lists the applications linked to each other.
-3. Upload your own PDF statement or slip with **New case** and watch it go through the
-   pipeline, or press **Run investigation** on any case.
+2. Open **Customers**. Every customer has a risk status — *Clear*, *Review*, *High risk* or
+   *Awaiting data*.
+3. Open a customer. The page opens on the **Risk Lens**: the verdict, then one section per
+   source — Identity, GST, Bank conduct, ITR, Network and Uploaded documents — each with its
+   findings and the evidence behind them. Confirm or dismiss each finding.
+4. For a *Clear* customer, the **Loan case** panel generates the AI credit decision. Accept it,
+   then **Push to LOS / ULI / ONDC**.
 
-| Case | What it is | What FinRiskLens finds |
+Customers register themselves on the home page with their Udyam number, share bank data through
+Account Aggregator, fetch GST, ITR and MCA, and upload documents from their dashboard. Every new
+source reassesses them.
+
+| Demo customer (Udyam) | Story | What FinRiskLens shows |
+|---|---|---|
+| Clear · `UDYAM-MH-99-0000301` | Consistent everywhere | *Clear* → AI credit decision → Approve → LOS |
+| Edited statement · `…0302` | Uploaded statement disagrees with the bank's Account Aggregator record | *High risk* — statement vs the bank's own record |
+| Turnover inflation · `…0303` | Bank credits about 3× GST and ITR turnover | *High risk* — turnover mismatch across sources |
+| Edited ITR · `…0304` | Uploaded ITR shows more than the filed return | *High risk* — uploaded vs filed ITR |
+| Mule-like account · `…0305` | Every receipt forwarded the same day | *High risk* — pass-through in the bank data |
+| Circular traders · `…0306–0308` | Invoice each other in a loop and share a director | *High risk* for all three — linked customers |
+
+### The synthetic test set
+
+The measurements below run on a set of synthetic documents with ground truth
+(`tools/FinRiskLensAI.DemoData`), each scenario one assessment:
+
+| Scenario | What it is | What FinRiskLens finds |
 |---|---|---|
 | DEMO-G01 … G05 | Five genuine applicants — four businesses, one salaried. G05 has Account Aggregator linked, and some of its bank postings clear a day after the statement date | Nothing. False alarms on honest applicants are the costliest error |
 | DEMO-T01 | A receipt inflated tenfold in Word; balances and footer left alone | Balance break, page totals mismatch, file edited in Word |
@@ -53,38 +76,45 @@ fictional and every page is stamped *SYNTHETIC DOCUMENT*.
 | DEMO-B03 | Every receipt forwarded the same day | Pass-through (mule-like account) |
 | DEMO-A01 | Monthly NACH EMIs to two lenders, never declared; two fresh loans 48 days apart | Undeclared EMIs, loan stacking — cited to the credit policy |
 | DEMO-A02 | Weekly betting, monthly crypto, a bounced EMI | Gambling and crypto exposure — cited to policy §4.2 — and the bounce |
-| DEMO-R01 … R04 | Four salaried applicants supplied by one fabricator. Each case is clean on its own | A fraud ring: statements claiming two banks and slips claiming three employers, all made by the same software — and every salary paid from one account |
-| DEMO-R05, R06 | Two businesses; the second uploaded the first one's statement | A fraud ring: the same file, byte for byte |
+| DEMO-R01 … R04 | Four salaried applicants supplied by one fabricator. Each is clean on its own | Linked applicants: statements claiming two banks and slips claiming three employers, all made by the same software — and every salary paid from one account |
+| DEMO-R05, R06 | Two businesses; the second uploaded the first one's statement | Linked: the same file, byte for byte |
 
 ---
 
 ## How it works
 
 ```
- Upload (PDF / image)
+ Customer shares data — Account Aggregator consent · GST · ITR · MCA · uploads (PDF / image)
    │
-   ① INGEST       type sniffed from the bytes · SHA-256 · PDF metadata (producer, dates, fonts)
-   │              stored in Cloud Storage, Mumbai — the same file in two cases is linked at once
+   ① INGEST       uploads: type sniffed from the bytes · SHA-256 · PDF metadata (producer, dates, fonts),
+   │              stored in Cloud Storage, Mumbai; source data in the customer's own folder
    ▼
    ② EXTRACT      Gemini 3.5 Flash, Mumbai — page by page in parallel; numbers copied as printed,
    │              never corrected, because tampered arithmetic is the evidence
    ▼
    ③ CHECK        nine deterministic checks in C#: balance continuity, page carry-over, stated
    │              totals, slip arithmetic, round-tripping, window dressing, pass-through, metadata —
-   │              and the statement against the bank's own record, fetched through Account Aggregator
+   │              the statement against the bank's own record, fetched through Account Aggregator,
+   │              and the Account Aggregator risk flags — pass-through, cash dependency, bounces
    ▼
-   ④ LINK         the network lens across every application: a shared file, a template claiming
-   │              different issuers, or one salary account behind different employers joins
-   │              applications into a fraud ring (union-find), and every member gets the finding
+   ④ LINK         the network lens across every customer: a shared director, mobile, email or
+   │              address, the same document or template, one salary account behind different
+   │              employers, or GST invoices that go round in a loop — every linked customer gets
+   │              the finding, naming the others
    ▼
-   ⑤ INVESTIGATE  Gemini 3.1 Pro agent with tools scoped to this one application: statement rows,
+   ⑤ INVESTIGATE  Gemini 3.1 Pro agent with tools scoped to this one customer: statement rows,
    │              counterparty summary, document fields, GST / ITR / Account Aggregator facts,
    │              and a hybrid search over the lender's policy and fraud typologies
    ▼
-   ⑥ VERIFY       every AI claim must cite rows or fields of this case, and every rupee amount
-   │              must trace to them — or it is dropped, and the drop is shown, not hidden
+   ⑥ VERIFY       every AI claim must cite rows or fields of this customer's data, and every rupee
+   │              amount must trace to them — or it is dropped, and the drop is shown, not hidden
    ▼
-   ⑦ REVIEW       findings with evidence links and policy citations; confirm, dismiss, reopen
+   ⑦ RISK LENS    the verdict and one section per source, findings with evidence links and policy
+   │              citations; the officer confirms or dismisses each — a confirmed finding blocks the loan
+   ▼
+   ⑧ DECIDE       Clear customers only: the credit capacity computed in code (FOIR, credit policy §3),
+                  Gemini Pro decides within it and every figure is verified; the accepted decision
+                  goes to the LOS, ULI (OCEN) or ONDC
 ```
 
 ### Three kinds of evidence
@@ -115,7 +145,7 @@ extraction is scored row by row.
 | Rows exact (date, debit, credit and balance all right) | **99.8% and 100%** (1,296 and 1,298 of 1,298) |
 | Page balances and printed totals | **100% (244/244)** |
 | Fields — salary slips and statement account numbers | **100% (38/38)** |
-| Cases whose findings match expectation | **14/14**, both runs |
+| Scenarios whose findings match expectation | **14/14**, both runs |
 | Time per statement | 10–60 s |
 
 Reading a whole statement in one call first scored 88.8%: Gemini dropped 45 rows from a
@@ -131,17 +161,17 @@ thinking. A tampered page fails both reads and is kept exactly as printed; the s
 is never told what failed, so the model is never invited to make the numbers add up.
 
 **Network lens** — `DemoData eval` also runs the lens on Gemini's own reading. Over the nine
-salaried and ring cases it finds exactly the two planted rings, each with every link, and
+salaried and linked scenarios it finds exactly the two planted groups, each with every link, and
 leaves the three genuine colleagues of one employer unlinked.
 
-**Investigator** — `DemoData investigate`, the first 12 cases (the two added since raise nothing either)
+**Investigator** — `DemoData investigate`, the first 12 scenarios (the two added since raise nothing either)
 
 | | |
 |---|---|
 | Expected AI findings found | **5/5** |
 | Findings raised on genuine applicants | **0** |
 | Repeats of what the deterministic checks already found | 0 |
-| Time per case | 12–43 s |
+| Time per assessment | 12–43 s |
 
 **Retrieval** — hybrid search (keyword + vector + Gemini rerank) over the policy and
 typology corpora: every test question, including paraphrases with no shared words, returns
@@ -155,14 +185,17 @@ everything.
 - **Arithmetic is deterministic.** Balance, totals and slip checks are plain C# with unit
   tests. The model is only asked what arithmetic cannot answer.
 - **Grounding verification.** An AI finding is dropped if its type is outside the AI
-  catalogue, if it cites a row or field that is not in this application, or if it quotes a
+  catalogue, if it cites a row or field that is not in this customer's data, or if it quotes a
   rupee amount that is not a cited value, a total of cited rows, a declared figure or a
   verification fact it was shown. Uncited policy is stripped. Rejected claims are listed
-  on the case page with the reason.
+  on the Risk Lens with the reason.
 - **Tools are scoped server-side.** The Investigator's tools are bound to one
-  application's data before the run; the model cannot ask its way into another case.
+  customer's assessment before the run; the model cannot ask its way into another customer.
+- **The credit decision is grounded too.** The credit capacity is computed in code; the
+  recommended amount can never exceed it, every rupee figure in a reason must be one of its
+  figures, and every policy point must cite a retrieved clause — or it is removed and shown.
 - **A human decides.** Every finding is confirmed or dismissed by an officer, with a note.
-  A re-run never resurrects a dismissed finding.
+  A re-run never resurrects a dismissed finding, and a confirmed one blocks the loan case.
 - **Data location.** Document files, the database, extraction and embeddings are all in
   Mumbai (`asia-south1`). Only Pro reasoning over already-extracted facts uses Gemini's
   global endpoint, because Pro is not served from Mumbai.
@@ -179,7 +212,7 @@ everything.
 | **Vertex AI — Gemini 3.8 Flash** (global) | Reranking retrieved policy passages |
 | **Vertex AI — gemini-embedding-001** (`asia-south1`) | 768-dimension embeddings for policy and typology |
 | **Cloud Run** (`asia-south1`) | The application, built from source by Google Cloud buildpacks |
-| **Cloud Storage** (`asia-south1`) | Uploaded case documents; registry and Account Aggregator source data |
+| **Cloud Storage** (`asia-south1`) | Customers' uploaded documents; registry and Account Aggregator source data |
 | **Cloud SQL for PostgreSQL** (`asia-south1`) | Application data, findings, and the knowledge base — `pgvector` HNSW and full-text search in one database |
 | **Cloud Build · Artifact Registry** | Source-to-container builds |
 | **Cloud Logging** | Application logs |
@@ -257,7 +290,7 @@ dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRisk
 dotnet run --project FinRiskLensAI-RAG-V2
 ```
 
-Then seed the demo cases and the knowledge base:
+Then seed the synthetic test set and the knowledge base:
 
 ```bash
 dotnet run --project tools/FinRiskLensAI.DemoData -- seed
@@ -281,16 +314,16 @@ development file, and uploaded with the source when you deploy.
 | Command | Does |
 |---|---|
 | `DemoData -- generate <dir>` | Writes the synthetic PDFs and their ground-truth JSON |
-| `DemoData -- seed` | Puts every demo case through real intake, extraction and the checks |
+| `DemoData -- seed` | Puts every test scenario through real intake, extraction and the checks |
 | `DemoData -- eval` | Live Gemini extraction scored row by row against the ground truth |
-| `DemoData -- investigate` | Live Investigator on every demo case, scored against expected findings |
+| `DemoData -- investigate` | Live Investigator on every test scenario, scored against expected findings |
 | `RagCli -- ingest · search · embed` | Builds and queries the knowledge base without the UI |
 
 ### Tests
 
 63 xUnit tests: the nine deterministic checks (one hand-made statement each, plus a clean
-one that must raise nothing), the network lens finding exactly the planted rings, the extractor's re-read rule, the grounding verifier, the chunker, reciprocal rank fusion,
-PDF inspection, and every demo case run through the checks in memory.
+one that must raise nothing), the network lens finding exactly the planted links, the extractor's re-read rule, the grounding verifier, the chunker, reciprocal rank fusion,
+PDF inspection, and every test scenario run through the checks in memory.
 
 ```bash
 dotnet test tests/FinRiskLensAI.Tests
@@ -332,7 +365,7 @@ Doc/                      documentation, knowledge corpora, schema log
 
 ## Team
 
-**ASM FinTech Developer**
+**AS FinTech Developer**
 
 ## Status and licence
 
@@ -344,4 +377,4 @@ pending a decision. Please get in touch before reusing the code.
 
 ---
 
-© 2026 FinRiskLens AI · Team ASM FinTech Developer · Google AI Builder Cup 2026
+© 2026 FinRiskLens AI · Team AS FinTech Developer · Google AI Builder Cup 2026

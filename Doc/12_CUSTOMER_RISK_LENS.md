@@ -53,7 +53,7 @@ and starts a fresh assessment automatically.
 | 4. Loan case | **Generate loan case** is enabled only when no High or Medium finding is open. A confirmed finding blocks it; a dismissed one does not | 🆕 gate |
 | 5. AI credit decision | Gemini Pro recommends **Approve / Refer / Decline**, the product, limit and tenure, and the reasons — every amount traced to the customer's own data, every policy point cited. The officer can adjust the amount before accepting | 🆕 to build |
 | 6. Send | Preview the payload, confirm, get a receipt — **LOS**, **ULI (OCEN 4.0)**, **ONDC (beckn)**. The payload now carries the risk assessment and the credit decision | ✅ push exists · 🆕 two new blocks |
-| 7. Rings | The Rings page lists **customers** linked to each other | ✅ reuse, links extended |
+| 7. Linked customers | No separate page: each customer's Risk Lens shows, in its **Network** section, the other customers it is linked to and how | ✅ (Rings page removed 2026-10-17) |
 
 The **Cases** menu and **New case** form leave the bank portal: the bank works per customer.
 
@@ -98,7 +98,7 @@ findings behind it.
 | Investigator | Tools scoped to the customer instead of the case |
 | Credit decision | New `CreditDecisionService` (Gemini Pro + grounding) |
 | Loan case | Gate on the verdict; `riskAssessment` and `creditDecision` blocks in the three payload builders |
-| Bank UI | Risk status on **Customers**; **Risk Lens** tab first on the customer page; **Cases** menu removed; **Rings** lists customers |
+| Bank UI | Risk status on **Customers**; **Risk Lens** tab first on the customer page; **Cases** menu, case pages and **Rings** page removed — links show in each customer's Network section |
 | Customer UI | **Upload documents** card and status on the dashboard |
 | Demo data | Demo **customers** instead of demo cases (below) |
 | Docs, deck, video | README, architecture, deck and video script rewritten to the customer flow |
@@ -141,4 +141,4 @@ evidence links on every finding.
 | When is a customer *Clear*? | No open finding **and** bank evidence — the Account Aggregator record or a statement read from an upload (policy §5.1). Without it: *Awaiting data* |
 | Can the officer override a Decline? | No — Refer goes to a senior officer outside the system; the officer can lower a recommended limit, not raise it |
 | Does the customer see findings? | No — they see their data and that the bank is reviewing |
-| Existing demo cases | Replaced by demo customers; the case pages go with the Cases menu |
+| Existing demo cases | Replaced on the portal by demo customers; the case pages and the Rings page are removed (2026-10-17). The `DEMO-*` scenarios stay as the synthetic test set behind the measurements (`DemoData eval`) |

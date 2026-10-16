@@ -139,7 +139,7 @@ else
                                     }
                                     <a class="bp-case-status @chip" onclick="event.stopPropagation()"
                                        href="@Url.Action("Customer", "BankAdmin", new { uan = c.Uan, tab = "risk" })"
-                                       title="@(r == null ? "No documents assessed yet" : $"{r.OpenHigh} High · {r.OpenMedium} Medium · {r.OpenLow} Low open")">
+                                       title="@(r == null ? "No documents assessed yet" : $"{r.OpenHigh} High · {r.OpenMedium} Medium · {r.OpenLow} Low open or confirmed")">
                                         @FinRiskLensAI.Core.Models.Cases.RiskSummary.Label(verdict)
                                     </a>
                                 </td>

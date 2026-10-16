@@ -17,6 +17,16 @@ namespace FinRiskLensAI.Tests
         }
 
         [Fact]
+        public void A_confirmed_finding_keeps_blocking_and_a_dismissed_one_does_not()
+        {
+            var app = new LoanApplication { Status = CaseStatus.Review, BankDataAt = DateTime.UtcNow };
+            Finding High(ReviewStatus s) => new() { Severity = FindingSeverity.High, ReviewStatus = s };
+
+            Assert.Equal(RiskVerdict.HighRisk, RiskSummary.Of(app, new[] { High(ReviewStatus.Confirmed) }));
+            Assert.Equal(RiskVerdict.Clear, RiskSummary.Of(app, new[] { High(ReviewStatus.Dismissed) }));
+        }
+
+        [Fact]
         public void Every_finding_type_lands_in_its_section()
         {
             Assert.Equal(RiskSections.Documents, RiskSections.Of("STATEMENT_VS_AA_MISMATCH"));

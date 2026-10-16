@@ -19,12 +19,7 @@
     <p>@f.Explanation</p>
     @if (f.RecommendedAction != null)
     {
-        <p class="bp-finding-action"><i class="bi bi-arrow-return-right"></i> @f.RecommendedAction
-            @if (f.Type == "FRAUD_RING")
-            {
-                <a class="bp-link" href="@Url.Action("Rings", "Cases")">See the ring <i class="bi bi-diagram-3"></i></a>
-            }
-        </p>
+        <p class="bp-finding-action"><i class="bi bi-arrow-return-right"></i> @f.RecommendedAction</p>
     }
 
     @if (f.Evidence.Count > 0)
@@ -42,7 +37,7 @@
                     @if (doc != null)
                     {
                         <a class="bp-link" target="_blank" rel="noopener"
-                           href="@(Url.Action("Document", "Cases", new { id = Model.LoanApplicationID, docId = doc.CaseDocumentID }))@(e.PageNo != null ? $"#page={e.PageNo}" : "")">
+                           href="@(Url.Action("Document", "RiskLens", new { id = Model.LoanApplicationID, docId = doc.CaseDocumentID }))@(e.PageNo != null ? $"#page={e.PageNo}" : "")">
                             <i class="bi bi-box-arrow-up-right"></i> @doc.FileName@(e.PageNo != null ? $", p. {e.PageNo}" : "")
                         </a>
                     }
@@ -57,7 +52,7 @@
         <p class="bp-review-note"><i class="bi bi-chat-left-text"></i> @f.ReviewNote</p>
     }
 
-    <form class="bp-review-form" method="post" asp-controller="Cases" asp-action="Review"
+    <form class="bp-review-form" method="post" asp-controller="RiskLens" asp-action="Review"
           asp-route-id="@Model.LoanApplicationID" asp-route-findingId="@f.FindingID">
         @if (Model.ReturnUrl != null)
         {

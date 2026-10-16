@@ -11,6 +11,7 @@
     var app = risk?.Application;
     var findings = risk?.Findings ?? Array.Empty<Finding>();
     var open = findings.Where(f => f.ReviewStatus == ReviewStatus.Open).ToList();
+    var standing = findings.Where(f => f.ReviewStatus != ReviewStatus.Dismissed).ToList();   // open or confirmed
     int Open(FindingSeverity s) => open.Count(f => f.Severity == s);
     var assessing = app != null && (app.Status == CaseStatus.Processing || app.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending));
     var verdict = app == null ? RiskVerdict.AwaitingData : RiskSummary.Of(app, findings);
@@ -24,10 +25,10 @@
     };
     string Money(decimal v) => "₹" + v.ToString("N0", new System.Globalization.CultureInfo("en-IN"));
 
-    // Section status: Flag on an open High, Watch on any other open finding, otherwise what the data allows
+    // Section status: Flag on a standing High, Watch on any other standing finding, otherwise what the data allows
     (string Label, string Css) Status(string key, bool shared)
     {
-        var mine = open.Where(f => RiskSections.Of(f.Type) == key).ToList();
+        var mine = standing.Where(f => RiskSections.Of(f.Type) == key).ToList();
         if (mine.Any(f => f.Severity == FindingSeverity.High)) return ("Flag", "bp-case-hold");
         if (mine.Count > 0) return ("Watch", "bp-case-review");
         return shared ? ("No findings", "bp-case-clear") : ("Not shared", "bp-case-new");
@@ -50,7 +51,7 @@
         (RiskSections.Itr, "bi-file-earmark-text", "ITR", "itr", Model.Itr?.HasData == true,
             Model.Itr?.HasData == true ? $"{Model.Itr.FormType} · assessment year {Model.Itr.AssessmentYear}" : "ITR not shared yet"),
         (RiskSections.Network, "bi-diagram-3", "Network", "", true,
-            findings.Any(f => f.Type == "FRAUD_RING") ? "Linked to other customers — see the finding" : "No links to other customers")
+            findings.Any(f => f.Type == "FRAUD_RING") ? "Linked to other customers — see the finding below" : "No links to other customers")
     };
 }
 
@@ -85,7 +86,7 @@
                     }
                     else
                     {
-                        <span><i class="bi bi-slash-circle"></i> A loan case waits until every open finding is confirmed or dismissed.</span>
+                        <span><i class="bi bi-slash-circle"></i> A loan case waits until every finding is reviewed — a confirmed finding blocks it, a dismissed one does not.</span>
                     }
                     @if (app.InvestigatedAt != null)
                     {
@@ -104,11 +105,11 @@
     else
     {
         <div class="bp-findings-actions">
-            <form method="post" asp-controller="Cases" asp-action="RunChecks" asp-route-id="@app.LoanApplicationID">
+            <form method="post" asp-controller="RiskLens" asp-action="RunChecks" asp-route-id="@app.LoanApplicationID">
                 <input type="hidden" name="returnUrl" value="@back" />
                 <button type="submit" class="bp-btn bp-btn-ghost bp-btn-sm"><i class="bi bi-arrow-repeat"></i> Re-run checks</button>
             </form>
-            <form method="post" asp-controller="Cases" asp-action="Investigate" asp-route-id="@app.LoanApplicationID">
+            <form method="post" asp-controller="RiskLens" asp-action="Investigate" asp-route-id="@app.LoanApplicationID">
                 <input type="hidden" name="returnUrl" value="@back" />
                 <button type="submit" class="bp-btn bp-btn-sm" @(assessing ? "disabled" : "")><i class="bi bi-robot"></i> Run investigation</button>
             </form>
@@ -269,7 +270,7 @@
                         <tr>
                             <td>
                                 <a class="bp-link bp-strong" target="_blank" rel="noopener"
-                                   href="@Url.Action("Document", "Cases", new { id = app.LoanApplicationID, docId = d.CaseDocumentID })">
+                                   href="@Url.Action("Document", "RiskLens", new { id = app.LoanApplicationID, docId = d.CaseDocumentID })">
                                     <i class="bi @(d.ContentType == "application/pdf" ? "bi-file-earmark-pdf" : "bi-file-earmark-image")"></i> @d.FileName
                                 </a>
                             </td>

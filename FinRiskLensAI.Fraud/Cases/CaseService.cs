@@ -215,7 +215,7 @@ namespace FinRiskLensAI.Fraud.Cases
                 await RunChecksOnceAsync(other, ct);
         }
 
-        public async Task<IReadOnlyList<Ring>> ListRingsAsync(CancellationToken ct = default)
+        private async Task<IReadOnlyList<Ring>> ListRingsAsync(CancellationToken ct = default)
         {
             var network = await _cases.GetNetworkAsync(ct);
             if (_sources == null) return NetworkLens.Find(network);

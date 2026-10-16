@@ -69,10 +69,11 @@ namespace FinRiskLensAI.Core.Models.Cases
                                      int Documents, DateTime? InvestigatedAt)
     {
         /// <summary>
-        /// The one rule for the verdict. Still reading or investigating → Assessing; any open High finding →
-        /// High risk; any other open finding → Review. Otherwise Clear — but only with bank evidence (the
-        /// bank's Account Aggregator record, or a statement read from an upload; credit policy §5.1). Without
-        /// it nothing material was checked, so the customer is Awaiting data. Reviewed findings no longer count.
+        /// The one rule for the verdict. Still reading or investigating → Assessing; any High finding that stands
+        /// (open, or confirmed by the officer) → High risk; any other standing finding → Review. Otherwise Clear —
+        /// but only with bank evidence (the bank's Account Aggregator record, or a statement read from an upload;
+        /// credit policy §5.1). Without it nothing material was checked, so the customer is Awaiting data. Only a
+        /// dismissed finding stops counting: a confirmed one blocks the loan case (Doc/12_CUSTOMER_RISK_LENS.md §3).
         /// </summary>
         public static RiskVerdict Decide(bool assessing, int openHigh, int openOther, bool hasBankEvidence)
             => assessing ? RiskVerdict.Assessing
@@ -84,10 +85,10 @@ namespace FinRiskLensAI.Core.Models.Cases
         /// <summary>The verdict of one assessment from its findings — the Risk Lens, the credit decision and the push gate all use this.</summary>
         public static RiskVerdict Of(LoanApplication app, IEnumerable<Finding> findings)
         {
-            var open = findings.Where(f => f.ReviewStatus == ReviewStatus.Open).ToList();
+            var standing = findings.Where(f => f.ReviewStatus != ReviewStatus.Dismissed).ToList();
             var assessing = app.Status == CaseStatus.Processing || app.Documents.Any(d => d.ExtractStatus == ExtractStatus.Pending);
-            var high = open.Count(f => f.Severity == FindingSeverity.High);
-            return Decide(assessing, high, open.Count - high, HasBankEvidence(app));
+            var high = standing.Count(f => f.Severity == FindingSeverity.High);
+            return Decide(assessing, high, standing.Count - high, HasBankEvidence(app));
         }
 
         /// <summary>Bank evidence for <see cref="Decide"/>: the AA record was read, or an uploaded statement was.</summary>
