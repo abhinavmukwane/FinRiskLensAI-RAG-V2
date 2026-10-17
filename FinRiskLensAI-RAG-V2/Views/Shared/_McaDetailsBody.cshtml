@@ -334,16 +334,20 @@
                            card in a row ends level. The card itself opens the DIN
                            profile, so these buttons stop the click in McaDetails.js. *@
                         <div class="director-screen mt-auto">
-                            <span class="lbl">Board Screening</span>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="screen-btn" data-screen="ofac" data-din="@d.Din" data-name="@d.Name">
-                                    <i class="bi bi-globe2"></i>OFAC
+                            <span class="lbl" title="Demo mode: no live OFAC or AML provider is connected">Board Screening (Demo)</span>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="screen-btn" data-screen="ofac" data-din="@d.Din" data-name="@d.Name"
+                                        aria-label="Run demo OFAC screening for @d.Name">
+                                    <i class="bi bi-globe2"></i>OFAC Screening
                                 </button>
-                                <button type="button" class="screen-btn" data-screen="aml" data-din="@d.Din" data-name="@d.Name">
-                                    <i class="bi bi-shield-check"></i>AML
+                                <button type="button" class="screen-btn" data-screen="aml" data-din="@d.Din" data-name="@d.Name"
+                                        aria-label="Run demo AML screening for @d.Name">
+                                    <i class="bi bi-shield-check"></i>AML Screening
                                 </button>
                             </div>
                         </div>
+                        @* Last demo result for THIS director, filled by McaDetails.js *@
+                        <div class="screen-last small text-muted mt-2" data-din="@d.Din" aria-live="polite"></div>
                     </div>
                 </div>
             }
@@ -568,6 +572,46 @@
                 <li><span>Director Since</span><strong id="dinDirectorSince">—</strong></li>
                 <li><span>Companies</span><strong id="dinCompanies">—</strong></li>
             </ul>
+        </div>
+    </div>
+</div>
+
+@* ===== BOARD SCREENING RESULT MODAL (demo mode, populated via /Mca/ScreenDirector) ===== *@
+<div class="detail-modal-overlay" id="screenModalOverlay"></div>
+<div class="detail-modal udyam-dashboard" id="screenModal" role="dialog" aria-modal="true" aria-labelledby="screenTitle">
+    <div class="detail-modal-header">
+        <h5 id="screenTitle"><i class="bi bi-shield-check me-2"></i>Board Screening</h5>
+        <button type="button" class="detail-modal-close" id="screenModalClose" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="detail-modal-body">
+        <div id="screenLoading" class="text-center py-4" style="display:none;">
+            <div class="spinner-border spinner-border-sm" role="status" style="color:var(--theme-maroon);"></div>
+            <span class="ms-2 text-muted" style="font-size:13px;">Running demo screening…</span>
+        </div>
+
+        <div id="screenError" class="text-center py-3" style="display:none;">
+            <p class="text-danger mb-3" id="screenErrorText" style="font-size:13px;">The screening request failed.</p>
+            <button type="button" class="screen-btn" id="screenRetry"><i class="bi bi-arrow-clockwise"></i>Retry</button>
+        </div>
+
+        <div id="screenContent" style="display:none;">
+            <ul class="drawer-detail-list">
+                <li><span>Director</span><strong id="screenDirector">—</strong></li>
+                <li><span title="Director Identification Number">DIN</span><strong id="screenDin">—</strong></li>
+                <li><span>Screening</span><strong id="screenType">—</strong></li>
+                <li><span>Run At</span><strong id="screenAt">—</strong></li>
+                <li><span>Result</span><strong id="screenStatus">—</strong></li>
+            </ul>
+
+            <h6 class="drawer-section-title">Potential Matches</h6>
+            <div id="screenMatches"></div>
+
+            <h6 class="drawer-section-title">What Was Checked</h6>
+            <p class="small text-muted mb-1" id="screenScope">—</p>
+            <p class="small text-muted mb-0" id="screenScoreNote">—</p>
+
+            <h6 class="drawer-section-title">Next Steps</h6>
+            <ul class="small mb-0 ps-3" id="screenNext"></ul>
         </div>
     </div>
 </div>

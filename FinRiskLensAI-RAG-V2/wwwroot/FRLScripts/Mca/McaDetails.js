@@ -279,10 +279,10 @@
     });
 
     // ── Board screening (OFAC / AML) ─────────────────────────────────────
-    // UI only for now: no screening service is wired up. Each button raises
-    // a 'frl:board-screen' event carrying the director's DIN and the list to
-    // check, which is the single place to hook a real provider in.
-    document.querySelectorAll('.screen-btn').forEach(function (btn) {
+    // Each card button raises a 'frl:board-screen' event carrying the director's
+    // DIN and the list; the demo workflow below handles it. Demo mode only: no
+    // screening provider is connected (see McaController.DemoScreening).
+    document.querySelectorAll('.director-screen .screen-btn').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
             document.dispatchEvent(new CustomEvent('frl:board-screen', {
@@ -295,11 +295,151 @@
         });
     });
 
+    // Demo screening workflow: one request per click, results kept per DIN + list
+    // so one director's result can never show under another.
+    var screenOverlay = document.getElementById('screenModalOverlay');
+    var screenModal = document.getElementById('screenModal');
+    var screenResults = {};      // key "din|list" → last result for that director and list
+    var lastRequest = null;      // for Retry
+
+    function setScreenView(view) {
+        ['screenLoading', 'screenError', 'screenContent'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = id === view ? 'block' : 'none';
+        });
+    }
+
+    function openScreen() {
+        if (!screenModal) return;
+        screenOverlay.classList.add('active');
+        screenModal.classList.add('active');
+    }
+
+    function closeScreen() {
+        if (!screenModal) return;
+        screenOverlay.classList.remove('active');
+        screenModal.classList.remove('active');
+    }
+
+    function renderScreen(r) {
+        var title = document.getElementById('screenTitle');
+        if (title) {
+            title.innerHTML = '<i class="bi bi-shield-check me-2"></i>';
+            title.appendChild(document.createTextNode(r.list + ' (Demo)'));
+        }
+        text('screenDirector', r.directorName);
+        text('screenDin', r.din);
+        text('screenType', r.list + ' · demo mode');
+        text('screenAt', r.screenedAt);
+        text('screenStatus', r.statusText);
+        var status = document.getElementById('screenStatus');
+        if (status) status.style.color = r.outcome === 'potential-match' ? 'var(--warning-orange)' : '';
+        text('screenScope', r.scope);
+        text('screenScoreNote', r.scoreNote);
+
+        var box = document.getElementById('screenMatches');
+        if (box) {
+            box.innerHTML = '';
+            if (!r.matches || r.matches.length === 0) {
+                var none = document.createElement('p');
+                none.className = 'small text-muted mb-0';
+                none.textContent = 'None in the demo list.';
+                box.appendChild(none);
+            } else {
+                r.matches.forEach(function (m) {
+                    var item = document.createElement('div');
+                    item.className = 'p-2 mb-2 border rounded small';
+                    [['Matched name', m.matchedName], ['List', m.source],
+                     ['Name overlap (demo engine)', m.overlapPercent + '%'],
+                     ['Why', m.reason], ['Details', m.detail]].forEach(function (row) {
+                        var line = document.createElement('div');
+                        var label = document.createElement('span');
+                        label.className = 'text-muted';
+                        label.textContent = row[0] + ': ';
+                        line.appendChild(label);
+                        line.appendChild(document.createTextNode(row[1]));
+                        item.appendChild(line);
+                    });
+                    box.appendChild(item);
+                });
+            }
+        }
+
+        var next = document.getElementById('screenNext');
+        if (next) {
+            next.innerHTML = '';
+            (r.nextActions || []).forEach(function (a) {
+                var li = document.createElement('li');
+                li.textContent = a;
+                next.appendChild(li);
+            });
+        }
+        setScreenView('screenContent');
+    }
+
+    function noteOnCard(din) {
+        var slot = document.querySelector('.screen-last[data-din="' + CSS.escape(din) + '"]');
+        if (!slot) return;
+        var parts = ['ofac', 'aml']
+            .filter(function (l) { return screenResults[din + '|' + l]; })
+            .map(function (l) {
+                var r = screenResults[din + '|' + l];
+                return (l === 'ofac' ? 'OFAC' : 'AML') + ' (demo): '
+                    + (r.outcome === 'potential-match' ? 'potential match, needs review' : 'no match in demo list');
+            });
+        slot.textContent = parts.join(' · ');
+    }
+
+    async function runScreening(req) {
+        lastRequest = req;
+        openScreen();
+        var title = document.getElementById('screenTitle');
+        if (title) {
+            title.innerHTML = '<i class="bi bi-shield-check me-2"></i>';
+            title.appendChild(document.createTextNode((req.list === 'ofac' ? 'OFAC' : 'AML') + ' Screening (Demo)'));
+        }
+        setScreenView('screenLoading');
+
+        var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var timer = controller ? setTimeout(function () { controller.abort(); }, 15000) : null;
+        try {
+            var uan = (modal && modal.dataset.uan) || '';
+            var res = await fetch('/Mca/ScreenDirector?din=' + encodeURIComponent(req.din)
+                + '&list=' + encodeURIComponent(req.list)
+                + (uan ? '&uan=' + encodeURIComponent(uan) : ''),
+                controller ? { signal: controller.signal } : undefined);
+            var json = await res.json();
+            if (!json || !json.status || !json.data) throw new Error((json && json.error) || 'The screening request failed.');
+
+            // Only keep the result if it is for the director and list that were asked for
+            if (json.data.din !== req.din) throw new Error('The response did not match the selected director.');
+            screenResults[req.din + '|' + req.list] = json.data;
+            renderScreen(json.data);
+            noteOnCard(req.din);
+        } catch (e) {
+            text('screenErrorText', e && e.name === 'AbortError'
+                ? 'The screening request timed out. Try again.'
+                : (e && e.message) || 'The screening request failed. Try again.');
+            setScreenView('screenError');
+        } finally {
+            if (timer) clearTimeout(timer);
+        }
+    }
+
+    document.addEventListener('frl:board-screen', function (e) {
+        if (e.detail && e.detail.din && e.detail.list) runScreening(e.detail);
+    });
+    var retry = document.getElementById('screenRetry');
+    if (retry) retry.addEventListener('click', function () { if (lastRequest) runScreening(lastRequest); });
+    if (screenOverlay) screenOverlay.addEventListener('click', closeScreen);
+    var screenClose = document.getElementById('screenModalClose');
+    if (screenClose) screenClose.addEventListener('click', closeScreen);
+
     if (overlay) overlay.addEventListener('click', closeModal);
     var closeBtn = document.getElementById('dinModalClose');
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') { closeModal(); closeScreen(); }
     });
 
     // ── Refresh — re-render from the server ──────────────────────────────

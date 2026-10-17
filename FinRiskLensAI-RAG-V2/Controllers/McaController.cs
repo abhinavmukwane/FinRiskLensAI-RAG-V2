@@ -139,6 +139,44 @@ namespace FinRiskLensAI.Controllers
             return Json(new { status = vm.Found, data = vm });
         }
 
+        /// <summary>
+        /// Board screening for one director, in DEMO MODE. No OFAC or AML provider is
+        /// configured in this project, so the director's name is compared with a small
+        /// fictional list (<see cref="DemoScreening"/>) and every response says so.
+        /// Same session rule as <see cref="GetDinDetail"/>; only a DIN on the company's
+        /// MCA record can be screened. Swap DemoScreening for a licensed provider to go live.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ScreenDirector(string din, string list, CancellationToken ct, string? uan = null)
+        {
+            var customerUan = HttpContext.Session.GetCurrentUser()?.UdyamNumber?.Trim();
+            var isBankUser = HttpContext.Session.GetCurrentBankUser() != null;
+            uan = isBankUser && !string.IsNullOrWhiteSpace(uan) ? uan.Trim() : customerUan;
+
+            var kind = list?.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(uan))
+                return Json(new { status = false, error = "Your session has expired. Sign in again." });
+            if (kind is not ("ofac" or "aml") || string.IsNullOrWhiteSpace(din))
+                return Json(new { status = false, error = "Unknown screening request." });
+
+            try
+            {
+                var mcaJson = await _profile.LoadMcaJsonAsync(uan, ct);
+                var mca = string.IsNullOrWhiteSpace(mcaJson) ? null : JsonConvert.DeserializeObject<McaResponseModel>(mcaJson);
+                var director = mca?.message?.details?.directors?
+                    .FirstOrDefault(d => string.Equals(d.din_number?.Trim(), din.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (director == null)
+                    return Json(new { status = false, error = "This DIN isn't on the company's MCA record, so it wasn't screened." });
+
+                return Json(new { status = true, data = DemoScreening.Run(kind, director.director_name ?? "-", din.Trim()) });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Demo {List} screening failed for DIN {Din}, UAN {Uan}", kind, din, uan);
+                return Json(new { status = false, error = "The screening request failed. Try again." });
+            }
+        }
+
         // ─────────────────────────────────────────────────────────────────
         //  Data access
         // ─────────────────────────────────────────────────────────────────
@@ -423,6 +461,99 @@ namespace FinRiskLensAI.Controllers
             return parts.Length == 1
                 ? parts[0][..1].ToUpperInvariant()
                 : string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant();
+        }
+
+        /// <summary>
+        /// Demo board screening. NOT a live check: no OFAC or AML provider is configured.
+        /// Compares the director's name, token by token, with a small FICTIONAL list (no
+        /// real people, no real list entries). Deterministic, so the same director and list
+        /// always give the same result. A shared name token with a fictional entry is a
+        /// "potential match" for review, never a finding; no match means only that none of
+        /// these fictional entries matched.
+        /// </summary>
+        internal static class DemoScreening
+        {
+            public const string Label = "Illustrative Demo — Not a Live OFAC/AML Check";
+
+            private record Entry(string Name, string Source, string Detail);
+
+            // Fictional entries. Common surnames make the "potential match" review flow
+            // visible; the given names are deliberately not real people.
+            private static readonly Entry[] Ofac =
+            {
+                new("Demo Testperson Reddy", "Demo sanctions list A (fictional)", "Fictional entry for the demo; no programme, date of birth or nationality on file."),
+                new("Sample Listed Sharma", "Demo sanctions list A (fictional)", "Fictional entry for the demo; no programme, date of birth or nationality on file."),
+                new("Example Entity Patel", "Demo sanctions list B (fictional)", "Fictional entry for the demo; no programme, date of birth or nationality on file."),
+            };
+
+            private static readonly Entry[] Aml =
+            {
+                new("Demo Watchlisted Kulkarni", "Demo watchlist (fictional)", "Fictional watchlist entry for the demo."),
+                new("Sample Exposed Deshpande", "Demo politically exposed persons list (fictional)", "Fictional PEP entry for the demo."),
+                new("Example Reported Reddy", "Demo adverse-media list (fictional)", "Fictional adverse-media entry for the demo."),
+            };
+
+            public static object Run(string kind, string directorName, string din)
+            {
+                var isOfac = kind == "ofac";
+                var nameTokens = Tokens(directorName);
+
+                var matches = (isOfac ? Ofac : Aml)
+                    .Select(e =>
+                    {
+                        var entryTokens = Tokens(e.Name);
+                        var shared = nameTokens.Intersect(entryTokens).Where(t => t.Length >= 4).ToList();
+                        var overlap = nameTokens.Union(entryTokens).Count() is var all and > 0
+                            ? (int)Math.Round(100.0 * nameTokens.Intersect(entryTokens).Count() / all) : 0;
+                        return new { e, shared, overlap };
+                    })
+                    .Where(x => x.shared.Count > 0)
+                    .OrderByDescending(x => x.overlap)
+                    .Select(x => new
+                    {
+                        matchedName = x.e.Name,
+                        source = x.e.Source,
+                        overlapPercent = x.overlap,
+                        reason = $"Shares the name token \"{string.Join("\", \"", x.shared)}\" with the director's name.",
+                        detail = x.e.Detail
+                    })
+                    .ToList();
+
+                return new
+                {
+                    mode = "demo",
+                    label = Label,
+                    list = isOfac ? "OFAC Screening" : "AML Screening",
+                    directorName,
+                    din,
+                    screenedAt = DateTime.Now.ToString("dd MMM yyyy, HH:mm"),
+                    outcome = matches.Count > 0 ? "potential-match" : "no-match",
+                    statusText = matches.Count > 0
+                        ? $"{matches.Count} potential match{(matches.Count == 1 ? "" : "es")} in the demo list — needs review"
+                        : "No match in the demo list",
+                    matches,
+                    scope = isOfac
+                        ? "Compared the director's name with 3 fictional sanctions-style entries. This is not the OFAC SDN list and not a sanctions check."
+                        : "Compared the director's name with 3 fictional watchlist, PEP and adverse-media entries. A name comparison is not an AML assessment: no identity matching, ownership, PEP database or transaction review was done.",
+                    scoreNote = "Overlap = shared name tokens ÷ all name tokens, from the demo engine. It is not a match confidence.",
+                    nextActions = matches.Count > 0
+                        ? new[]
+                        {
+                            "Treat this as a name similarity only. A potential match is not proof of wrongdoing.",
+                            "Compare date of birth, nationality and PAN with the matched entry before drawing any conclusion.",
+                            "Run a live screening with a licensed provider before relying on any result."
+                        }
+                        : new[]
+                        {
+                            "No match means only that none of the fictional demo entries matched.",
+                            "Run a live screening with a licensed provider before relying on any result."
+                        }
+                };
+            }
+
+            private static HashSet<string> Tokens(string name) =>
+                new(System.Text.RegularExpressions.Regex.Split(name.ToLowerInvariant(), "[^a-z]+")
+                    .Where(t => t.Length > 0), StringComparer.Ordinal);
         }
 
         /// <summary>

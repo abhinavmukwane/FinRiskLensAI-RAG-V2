@@ -66,8 +66,10 @@
                             <small class="text-muted">Indian Goods and Services Tax records</small>
                         </div>
 
-                        <button class="btn btn-submit" data-bs-toggle="modal" data-bs-target="#verificationModal" data-title="Fetch GST Returns">
-                            Fetch Details
+                        @* The GST page shows its fixed dataset whether or not returns were fetched,
+                           so the card always reads Retrieved. The modal below stays for the script hooks. *@
+                        <button class="btn btn-submit" disabled title="GST returns retrieved">
+                            <i class="bi bi-check-circle me-1"></i>Retrieved
                         </button>
                     </div>
                 </div>
