@@ -20,7 +20,7 @@ namespace FinRiskLensAI.Controllers
     {
         private const int MaxQuestionChars = 1000;
         private const int MaxStoredTurns = 8;           // 4 questions and answers
-        private const int MaxStoredChars = 4000;        // per stored turn
+        private const int MaxStoredChars = 12000;       // per stored reply, so long Markdown answers re-render whole
         private const string HistoryPrefix = "FrlChat:History:";
         private const string LastAskPrefix = "FrlChat:LastAsk:";
         private static readonly TimeSpan MinInterval = TimeSpan.FromSeconds(2);

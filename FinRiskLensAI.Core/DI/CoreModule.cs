@@ -9,7 +9,7 @@ namespace FinRiskLensAI.Core.DI
         protected override void Load(ContainerBuilder builder)
         {
             // Shared HTTP helper (wraps one app-lifetime HttpClient) — used by the
-            // chatbot (Groq) and the AA data-pull services.
+            // AA data-pull and IP-risk services.
             builder.RegisterType<HttpClientHelper>()
                    .As<IHttpClientHelper>()
                    .SingleInstance();

@@ -66,7 +66,7 @@ namespace FinRiskLensAI.Common
             return await _gemini.GenerateJsonAsync<Reply>(
                 _gemini.Options.FlashModel, _gemini.Options.FlashLocation, SystemPrompt,
                 new[] { (JsonNode)GeminiClient.Text(payload.ToJsonString()) },
-                Schema(), maxOutputTokens: 4096, thinkingLevel: "LOW", ct: deadline.Token);
+                Schema(), maxOutputTokens: 8192, thinkingLevel: "LOW", ct: deadline.Token);
         }
 
         private const string SystemPrompt = """
@@ -84,25 +84,39 @@ Grounding rules:
   adjust or predict them. For what-if questions, say a recalculation needs the scoring service and give no number.
 - Prefer the precomputed crossSourceComparisons and identityConsistency over your own arithmetic. If you must
   calculate, show the formula and the inputs.
-- Every module states its provenance. When an answer relies on a module marked SAMPLE DATA, set usesSampleData
-  true and say so plainly once. Never describe sample data as verified, filed, live or official, and never claim
-  a government, bank, OFAC, AML or DIN check happened.
+- Every module states its provenance. Present the figures directly; do NOT add generic disclaimers such as
+  "this is sample/illustrative/tentative data". Set usesSampleData true when you relied on a SAMPLE DATA module.
+  Mention provenance only when it materially changes a conclusion, briefly and specifically (e.g. "the GST and ITR
+  figures come from separate generated records, so the gap may not reflect the real business"). Never describe
+  any data as verified, filed, live or official, and never claim a government, bank, OFAC, AML or DIN check happened.
 - Compare like with like and name the periods. When periods or sources differ, say how that limits the comparison.
 - A mismatch is a question to resolve, not fraud or wrongdoing. Offer plausible explanations and what would settle it.
 - If identityConsistency shows mismatches, say the records may not describe the same business before combining them.
 - Distinguish observed facts, calculated figures, interpretation and recommendations.
-- If the question is ambiguous, set needsClarification true, ask one short question in "answer", and leave findings empty.
+- If the question is ambiguous, set needsClarification true and ask one short question in "answer".
 - Decline politely if the question is unrelated to this business, MSME finance or this product.
 
-Writing (international readers, bankers and business owners):
-- "answer": a direct reply in 1–4 short sentences, plain English, no markdown headings.
-- "findings": 0–4 items, only when they add evidence. Each names sources (module + period), figures used,
-  the comparison or formula, why it matters for credit, caveats or missing evidence, and one practical next step.
-- "nextActions": 1–3 recommendations specific to THIS assessment's data (e.g. which document to request and why).
-- "limitations": what the context cannot support, including sample data and missing sources.
+Writing (international readers, bankers and business owners). Put the WHOLE reply in "answer" as GitHub-flavoured
+Markdown; leave findings, nextActions and limitations as empty arrays.
+- Match the length to the question. A simple question gets a direct answer in a few sentences, no headings.
+- For analysis questions (risks, summaries, comparisons, "what should a banker check"), use only the sections that
+  apply, as level-3 headings, in this order:
+  ### Executive Summary — 2–3 sentences with the main finding.
+  ### Strengths — evidence-based positives only.
+  ### Concerns / Risks — weaknesses, mismatches or risk indicators.
+  ### Cross-Source Analysis — a Markdown table with columns Comparison | Source A (period) | Source B (period) | Values | Difference / Ratio | Interpretation.
+  ### Recommended Next Steps — a numbered list of practical actions for a banker or analyst.
+  ### Evidence and Limitations — only gaps that materially affect the answer (a missing source, stale filing, period mismatch).
+- Start each strength or concern bullet with a bold label: **Strength**, **Concern**, **Needs Review** or
+  **Insufficient Information**, then say what the indicator means, the figure and the source module with its period,
+  and whether it is a recorded fact, a calculated metric or an interpretation. Never pad these sections with generic points.
+- Use tables for comparisons of figures; keep cells short. Bold only key figures and labels.
+- Money in Indian format, as in the context: ₹1.15 Cr, ₹17.86 L, or ₹1,15,00,000 when an exact amount matters.
+  Show calculations as "₹12.86 Cr ÷ ₹1.15 Cr = 11.2×".
+- Use the source labels from the context: "Business Registration (Udyam)", "Tax & Sales Compliance (GST)",
+  "Consent-Based Banking Data (AA)", "Income Tax Filing (ITR)", "Corporate Registry (MCA)".
+- No HTML, no code blocks, no images, no links.
 - "followUps": 2–3 short questions the user could ask next, based on what you found.
-- Use Indian amounts as in the context (₹ L, ₹ Cr). Use the source labels from the context, e.g.
-  "Tax & Sales Compliance (GST)", "Income Tax Filing (ITR)", "Corporate Registry (MCA)".
 """;
 
         private static JsonObject Schema()

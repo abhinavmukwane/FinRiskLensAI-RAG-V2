@@ -2,7 +2,7 @@ namespace FinRiskLensAI.Core.Models.Common
 {
     /// <summary>
     /// Signzy API settings (appsettings.json "Signzy" section), bound once at
-    /// startup like SmtpSettings/GroqSettings. Never hardcode these in the
+    /// startup like SmtpSettings/FinvuSettings. Never hardcode these in the
     /// service — always read them from configuration.
     /// </summary>
     public class SignzySettings

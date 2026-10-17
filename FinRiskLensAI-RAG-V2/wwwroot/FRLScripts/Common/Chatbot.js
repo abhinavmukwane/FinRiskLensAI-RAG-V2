@@ -4,8 +4,11 @@
 // Talks to ChatbotController: GET /Chatbot/State (conversation + suggestions),
 // POST /Chatbot/Ask, POST /Chatbot/Clear. The server rebuilds the business's
 // whole assessment for every question, so this script sends only the question
-// and the current page's name. Everything from the server is rendered with
-// textContent: model output never becomes HTML.
+// and the current page's name.
+//
+// Answers arrive as Markdown. renderMarkdown() builds DOM nodes and puts every
+// piece of text in with createTextNode, so HTML or script in a model reply is
+// shown as text and can never run.
 // ============================================================================
 
 (function () {
@@ -21,6 +24,7 @@
     var panel = document.getElementById('frlChatPanel');
     var closeBtn = document.getElementById('frlChatClose');
     var clearBtn = document.getElementById('frlChatClear');
+    var expandBtn = document.getElementById('frlChatExpand');
     var messages = document.getElementById('frlChatMessages');
     var suggestionsBox = document.getElementById('frlChatSuggestions');
     var form = document.getElementById('frlChatForm');
@@ -28,6 +32,7 @@
     var sendBtn = document.getElementById('frlChatSend');
     var statusEl = document.getElementById('frlChatStatus');
 
+    var EXPANDED_KEY = 'frl-chat-expanded';
     var loaded = false;
     var busy = false;
     var lastQuestion = null;
@@ -41,7 +46,11 @@
         return n;
     }
 
-    function scrollDown() { messages.scrollTop = messages.scrollHeight; }
+    function nearBottom() {
+        return messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+    }
+
+    function scrollToBottom() { messages.scrollTop = messages.scrollHeight; }
 
     function setStatus(state, text) {
         statusEl.className = 'frl-chat-status is-' + state;
@@ -54,83 +63,240 @@
         input.setAttribute('aria-busy', b ? 'true' : 'false');
     }
 
+    // ── safe Markdown → DOM ─────────────────────────────────────────────
+    // Inline: **bold**, *italic*, `code`, [text](url) shown as text only. Underscores are
+    // left alone, so identifiers such as total_tax or __xss keep their underscores.
+    function renderInline(parent, text) {
+        var re = /(\*\*([^*]+)\*\*|`([^`]+)`|\*([^*\s][^*]*)\*|\[([^\]]+)\]\([^)]*\))/g;
+        var last = 0, m;
+        while ((m = re.exec(text)) !== null) {
+            if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+            if (m[2]) {
+                var b = document.createElement('strong');
+                renderInline(b, m[2]);
+                parent.appendChild(b);
+            } else if (m[3]) {
+                parent.appendChild(el('code', null, m[3]));
+            } else if (m[4]) {
+                var i = document.createElement('em');
+                renderInline(i, m[4]);
+                parent.appendChild(i);
+            } else if (m[5]) {
+                parent.appendChild(document.createTextNode(m[5]));
+            }
+            last = re.lastIndex;
+        }
+        if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+    }
+
+    function splitRow(line) {
+        var t = line.trim();
+        if (t.charAt(0) === '|') t = t.slice(1);
+        if (t.charAt(t.length - 1) === '|') t = t.slice(0, -1);
+        return t.split('|').map(function (c) { return c.trim(); });
+    }
+
+    function isTableSeparator(line) {
+        return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line);
+    }
+
+    function renderMarkdown(md) {
+        var frag = document.createElement('div');
+        frag.className = 'frl-md';
+        var lines = String(md || '').replace(/\r\n?/g, '\n').split('\n');
+        var i = 0;
+
+        function para(buf) {
+            if (!buf.length) return;
+            var p = el('p');
+            renderInline(p, buf.join(' '));
+            frag.appendChild(p);
+            buf.length = 0;
+        }
+
+        var buf = [];
+        while (i < lines.length) {
+            var line = lines[i];
+            var trimmed = line.trim();
+
+            if (!trimmed) { para(buf); i++; continue; }
+
+            // Fenced code: shown as plain preformatted text
+            if (/^```/.test(trimmed)) {
+                para(buf);
+                var code = [];
+                i++;
+                while (i < lines.length && !/^```/.test(lines[i].trim())) { code.push(lines[i]); i++; }
+                i++;
+                frag.appendChild(el('pre', 'frl-pre', code.join('\n')));
+                continue;
+            }
+
+            var h = /^(#{1,6})\s+(.*)$/.exec(trimmed);
+            if (h) {
+                para(buf);
+                var level = Math.min(6, Math.max(3, h[1].length + 1));   // # → h3 inside a chat bubble
+                var heading = el('h' + level, 'frl-h');
+                renderInline(heading, h[2].replace(/\s*#+\s*$/, ''));
+                frag.appendChild(heading);
+                i++;
+                continue;
+            }
+
+            if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) { para(buf); frag.appendChild(el('hr', 'frl-hr')); i++; continue; }
+
+            // Table: header row, separator row, body rows
+            if (trimmed.indexOf('|') !== -1 && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+                para(buf);
+                var head = splitRow(line);
+                i += 2;
+                var wrap = el('div', 'frl-table-wrap');
+                var table = el('table', 'frl-table');
+                var thead = el('thead'), tr = el('tr');
+                head.forEach(function (c) { var th = el('th'); renderInline(th, c); tr.appendChild(th); });
+                thead.appendChild(tr);
+                table.appendChild(thead);
+                var tbody = el('tbody');
+                while (i < lines.length && lines[i].trim() && lines[i].indexOf('|') !== -1) {
+                    var row = el('tr');
+                    var cells = splitRow(lines[i]);
+                    for (var c = 0; c < head.length; c++) {
+                        var td = el('td');
+                        renderInline(td, cells[c] || '');
+                        row.appendChild(td);
+                    }
+                    tbody.appendChild(row);
+                    i++;
+                }
+                table.appendChild(tbody);
+                wrap.appendChild(table);
+                frag.appendChild(wrap);
+                continue;
+            }
+
+            if (/^>\s?/.test(trimmed)) {
+                para(buf);
+                var quote = el('blockquote', 'frl-quote');
+                var qb = [];
+                while (i < lines.length && /^>\s?/.test(lines[i].trim())) { qb.push(lines[i].trim().replace(/^>\s?/, '')); i++; }
+                renderInline(quote, qb.join(' '));
+                frag.appendChild(quote);
+                continue;
+            }
+
+            // Lists (one nested level, by indentation)
+            var li = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/.exec(line);
+            if (li) {
+                para(buf);
+                var ordered = /\d/.test(li[2]);
+                var list = el(ordered ? 'ol' : 'ul', 'frl-mdlist');
+                var baseIndent = li[1].length;
+                var lastItem = null;
+                while (i < lines.length) {
+                    var m = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/.exec(lines[i]);
+                    if (!m) {
+                        // a wrapped continuation line belongs to the previous item
+                        if (lastItem && lines[i].trim() && /^\s{2,}/.test(lines[i])) {
+                            lastItem.appendChild(document.createTextNode(' '));
+                            renderInline(lastItem, lines[i].trim());
+                            i++;
+                            continue;
+                        }
+                        break;
+                    }
+                    if (m[1].length > baseIndent + 1 && lastItem) {
+                        var sub = lastItem.querySelector(':scope > ul, :scope > ol');
+                        if (!sub) { sub = el(/\d/.test(m[2]) ? 'ol' : 'ul', 'frl-mdlist'); lastItem.appendChild(sub); }
+                        var subItem = el('li');
+                        renderInline(subItem, m[3]);
+                        sub.appendChild(subItem);
+                    } else {
+                        lastItem = el('li');
+                        renderInline(lastItem, m[3]);
+                        list.appendChild(lastItem);
+                    }
+                    i++;
+                }
+                frag.appendChild(list);
+                continue;
+            }
+
+            buf.push(trimmed);
+            i++;
+        }
+        para(buf);
+        return frag;
+    }
+
     // ── rendering ───────────────────────────────────────────────────────
     function addUser(text) {
-        var m = el('div', 'frl-msg frl-msg-user', text);
-        messages.appendChild(m);
-        scrollDown();
+        var row = el('div', 'frl-row frl-row-user');
+        row.appendChild(el('div', 'frl-msg frl-msg-user', text));
+        messages.appendChild(row);
+        scrollToBottom();
     }
 
-    function paragraphs(parent, text) {
-        String(text || '').split(/\n+/).filter(Boolean).forEach(function (p) {
-            parent.appendChild(el('p', 'frl-p', p));
+    function botRow() {
+        var row = el('div', 'frl-row frl-row-bot');
+        var avatar = el('div', 'frl-row-avatar');
+        avatar.setAttribute('aria-hidden', 'true');
+        avatar.appendChild(el('i', 'bi bi-robot'));
+        row.appendChild(avatar);
+        var msg = el('div', 'frl-msg frl-msg-bot');
+        row.appendChild(msg);
+        return { row: row, msg: msg };
+    }
+
+    // Older structured replies (findings / next actions) still render, as Markdown
+    function legacyMarkdown(reply) {
+        var out = [];
+        (reply.findings || []).forEach(function (f) {
+            out.push('#### ' + f.title);
+            if (f.sources && f.sources.length) out.push('*' + f.sources.join(' · ') + '*');
+            [['Observation', f.observation], ['Figures', f.figures], ['Calculation', f.calculation],
+             ['Why it matters', f.whyItMatters], ['Caveats', f.caveats], ['Next step', f.nextStep]]
+                .forEach(function (r) { if (r[1]) out.push('- **' + r[0] + ':** ' + r[1]); });
+            out.push('');
         });
+        if (reply.nextActions && reply.nextActions.length) {
+            out.push('### Recommended Next Steps');
+            reply.nextActions.forEach(function (a, n) { out.push((n + 1) + '. ' + a); });
+            out.push('');
+        }
+        if (reply.limitations && reply.limitations.length) {
+            out.push('### Evidence and Limitations');
+            reply.limitations.forEach(function (a) { out.push('- ' + a); });
+        }
+        return out.join('\n');
     }
 
-    function list(parent, title, items, cls) {
-        if (!items || !items.length) return;
-        var box = el('div', 'frl-block ' + (cls || ''));
-        box.appendChild(el('div', 'frl-block-title', title));
-        var ul = el('ul', 'frl-list');
-        items.forEach(function (i) { ul.appendChild(el('li', null, i)); });
-        box.appendChild(ul);
-        parent.appendChild(box);
-    }
+    function addBot(reply, followView) {
+        var parts = botRow();
+        parts.msg.appendChild(renderMarkdown(reply.answer));
+        var extra = legacyMarkdown(reply);
+        if (extra.trim()) parts.msg.appendChild(renderMarkdown(extra));
+        messages.appendChild(parts.row);
 
-    function finding(f) {
-        var card = el('div', 'frl-finding');
-        card.appendChild(el('div', 'frl-finding-title', f.title));
-        if (f.sources && f.sources.length) {
-            var chips = el('div', 'frl-chips');
-            f.sources.forEach(function (s) { chips.appendChild(el('span', 'frl-chip', s)); });
-            card.appendChild(chips);
-        }
-        [['Observation', f.observation], ['Figures', f.figures], ['Calculation', f.calculation],
-         ['Why it matters', f.whyItMatters], ['Caveats', f.caveats]].forEach(function (row) {
-            if (!row[1]) return;
-            var line = el('div', 'frl-finding-row');
-            line.appendChild(el('span', 'frl-finding-label', row[0]));
-            line.appendChild(el('span', null, row[1]));
-            card.appendChild(line);
-        });
-        if (f.nextStep) {
-            var next = el('div', 'frl-finding-next');
-            next.appendChild(el('i', 'bi bi-arrow-right-circle-fill'));
-            next.appendChild(el('span', null, f.nextStep));
-            card.appendChild(next);
-        }
-        return card;
-    }
+        // Bring the start of a new answer into view, but only if the reader was
+        // already following the conversation; never yank them away from an earlier message.
+        if (followView) messages.scrollTop = Math.max(0, parts.row.offsetTop - 8);
 
-    function addBot(reply) {
-        var m = el('div', 'frl-msg frl-msg-bot');
-        if (reply.usesSampleData) {
-            var note = el('div', 'frl-sample-note');
-            note.appendChild(el('i', 'bi bi-info-circle'));
-            note.appendChild(el('span', null, 'Part of this answer uses sample data, not live records.'));
-            m.appendChild(note);
-        }
-        paragraphs(m, reply.answer);
-        (reply.findings || []).forEach(function (f) { m.appendChild(finding(f)); });
-        list(m, 'Recommended next steps', reply.nextActions, 'frl-block-next');
-        list(m, 'Limitations', reply.limitations, 'frl-block-limits');
-        messages.appendChild(m);
-        scrollDown();
-        renderSuggestions(reply.followUps && reply.followUps.length ? reply.followUps : openingSuggestions,
-            reply.followUps && reply.followUps.length ? 'Ask next' : 'Suggested questions');
+        var follow = reply.followUps && reply.followUps.length;
+        renderSuggestions(follow ? reply.followUps : openingSuggestions, follow ? 'Ask next' : 'Suggested questions');
     }
 
     function addError(text, canRetry) {
-        var m = el('div', 'frl-msg frl-msg-bot frl-msg-error');
-        m.appendChild(el('p', 'frl-p', text));
+        var parts = botRow();
+        parts.msg.classList.add('frl-msg-error');
+        parts.msg.appendChild(el('p', null, text));
         if (canRetry && lastQuestion) {
             var b = el('button', 'frl-retry', 'Retry');
             b.type = 'button';
-            b.addEventListener('click', function () { m.remove(); send(lastQuestion, true); });
-            m.appendChild(b);
+            b.addEventListener('click', function () { parts.row.remove(); send(lastQuestion, true); });
+            parts.msg.appendChild(b);
         }
-        messages.appendChild(m);
-        scrollDown();
+        messages.appendChild(parts.row);
+        scrollToBottom();
     }
 
     function renderSuggestions(items, title) {
@@ -146,11 +312,12 @@
     }
 
     function welcome(available, missing) {
-        var m = el('div', 'frl-msg frl-msg-bot');
-        m.appendChild(el('p', 'frl-p', 'Hello! I can explain and compare this business\'s assessment across all its sources.'));
-        if (available && available.length) list(m, 'Available', available);
-        if (missing && missing.length) list(m, 'Missing or not applicable', missing, 'frl-block-limits');
-        messages.appendChild(m);
+        var md = ['Hello! I can explain and compare this business\'s assessment across all its sources.'];
+        if (available && available.length) { md.push('', '**Available**'); available.forEach(function (a) { md.push('- ' + a); }); }
+        if (missing && missing.length) { md.push('', '**Missing or not applicable**'); missing.forEach(function (a) { md.push('- ' + a); }); }
+        var parts = botRow();
+        parts.msg.appendChild(renderMarkdown(md.join('\n')));
+        messages.appendChild(parts.row);
     }
 
     // ── server calls ────────────────────────────────────────────────────
@@ -168,9 +335,10 @@
                 if (t.role === 'user') { addUser(t.text); return; }
                 var reply = null;
                 try { reply = t.reply ? JSON.parse(t.reply) : null; } catch (e) { reply = null; }
-                addBot(reply || { answer: t.text });
+                addBot(reply || { answer: t.text }, false);
             });
             renderSuggestions(openingSuggestions, 'Suggested questions');
+            scrollToBottom();
             setStatus('online', 'Online');
         } catch (e) {
             setStatus('error', 'Unavailable');
@@ -191,11 +359,12 @@
         setBusy(true);
         setStatus('busy', 'Analysing the assessment…');
 
-        var typing = el('div', 'frl-msg frl-msg-bot frl-typing');
-        typing.setAttribute('aria-label', 'The assistant is working');
-        typing.innerHTML = '<span></span><span></span><span></span>';
-        messages.appendChild(typing);
-        scrollDown();
+        var typing = botRow();
+        typing.msg.classList.add('frl-typing');
+        typing.msg.setAttribute('aria-label', 'The assistant is working');
+        typing.msg.innerHTML = '<span></span><span></span><span></span>';
+        messages.appendChild(typing.row);
+        scrollToBottom();
 
         var controller = new AbortController();
         var timer = setTimeout(function () { controller.abort(); }, 75000);
@@ -207,16 +376,17 @@
                 signal: controller.signal
             });
             var json = await res.json();
-            typing.remove();
+            var following = nearBottom();
+            typing.row.remove();
             if (!json.status || !json.reply) {
                 setStatus('error', 'Error');
                 addError(json.error || 'The assistant couldn\'t answer. Try again.', json.retryable !== false);
             } else {
                 setStatus('online', 'Online');
-                addBot(json.reply);
+                addBot(json.reply, following);
             }
         } catch (e) {
-            typing.remove();
+            typing.row.remove();
             setStatus('error', 'Error');
             addError(e && e.name === 'AbortError'
                 ? 'The assistant took too long to answer. Try again.'
@@ -236,7 +406,16 @@
         await loadState();
     }
 
-    // ── open / close ────────────────────────────────────────────────────
+    // ── open / close / expand ───────────────────────────────────────────
+    function setExpanded(on) {
+        root.classList.toggle('expanded', on);
+        expandBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        expandBtn.setAttribute('aria-label', on ? 'Restore the assistant to a side panel' : 'Expand the assistant');
+        expandBtn.title = on ? 'Restore to side panel' : 'Expand';
+        expandBtn.querySelector('i').className = on ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
+        try { localStorage.setItem(EXPANDED_KEY, on ? '1' : '0'); } catch (e) { /* optional */ }
+    }
+
     function open() {
         panel.hidden = false;
         root.classList.add('open');
@@ -254,11 +433,14 @@
 
     function autoSize() {
         input.style.height = 'auto';
-        input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+        input.style.height = Math.min(input.scrollHeight, 160) + 'px';
     }
+
+    try { setExpanded(localStorage.getItem(EXPANDED_KEY) === '1'); } catch (e) { setExpanded(false); }
 
     launcher.addEventListener('click', open);
     closeBtn.addEventListener('click', close);
+    expandBtn.addEventListener('click', function () { setExpanded(!root.classList.contains('expanded')); });
     clearBtn.addEventListener('click', clearConversation);
     form.addEventListener('submit', function (e) { e.preventDefault(); send(input.value); });
     input.addEventListener('input', autoSize);
@@ -266,6 +448,7 @@
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); }
     });
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && root.classList.contains('open')) close();
+        if (e.key !== 'Escape' || !root.classList.contains('open')) return;
+        if (root.classList.contains('expanded')) setExpanded(false); else close();
     });
 })();
