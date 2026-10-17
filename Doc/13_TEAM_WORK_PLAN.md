@@ -432,9 +432,15 @@ in `ARCHITECTURE.md` §1. Keep every number traceable to a command (T12).
   **🔨 Deck updated 2026-10-17:** team name *AS FinTech Developer*; every slide to the customer flow (share →
   Risk Lens → AI credit decision → LOS / ULI / ONDC), 70 tests, business network links, AA risk flags; new
   snapshots from development (home, Customers, the Risk Lens and loan case of a Clear customer, statement vs
-  AA, AI investigator); slide 17 lists the T11 demo customers. **Still to do after T11 and T6:**
-  retake the Customers and loan-case snapshots with the demo customers and a real credit decision, and
-  check slide 17 against what T11 actually seeds.
+  AA, AI investigator); slide 17 lists the T11 demo customers.
+  **Updated 2026-10-17 night (21 slides):** slide 1 is A's own edit (team leader *Abhinav Mukwane & Sourabh
+  Thakre*) and is kept as is — the build inserts it from the saved deck rather than regenerating it.
+  Seven screenshot slides: home and customer dashboard; Business Registration (Udyam), Banking Data (AA)
+  overview and risk indicators, GST, ITR and MCA; the bank dashboard and customer page; Customers, the Risk
+  Lens, a finding with its evidence, and a Clear customer's loan case — on Reddy Industries (sandbox AA data,
+  *High risk*) and Sankalp (*Clear*); the viewer's IP, the V1 bank's name and a mobile number are blurred.
+  The demo-customer list became **Try it on the live site** (customer and bank walkthrough). **Still to do
+  after T6:** retake the loan-case screenshot with a real credit decision.
 - **Video:** rewrite `Doc/VIDEO_SCRIPT.md` for the customer flow (customer uploads → Risk Lens → a
   risky customer → the clear customer's loan case and decision → push to LOS); record it on the live
   site after T15's deploy; upload; put the link on the deck's links slide.
