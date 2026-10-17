@@ -1,6 +1,7 @@
 ﻿// ============================================================================
 // GST Analysis page — loaded only by Views/Dashboard/GSTAnalysis.cshtml.
-// Renders the BI dashboard (gauges + ApexCharts) with static demo data, and
+// Renders the BI dashboard (gauges + ApexCharts) from window.frlGstDemo, the
+// page's single illustrative sample dataset (no live GST API yet), and
 // parses the stored GSTR-2B/3B responses from window.frlGstAnalysis into
 // window.FRLGst so the charts can switch to live figures in the next phase.
 // Requires: ApexCharts only (loaded by the view). Deliberately jQuery-free —
@@ -18,6 +19,7 @@
 
     // ── Raw data hand-off (live figures build on this next phase) ────────
     var raw = window.frlGstAnalysis || {};
+    var demo = window.frlGstDemo || {};
     window.FRLGst = {
         hasData: !!raw.hasData,
         uan: raw.uan,
@@ -72,17 +74,26 @@
         charts[key].render();
     }
 
+    var supplierSeries = (function () {
+        var list = demo.suppliers || [];
+        var labels = list.map(function (s) { return s.name; });
+        var values = list.map(function (s) { return s.share; });
+        var top = values.reduce(function (a, b) { return a + b; }, 0);
+        if (list.length && top < 100) { labels.push('All other suppliers'); values.push(100 - top); }
+        return { labels: labels, values: values };
+    })();
+
     function renderCharts() {
         var p = getBrandPalette();
 
         // 1. Revenue & Purchase Trend
         renderChart('revenue', '#revenueChart', {
             series: [{
-                name: 'Monthly Revenue (GSTR-3B)',
-                data: [84, 90, 105, 112, 122, 130] // in Lakhs
+                name: 'Monthly sales (GSTR-3B)',
+                data: demo.salesLakh || []
             }, {
-                name: 'Monthly Purchases (GSTR-2B)',
-                data: [62, 65, 78, 80, 85, 92]
+                name: 'Monthly purchases (GSTR-2B)',
+                data: demo.purchasesLakh || []
             }],
             chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
             plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4, endingShape: 'rounded' } },
@@ -90,11 +101,11 @@
             stroke: { show: true, width: 2, colors: ['transparent'] },
             colors: [p.primary, p.secondary],
             xaxis: {
-                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                categories: demo.months || [],
                 axisBorder: { show: false },
                 axisTicks: { show: false }
             },
-            yaxis: { title: { text: 'Amount (in ₹ Lakhs)', style: { color: '#64748b', fontWeight: 500 } } },
+            yaxis: { title: { text: 'Amount (₹ Lakh)', style: { color: '#64748b', fontWeight: 500 } } },
             fill: { opacity: 1 },
             tooltip: { y: { formatter: function (val) { return '₹ ' + val + ' Lakhs'; } } },
             legend: { position: 'top', horizontalAlign: 'right', fontWeight: 500 },
@@ -103,10 +114,10 @@
 
         // 2. Vendor Concentration Donut
         renderChart('vendor', '#vendorChart', {
-            series: [28, 18, 13, 41],
+            series: supplierSeries.values,
             chart: { type: 'donut', height: 180, fontFamily: 'Inter, sans-serif' },
-            labels: ['Microsoft Corp', 'Redington India', 'Persistent Systems', 'Other Vendors'],
-            colors: [p.primary, p.secondary, p.accent, p.accentAlt],
+            labels: supplierSeries.labels,
+            colors: [p.primary, p.secondary, p.accent, p.accentAlt, p.secondaryContainer, '#cbd5e1'],
             legend: { show: false },
             dataLabels: { enabled: false },
             plotOptions: {
@@ -117,8 +128,8 @@
                             show: true,
                             total: {
                                 show: true,
-                                label: 'Top Vendor',
-                                formatter: function () { return '28%'; },
+                                label: 'Top supplier',
+                                formatter: function () { return (supplierSeries.values[0] || 0) + '%'; },
                                 style: { fontSize: '13px', fontWeight: 600, color: '#475569' }
                             }
                         }
@@ -131,22 +142,22 @@
         // 3. Tax Liability vs Payment
         renderChart('taxPayment', '#taxPaymentChart', {
             series: [{
-                name: 'GST Tax Liability',
-                data: [4.2, 4.5, 5.2, 5.6, 6.1, 6.5]
+                name: 'Tax liability (GSTR-3B)',
+                data: demo.taxLakh || []
             }, {
-                name: 'GST Paid Cash & ITC',
-                data: [4.2, 4.5, 5.2, 5.6, 6.1, 6.5]
+                name: 'Tax paid (cash + ITC)',
+                data: demo.taxLakh || []
             }],
             chart: { type: 'bar', height: 250, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
             plotOptions: { bar: { horizontal: false, columnWidth: '45%', borderRadius: 3 } },
             dataLabels: { enabled: false },
             colors: [p.accent, p.primary],
             xaxis: {
-                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                categories: demo.months || [],
                 axisBorder: { show: false },
                 axisTicks: { show: false }
             },
-            yaxis: { title: { text: 'Amount (in ₹ Lakhs)', style: { color: '#64748b' } } },
+            yaxis: { title: { text: 'Amount (₹ Lakh)', style: { color: '#64748b' } } },
             legend: { position: 'top', horizontalAlign: 'right' },
             grid: { borderColor: '#f1f5f9' }
         });
@@ -165,21 +176,21 @@
         // 5. 12-Month Forecast
         renderChart('forecast', '#forecastChart', {
             series: [{
-                name: 'Projected Revenue (in Lakhs)',
-                data: [132, 135, 138, 142, 145, 148, 152, 155, 160, 164, 168, 172]
+                name: 'Projected revenue (illustrative)',
+                data: demo.outlookLakh || []
             }, {
-                name: 'Upper Bound (95% CI)',
-                data: [135, 140, 144, 148, 152, 156, 161, 165, 171, 175, 180, 185]
+                name: 'Upper range (illustrative)',
+                data: demo.outlookUpperLakh || []
             }],
             chart: { height: 250, type: 'line', toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
             stroke: { width: [3, 2], curve: 'smooth', dashArray: [0, 5] },
             colors: [p.primary, p.secondaryContainer],
             xaxis: {
-                categories: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                categories: demo.outlookMonths || [],
                 axisBorder: { show: false },
                 axisTicks: { show: false }
             },
-            yaxis: { title: { text: 'Projected Revenue (₹ Lakhs)' } },
+            yaxis: { title: { text: 'Projected revenue (₹ Lakh, illustrative)' } },
             grid: { borderColor: '#f1f5f9' },
             legend: { position: 'top', horizontalAlign: 'right' }
         });
@@ -189,7 +200,7 @@
     function applyChartTheme() {
         var p = getBrandPalette();
         if (charts.revenue) charts.revenue.updateOptions({ colors: [p.primary, p.secondary] });
-        if (charts.vendor) charts.vendor.updateOptions({ colors: [p.primary, p.secondary, p.accent, p.accentAlt] });
+        if (charts.vendor) charts.vendor.updateOptions({ colors: [p.primary, p.secondary, p.accent, p.accentAlt, p.secondaryContainer, '#cbd5e1'] });
         if (charts.taxPayment) charts.taxPayment.updateOptions({ colors: [p.accent, p.primary] });
         if (charts.stabilityRadar) charts.stabilityRadar.updateOptions({ colors: [p.primary], fill: { opacity: 0.1, colors: [p.primary] }, markers: { colors: [p.primary] } });
         if (charts.forecast) charts.forecast.updateOptions({ colors: [p.primary, p.secondaryContainer] });
@@ -217,8 +228,8 @@
     }
 
     function init() {
-        animateCircleGauge('gstHealthGauge', 94, 100);
-        animateCircleGauge('itcGauge', 97, 100);
+        animateCircleGauge('gstHealthGauge', demo.gstScore || 0, 100);
+        animateCircleGauge('itcGauge', demo.itcUtilization || 0, 100);
         renderCharts();
         wireReportButtons();
     }

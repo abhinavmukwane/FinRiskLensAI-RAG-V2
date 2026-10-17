@@ -43,6 +43,15 @@ bankers outside India should understand the term; Indian users should still reco
 | MCA | Corporate Registry (MCA) | India's Ministry of Corporate Affairs records |
 | Enterprise Type | Enterprise Classification | The recorded MSME enterprise category |
 | Major Activity | Primary Business Activity | The business's recorded primary activity |
+| GST Returns | Tax Filing Records (GST Returns) | Monthly and periodic GST filings |
+| GSTIN | GST Identification Number (GSTIN) | The business's GST registration number |
+| GSTR-1 | Sales / Outward Supplies Return (GSTR-1) | Invoice-level sales declared to the tax authority |
+| GSTR-2B | Input Tax Credit Statement (GSTR-2B) | Credit available from suppliers' filings |
+| GSTR-3B | Summary Tax Return (GSTR-3B) | Monthly summary of sales, credit and tax paid |
+| ITC | Input Tax Credit (ITC) | Tax paid on purchases, offset against tax due |
+| Tax Paid in Cash | Tax Paid Directly in Cash | Share of tax settled in cash rather than with ITC |
+| Vendor | Supplier / Vendor | |
+| GST Compliance | Tax Filing Compliance (GST) | |
 | Registered Plant Locations | Registered Business Locations | Locations listed in the Udyam record |
 
 **Patterns**
@@ -104,7 +113,7 @@ Format: **Title** (2–6 words, title case) + **subtitle** (one sentence, ≤ 20
 | Business details review | Review Business Details | Check the details retrieved from the business registry before continuing. |
 | OTP verification | Verify Contact | Enter the 6-digit code sent to [masked contact]. |
 | Udyam analysis | AI-Powered Business Registration Analysis (customer page, approved Oct 17; the bank's Customer 360 keeps "Udyam Registration Profile") | Keep the existing line: registration profile score, rule-based, from the Udyam record (India's Government MSME Business Registry) only; not creditworthiness. "AI-Powered" refers to the assistant that answers questions about this record, never to the score. Labels: Business Registration (Udyam) on record · Udyam Registration Number · Enterprise Classification · Primary Business Activity · Registered Business Locations · GSTIN / PAN (listed on Udyam) · Business Registration (Udyam): On record (never a green "Registered": the record only carries a registration date) · GSTIN and PAN shown under Identified Strengths with an info icon and "· not checked", never a green check · NIC: India's National Industrial Classification. These labels are in the shared body, so Customer 360 shows them too. |
-| GST analysis | Tax & Sales Compliance | Filing regularity, turnover trends and tax compliance from GST returns. |
+| GST analysis | AI-Powered GST Intelligence Analysis | Static illustrative demo data until a live GST integration exists (see below). |
 | AA analysis | Banking & Cash-Flow Analysis | Balances, inflows, outflows and repayment capacity from consented bank data. |
 | ITR analysis | Income Tax Filing | Declared income and filing history from income tax returns. |
 | MCA analysis | Corporate Registry | Company status, directors and filings from the corporate registry. |
@@ -112,6 +121,26 @@ Format: **Title** (2–6 words, title case) + **subtitle** (one sentence, ≤ 20
 | Risk Lens (lender) | Risk Lens | What was found, where, and the evidence behind it. |
 
 These are the defaults. A page may adjust its subtitle to match what it actually shows. It must never describe data the page doesn't show.
+
+### Approved: GST analysis (`Shared/_GstAnalysisBody.cshtml`, shared with the bank's Customer 360)
+
+**Decision (Oct 17):** the page shows **static illustrative demo data**, the same for every business, because no live GST API exists. A version with figures extracted from the stored returns was built and set aside; it can come back once a GST integration exists.
+
+| Element | Wording |
+|---|---|
+| Header tag | ILLUSTRATIVE DEMO DATA (never "GST RETURNS VERIFIED") |
+| Header note | Illustrative figures for the demo, not this business's GST returns. No live GST integration is connected yet. |
+| Supplier names | Supplier A / B / C (sample). Never real company names: a real name on a demo page reads as a real trading relationship. |
+| Chatbot context | Tells the assistant that every figure is illustrative demo data |
+| Everything else | The fixed demo figures, charts and texts as in the code (score 94, turnover, ITC, forecast, red flags…). They describe no real business; don't quote them as findings in docs, the deck or the video. |
+| Subtitle | Tax & Sales Compliance (GST) · Sales Return (GSTR-1), Summary Tax Return (GSTR-3B) & Input Tax Credit Statement (GSTR-2B) · [business name] |
+| Key figures | Annual Turnover (GSTR-3B · 12 months) · Turnover Growth (Year on year) · Filing Compliance · ITC Utilization (Claimed vs GSTR-2B) · GSTR-1 vs GSTR-3B Match · Tax Paid Directly in Cash · Active B2B Customers · GST Risk Level |
+| Section titles | Business Assessment (Illustrative) · Tax Filing Compliance (GST) & Filing History · Monthly Sales vs Purchases · Input Tax Credit (ITC) · GSTR-2B vs GSTR-3B · Supplier / Vendor Concentration · Tax Liability & Payment (GSTR-3B) · Stability Index (Illustrative) · GST Red-Flag Checks (Sample Data) · Sales, Purchase & Tax Trends · 12-Month Revenue Outlook (Illustrative) · GST Observations (Sample Data) |
+| Claims removed | "AI" on the assessment card, "Confidence level", "Zero red flags detected", "Not detected", "fraud check passes", "89% Conf.", "Upper bound (95% CI)", "Forecast accuracy 92%", "exceeds industry averages", "perfect 100% on-time" (it contradicted the 98% card). Red flags read "No red flags in the sample data — not a fraud verdict". |
+| Units | Charts and money sections state ₹ Lakh; growth reads "year on year"; the filing timeline states its months (Jan–Jun). |
+| Sample dataset | One dataset at the top of `_GstAnalysisBody.cshtml` (monthly sales, purchases, tax, suppliers, filing counts, ITC available, outlook growth). Every card, sentence and chart reads from it (charts via `window.frlGstDemo`), so the figures can't contradict each other. Change a demo figure there, never in the markup. |
+| Disclaimer | Header badge SAMPLE DATA · NO LIVE GST API, plus a warning box: "Sample data for the demo. These are not this business's GST records: no live GST API is connected yet. Figures, assessments, red-flag checks and the outlook are illustrative and have not been validated. Period: Jan–Jun (sample year)." |
+| Sample labels | Header details read Business Age / Industry / Enterprise Classification (sample); GST Risk Level pill reads Sample; "Growth Stability" became "Months with Sales Growth" (counted from the dataset). |
 
 ### Approved: Home page (`Home/Index.cshtml`)
 

@@ -60,13 +60,53 @@
     // Prefer the model (set per-UAN by CustomerProfileBuilder) so this view also
     // renders for a bank officer, whose session holds no MSME user.
     var user = Context.Session.GetCurrentUser();
-    var enterpriseName = Model.EnterpriseName ?? user?.NameOfEnterprise ?? "TRUST FINTECH LIMITED";
+    var enterpriseName = Model.EnterpriseName ?? user?.NameOfEnterprise ?? "Not available";
 
     // Sensitive identifiers are always rendered masked (Universal maskers —
     // the same helpers UdyamController uses; never show the raw values here).
     var gstin = Universal.MaskGstin(Model.Gstin ?? user?.GstinNumber ?? "27AAAAA1111A1Z1");
     var pan = Universal.MaskPan(Model.PanNumber ?? user?.PanNumber ?? "AAAAA1111A");
     var uan = Universal.MaskUdyam(Model.Uan ?? "UDYAM-MH-20-0033382");
+
+    // ── One illustrative sample dataset for the whole page (no live GST API yet) ──
+    // Every card, chart and sentence reads from here, so the figures stay consistent.
+    // Amounts are ₹ lakh; the period is Jan–Jun of one financial year.
+    string[] sMonths = { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+    double[] sSales = { 84, 90, 105, 112, 122, 130 };           // outward supplies (GSTR-3B)
+    double[] sPurchases = { 62, 65, 78, 80, 85, 92 };           // inward supplies (GSTR-2B)
+    double[] sTax = { 4.2, 4.5, 5.2, 5.6, 6.1, 6.5 };           // tax liability (GSTR-3B), paid in full
+    const double sPriorSales = 543, sPriorPurchases = 412.5;    // same months of the previous year
+    const double sCashShare = 0.29;                             // tax paid directly in cash
+    const double sRcm = 1.2;                                    // reverse charge, paid in cash
+    const double sItcAvailable = 23.5;                          // ITC available in GSTR-2B
+    const int sReturnsDue = 12, sReturnsFiled = 12, sLateReturns = 0;   // GSTR-1 + GSTR-3B, 6 months
+    const int sB2bCustomers = 126, sActiveSuppliers = 82;
+    const double sR1Vs3bMatch = 0.992;
+    const double sOutlookGrowth = 0.16;                         // illustrative: June sales to next June
+    const int sScore = 94;                                      // illustrative GST score (no formula behind it)
+    var sSuppliers = new[] { ("Supplier A (sample)", 0.28), ("Supplier B (sample)", 0.18), ("Supplier C (sample)", 0.13),
+                             ("Supplier D (sample)", 0.06), ("Supplier E (sample)", 0.04) };
+
+    var sSalesTotal = sSales.Sum();
+    var sPurchaseTotal = sPurchases.Sum();
+    var sAnnualised = sSalesTotal / sSales.Length * 12;
+    var sSalesGrowth = sSalesTotal / sPriorSales - 1;
+    var sPurchaseGrowth = sPurchaseTotal / sPriorPurchases - 1;
+    var sMonthsUp = sSales.Zip(sSales.Skip(1), (a, b) => b > a).Count(up => up);
+    var sTaxTotal = sTax.Sum();
+    var sTaxCash = Math.Round(sTaxTotal * sCashShare, 1);
+    var sTaxItc = Math.Round(sTaxTotal - sTaxCash, 1);          // ITC used = ITC claimed
+    var sItcUtil = sTaxItc / sItcAvailable;
+    var sItcUnclaimed = Math.Round(sItcAvailable - sTaxItc, 1);
+    var sFiling = (double)sReturnsFiled / sReturnsDue;
+    var sTop5 = sSuppliers.Sum(s => s.Item2);
+    var sOutlook = Enumerable.Range(1, 12).Select(k => Math.Round(sSales[^1] * (1 + sOutlookGrowth * k / 12), 1)).ToArray();
+    var sOutlookUpper = sOutlook.Select(v => Math.Round(v * 1.06, 1)).ToArray();
+    string[] sOutlookMonths = { "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+
+    string L(double lakh) => lakh >= 100 ? $"₹{lakh / 100:0.0} Cr" : $"₹{lakh:0.0} Lakh";
+    string P(double v, string fmt = "0") => (v * 100).ToString(fmt) + "%";
+    string Signed(double v, string fmt = "0") => (v >= 0 ? "+" : "") + P(v, fmt);
 }
 
 
@@ -86,13 +126,13 @@
     <section class="glass-card business-header-card mb-4">
         <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-4">
             <div class="d-flex flex-column align-items-center gap-2 flex-shrink-0">
-                <div class="gauge-wrapper my-1" style="width: 120px; height: 120px;">
+                <div class="gauge-wrapper my-1" style="width: 120px; height: 120px;" title="Sample GST score for the demo. No score is calculated from real returns.">
                     <svg viewBox="0 0 140 140" style="width: 120px; height: 120px;">
                         <circle class="gauge-circle-bg" cx="70" cy="70" r="58"></circle>
                         <circle id="gstHealthGauge" class="gauge-circle-progress success" cx="70" cy="70" r="58" style="stroke-dasharray: 364; stroke-dashoffset: 364;"></circle>
                     </svg>
                     <div class="gauge-center-content">
-                        <span class="gauge-center-val" style="font-size: 32px;">94</span>
+                        <span class="gauge-center-val" style="font-size: 32px;">@sScore</span>
                         <span class="gauge-center-label" style="font-size: 11px;">/ 100</span>
                     </div>
                 </div>
@@ -102,32 +142,38 @@
             <div class="flex-grow-1 text-center text-lg-start">
                 <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-2 mb-1">
                     <span style="font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; opacity:0.7;">
-                        <i class="bi bi-patch-check-fill me-1"></i>GST RETURNS VERIFIED
+                        <i class="bi bi-info-circle me-1"></i>ILLUSTRATIVE DEMO DATA
                     </span>
+                    <span class="badge bg-warning text-dark" style="font-size:10px;">SAMPLE DATA · NO LIVE GST API</span>
                 </div>
                 <h3 class="fhc-title mb-1">AI-Powered GST Intelligence Analysis</h3>
                @*  <p class="fhc-sub mb-3">
                     Advanced GSTR-2B &amp; GSTR-3B Business Intelligence Dashboard &bull; @enterpriseName
                 </p> *@
-                <p class="fhc-sub mb-3">
-                    MSME GST Score • GSTR-1, GSTR-3B & GSTR-2B &bull; @enterpriseName
+                <p class="fhc-sub mb-1">
+                    Tax &amp; Sales Compliance (GST) &bull; Sales Return (GSTR-1), Summary Tax Return (GSTR-3B) &amp; Input Tax Credit Statement (GSTR-2B) &bull; @enterpriseName
                 </p>
+                <div class="alert alert-warning py-2 px-3 mb-3 small text-start" role="note" style="font-size:12.5px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Sample data for the demo.</strong> These are not this business's GST records: no live GST API is connected yet.
+                    Figures, assessments, red-flag checks and the outlook are illustrative and have not been validated. Period: Jan–Jun (sample year).
+                </div>
 
                 <div class="header-info-grid">
                     <div class="header-info-item">
-                        <span>GSTIN</span>
+                        <span title="GST Identification Number">GSTIN</span>
                         <strong>@gstin</strong>
                     </div>
                     <div class="header-info-item">
-                        <span>Business Age</span>
+                        <span>Business Age (sample)</span>
                         <strong>27 Years (Est. 1998)</strong>
                     </div>
                     <div class="header-info-item">
-                        <span>Industry</span>
+                        <span>Industry (sample)</span>
                         <strong>Software Services</strong>
                     </div>
                     <div class="header-info-item">
-                        <span>Enterprise Type</span>
+                        <span>Enterprise Classification (sample)</span>
                         <strong>Small Enterprise</strong>
                     </div>
                 </div>
@@ -150,8 +196,8 @@
                 <i class="bi bi-cash-stack"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value" style="font-size: 24px;">₹35.9 Cr</span>
-                <span class="kpi-status-pill">GSTR-3B, 12M</span>
+                <span class="kpi-value" style="font-size: 24px;">@L(sAnnualised)</span>
+                <span class="kpi-status-pill">GSTR-3B · annualised</span>
             </div>
         </div>
 
@@ -161,8 +207,8 @@
                 <i class="bi bi-graph-up-arrow"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">+18.4%</span>
-                <span class="kpi-status-pill">YoY</span>
+                <span class="kpi-value">@Signed(sSalesGrowth, "0.0")</span>
+                <span class="kpi-status-pill">Jan–Jun vs last year</span>
             </div>
         </div>
 
@@ -172,41 +218,41 @@
                 <i class="bi bi-file-earmark-check"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">98%</span>
+                <span class="kpi-value">@P(sFiling)</span>
                 <span class="kpi-status-pill">Filed on time</span>
             </div>
         </div>
 
         <div class="kpi-card kpi-success">
             <div class="kpi-card-header">
-                <span>ITC Utilisation</span>
+                <span title="Input Tax Credit">ITC Utilization</span>
                 <i class="bi bi-arrow-repeat"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">97%</span>
-                <span class="kpi-status-pill">Claimed vs 2B</span>
+                <span class="kpi-value">@P(sItcUtil)</span>
+                <span class="kpi-status-pill">Claimed vs GSTR-2B</span>
             </div>
         </div>
 
         @* ── Row 2 — data quality & risk ───────────────────────────────── *@
         <div class="kpi-card kpi-success">
             <div class="kpi-card-header">
-                <span>GSTR-1 vs 3B Match</span>
+                <span>GSTR-1 vs GSTR-3B Match</span>
                 <i class="bi bi-clipboard-check"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">99.2%</span>
+                <span class="kpi-value">@P(sR1Vs3bMatch, "0.0")</span>
                 <span class="kpi-status-pill">Consistent</span>
             </div>
         </div>
 
         <div class="kpi-card kpi-success">
             <div class="kpi-card-header">
-                <span>Tax Paid in Cash</span>
+                <span>Tax Paid Directly in Cash</span>
                 <i class="bi bi-percent"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">29%</span>
+                <span class="kpi-value">@P(sCashShare)</span>
                 <span class="kpi-status-pill">Healthy mix</span>
             </div>
         </div>
@@ -217,19 +263,19 @@
                 <i class="bi bi-people"></i>
             </div>
             <div class="kpi-value-row">
-                <span class="kpi-value">126</span>
+                <span class="kpi-value">@sB2bCustomers</span>
                 <span class="kpi-status-pill">Well diversified</span>
             </div>
         </div>
 
         <div class="kpi-card kpi-success">
             <div class="kpi-card-header">
-                <span>Risk Score</span>
+                <span>GST Risk Level</span>
                 <i class="bi bi-shield-check"></i>
             </div>
             <div class="kpi-value-row">
                 <span class="kpi-value" style="font-size: 24px;">Low</span>
-                <span class="kpi-status-pill">Stable</span>
+                <span class="kpi-status-pill">Sample</span>
             </div>
         </div>
 
@@ -241,46 +287,46 @@
         <div class="col-12 col-xl-7">
             <article class="glass-card h-100 border-primary" style="background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(239,246,255,0.8) 100%);">
                 <div class="card-title-container">
-                    <div class="fhc-section-label mb-0"><i class="bi bi-cpu me-1"></i>AI Business Assessment Engine</div>
+                    <div class="fhc-section-label mb-0"><i class="bi bi-clipboard-data me-1"></i>Business Assessment (Illustrative)</div>
                     @* <h4 class="card-heading text-primary m-0">
                         <i class="bi bi-cpu"></i> AI Business Assessment Engine
                     </h4> *@
-                    <span class="badge bg-primary px-3 py-1 font-headline" style="font-weight: 600; font-size: 11px;">BUSINESS ASSESSMENT</span>
+                    <span class="badge bg-primary px-3 py-1 font-headline" style="font-weight: 600; font-size: 11px;">SAMPLE DATA</span>
                 </div>
 
                 <div class="row align-items-center g-4">
                     <div class="col-12 col-md-5 text-center pe-md-4">
                         <div class="mb-3">
-                            <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">AI ASSESSMENT</span>
+                            <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">ASSESSMENT</span>
                             <span class="badge bg-success px-4 py-2 mt-1" style=" font-weight: 700; letter-spacing: 0.5px; border-radius: 8px;">STABLE PERFORMANCE</span>
                         </div>
                         <div class="mb-2">
-                            <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">CONFIDENCE LEVEL</span>
+                            <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">SAMPLE CONFIDENCE</span>
                             <h2 class="m-0 text-success font-headline">96%</h2>
                         </div>
                     </div>
                     <div class="col-12 col-md-7">
-                        <h5 class="text-secondary font-headline mb-3" style="font-size: 14px; font-weight: 700;">AI ASSESSMENT RATIONALE</h5>
+                        <h5 class="text-secondary font-headline mb-3" style="font-size: 14px; font-weight: 700;">RATIONALE (SAMPLE DATA)</h5>
                         <ul class="list-unstyled d-flex flex-column gap-2" style="font-size: 13px; color: var(--color-text-secondary);">
                             <li class="d-flex align-items-start gap-2">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
-                                <span>Business has maintained excellent GST compliance (98%+) for the last 24 months.</span>
+                                <span>Tax filing compliance (GST) is @P(sFiling): @sReturnsFiled of @sReturnsDue returns filed, @sLateReturns late.</span>
                             </li>
                             <li class="d-flex align-items-start gap-2">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
-                                <span>Revenue growth is highly consistent (+18% outward supply YoY).</span>
+                                <span>Outward supplies (sales) grew @P(sSalesGrowth, "0.0") on the same months last year.</span>
                             </li>
                             <li class="d-flex align-items-start gap-2">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
-                                <span>Vendor dependency is low (highest customer concentration is 28%).</span>
+                                <span>Supplier / vendor dependency is low: the largest supplier is @P(sSuppliers[0].Item2) of purchases.</span>
                             </li>
                             <li class="d-flex align-items-start gap-2">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
-                                <span>ITC utilization is excellent (97% utilization rate with near-zero leakage).</span>
+                                <span>Input Tax Credit (ITC) use is high: @P(sItcUtil) of the credit available in GSTR-2B is claimed.</span>
                             </li>
                             <li class="d-flex align-items-start gap-2">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
-                                <span>Operating cash flow is healthy and no abnormal filing patterns detected.</span>
+                                <span>No unusual filing patterns appear in the sample returns.</span>
                             </li>
                         </ul>
                     </div>
@@ -292,10 +338,10 @@
         <div class="col-12 col-xl-5">
             <article class="glass-card h-100">
                 <div class="card-title-container">
-                    <div class="fhc-section-label mb-0"><i class="bi bi-calendar-check-fill " style="padding-right: 4px;"></i>GST Compliance &amp; Filing History</div>
+                    <div class="fhc-section-label mb-0"><i class="bi bi-calendar-check-fill " style="padding-right: 4px;"></i>Tax Filing Compliance (GST) &amp; Filing History</div>
 
                    @*  <h4 class="card-heading m-0" style="font-size:14px !important;">
-                        <i class="bi bi-calendar-check-fill text-primary"></i> GST Compliance &amp; Filing History
+                        <i class="bi bi-calendar-check-fill text-primary"></i> Tax Filing Compliance (GST) &amp; Filing History
                     </h4> *@
                     <span class="badge bg-success-light text-success-hover font-headline px-3 py-1 d-inline-flex align-items-center gap-1" style="font-weight: 600; font-size: 8px;">
                         <span class="status-dot"></span>
@@ -305,7 +351,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <h5 class="text-secondary font-headline mb-3" style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">6-MONTH FILING TIMELINE (GSTR-1 &amp; 3B)</h5>
+                    <h5 class="text-secondary font-headline mb-3" style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">6-MONTH FILING TIMELINE · GSTR-1 &amp; GSTR-3B (JAN–JUN)</h5>
                     <div class="timeline-grid">
                         <div class="timeline-node success">
                             <div class="timeline-circle"><i class="bi bi-check"></i></div>
@@ -338,24 +384,24 @@
                     <div class="col-6 col-sm-3 d-flex justify-content-center">
                         <div class="stat-box">
                             <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">RETURNS FILED</span>
-                            <strong class="font-headline text-primary" style="font-size: 18px;">18 / 18</strong>
+                            <strong class="font-headline text-primary" style="font-size: 18px;">@sReturnsFiled / @sReturnsDue</strong>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3 d-flex justify-content-center">
                         <div class="stat-box">
                             <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">LATE RETURNS</span>
-                            <strong class="font-headline text-danger" style="font-size: 18px;">0</strong>
+                            <strong class="font-headline text-danger" style="font-size: 18px;">@sLateReturns</strong>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3 d-flex justify-content-center">
                         <div class="stat-box">
                             <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">COMPLIANCE</span>
-                            <strong class="font-headline text-success" style="font-size: 18px;">99%</strong>
+                            <strong class="font-headline text-success" style="font-size: 18px;">@P(sFiling)</strong>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3 d-flex justify-content-center">
                         <div class="stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">REGISTRY</span>
+                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">REGISTRATION</span>
                             <strong class="font-headline text-success" style="font-size: 16px;">Active</strong>
                         </div>
                     </div>
@@ -365,24 +411,24 @@
                     <div class="col-6 col-sm-3">
                         <div class="border rounded p-3 text-center bg-light">
                             <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">RETURNS FILED</span>
-                            <strong class="font-headline text-primary" style="font-size: 18px;">18 / 18</strong>
+                            <strong class="font-headline text-primary" style="font-size: 18px;">@sReturnsFiled / @sReturnsDue</strong>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3">
                         <div class="border rounded p-3 text-center bg-light">
                             <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">LATE RETURNS</span>
-                            <strong class="font-headline text-danger" style="font-size: 18px;">0</strong>
+                            <strong class="font-headline text-danger" style="font-size: 18px;">@sLateReturns</strong>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3">
                         <div class="border rounded p-3 text-center bg-light">
                             <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">COMPLIANCE</span>
-                            <strong class="font-headline text-success" style="font-size: 18px;">99%</strong>
+                            <strong class="font-headline text-success" style="font-size: 18px;">@P(sFiling)</strong>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3">
                         <div class="border rounded p-3 text-center bg-light">
-                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">REGISTRY</span>
+                            <span class="text-muted d-block mb-1" style="font-size: 10px; font-weight: 600;">REGISTRATION</span>
                             <strong class="font-headline text-success" style="font-size: 16px;">Active</strong>
                         </div>
                     </div>
@@ -394,12 +440,10 @@
         <div class="col-12 col-xl-8">
             <article class="glass-card">
                 <div class="card-title-container">
-                    <div class="fhc-section-label mb-0"><i class="bi bi-cpu me-1"></i>AI Business Assessment Engine</div>
-
                     <h4 class="card-heading m-0">
-                        <i class="bi bi-bar-chart-line text-primary"></i> Business Revenue &amp; Purchase Intelligence
+                        <i class="bi bi-bar-chart-line text-primary"></i> Monthly Sales vs Purchases
                     </h4>
-                    <span class="badge bg-primary-light text-primary font-headline px-3 py-1" style="font-size: 11px;">GSTR-3B VS GSTR-2B</span>
+                    <span class="badge bg-primary-light text-primary font-headline px-3 py-1" style="font-size: 11px;">GSTR-3B VS GSTR-2B · ₹ LAKH</span>
                 </div>
 
                 <div id="revenueChart" style="min-height: 280px;"></div>
@@ -407,26 +451,26 @@
                 <div class="row g-3 mt-2">
                     <div class="col-6 col-md-3">
                         <div class="p-3 border rounded">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Revenue Growth</span>
-                            <h4 class="text-success m-0 font-headline">+18%</h4>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Sales Growth (vs last year)</span>
+                            <h4 class="text-success m-0 font-headline">@Signed(sSalesGrowth)</h4>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="p-3 border rounded">
                             <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Purchase Growth</span>
-                            <h4 class="text-primary m-0 font-headline">+12%</h4>
+                            <h4 class="text-primary m-0 font-headline">@Signed(sPurchaseGrowth)</h4>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="p-3 border rounded">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Growth Stability</span>
-                            <h4 class="text-success m-0 font-headline">91%</h4>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Months with Sales Growth</span>
+                            <h4 class="text-success m-0 font-headline">@sMonthsUp of @(sSales.Length - 1)</h4>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="p-3 border rounded">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth</span>
-                            <h4 class="text-primary m-0 font-headline">+16%</h4>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth (Illustrative)</span>
+                            <h4 class="text-primary m-0 font-headline">@Signed(sOutlookGrowth)</h4>
                         </div>
                     </div>
                 </div>
@@ -438,9 +482,9 @@
             <article class="glass-card h-100">
                 <div class="card-title-container">
                     @* <h4 class="card-heading m-0">
-                        <i class="bi bi-wallet-fill text-primary"></i> ITC Intelligence (Input Tax Credit)
+                        <i class="bi bi-wallet-fill text-primary"></i> Input Tax Credit (ITC) · GSTR-2B vs GSTR-3B
                     </h4> *@
-                    <div class="fhc-section-label mb-0"><i class="bi bi-wallet-fill me-1"></i>ITC Intelligence (Input Tax Credit)</div>
+                    <div class="fhc-section-label mb-0"><i class="bi bi-wallet-fill me-1"></i>Input Tax Credit (ITC) · GSTR-2B vs GSTR-3B</div>
                 </div>
 
                 <div class="text-center mb-4">
@@ -450,24 +494,24 @@
                             <circle id="itcGauge" class="gauge-circle-progress success" cx="70" cy="70" r="58" style="stroke-dasharray: 364; stroke-dashoffset: 364;"></circle>
                         </svg>
                         <div class="gauge-center-content">
-                            <span class="gauge-center-val">97%</span>
+                            <span class="gauge-center-val">@P(sItcUtil)</span>
                             <span class="gauge-center-label">UTILIZATION</span>
                         </div>
                     </div>
-                    <span class="badge bg-success-light text-success-hover px-3 py-1 font-headline mt-2" style="font-size: 11px; font-weight: 700;">EXCELLENT ITC MATCHING</span>
+                    <span class="badge bg-success-light text-success-hover px-3 py-1 font-headline mt-2" style="font-size: 11px; font-weight: 700;">HIGH ITC MATCH</span>
                 </div>
 
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <div class="p-2 border rounded text-center">
-                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">ELIGIBLE ITC</span>
-                            <strong class="text-primary" style="font-size: 13px;">₹45.2 Lakh</strong>
+                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">AVAILABLE ITC (2B)</span>
+                            <strong class="text-primary" style="font-size: 13px;">@L(sItcAvailable)</strong>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="p-2 border rounded text-center">
-                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">CLAIMED ITC</span>
-                            <strong class="text-success" style="font-size: 13px;">₹43.8 Lakh</strong>
+                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">CLAIMED ITC (3B)</span>
+                            <strong class="text-success" style="font-size: 13px;">@L(sTaxItc)</strong>
                         </div>
                     </div>
                     <div class="col-6">
@@ -478,26 +522,26 @@
                     </div>
                     <div class="col-6">
                         <div class="p-2 border rounded text-center">
-                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">BLOCKED ITC</span>
-                            <strong class="text-warning" style="font-size: 13px;">₹1.4 Lakh</strong>
+                            <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">UNCLAIMED ITC</span>
+                            <strong class="text-warning" style="font-size: 13px;">@L(sItcUnclaimed)</strong>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <span class="text-muted d-block font-headline mb-2" style="font-size: 11px; font-weight: 700;">ITC AUDIT OBSERVATIONS</span>
+                    <span class="text-muted d-block font-headline mb-2" style="font-size: 11px; font-weight: 700;">ITC OBSERVATIONS (SAMPLE DATA)</span>
                     <div class="scroll-panel" style="max-height: 120px;">
                         <div class="scroll-panel-item check">
                             <i class="bi bi-shield-check"></i>
-                            <span>No significant Input Tax Credit mismatch or leakage detected.</span>
+                            <span>ITC claimed stays within the credit available in GSTR-2B.</span>
                         </div>
                         <div class="scroll-panel-item check">
                             <i class="bi bi-shield-check"></i>
-                            <span>Business efficiently utilizes available ITC to offset tax liability.</span>
+                            <span>Most tax liability is offset with available ITC.</span>
                         </div>
                         <div class="scroll-panel-item check">
                             <i class="bi bi-shield-check"></i>
-                            <span>No abnormal GSTR-3B vs 2B tax claims observed.</span>
+                            <span>GSTR-3B claims are in line with the GSTR-2B statement.</span>
                         </div>
                     </div>
                 </div>
@@ -509,9 +553,9 @@
             <article class="glass-card">
                 <div class="card-title-container">
                   @*   <h4 class="card-heading m-0">
-                        <i class="bi bi-people-fill text-primary"></i> Vendor Intelligence &amp; Concentration Risk
+                        <i class="bi bi-people-fill text-primary"></i> Supplier / Vendor Concentration
                     </h4> *@
-                    <div class="fhc-section-label mb-0"><i class="bi bi-people-fill me-1"></i>Vendor Intelligence &amp; Concentration Risk</div>
+                    <div class="fhc-section-label mb-0"><i class="bi bi-people-fill me-1"></i>Supplier / Vendor Concentration</div>
                     <span class="badge bg-success-light text-success-hover font-headline px-3 py-1" style="font-size: 11px;">HIGH DIVERSITY</span>
                 </div>
 
@@ -527,29 +571,29 @@
                                 </colgroup>
                                 <thead>
                                     <tr>
-                                        <th>Vendor Name</th>
-                                        <th>Purchase Amount (12M)</th>
+                                        <th>Supplier / Vendor</th>
+                                        <th>Purchases (Jan–Jun)</th>
                                         <th>Concentration %</th>
-                                        <th>Risk Classification</th>
+                                        <th>Concentration Risk</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><strong>Microsoft Corporation</strong></td>
-                                        <td>₹32 Lakh</td>
-                                        <td><strong>28%</strong></td>
+                                        <td><strong>Supplier A (sample)</strong></td>
+                                        <td>@L(sPurchaseTotal * sSuppliers[0].Item2)</td>
+                                        <td><strong>@P(sSuppliers[0].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Redington India Ltd</strong></td>
-                                        <td>₹24 Lakh</td>
-                                        <td><strong>18%</strong></td>
+                                        <td><strong>Supplier B (sample)</strong></td>
+                                        <td>@L(sPurchaseTotal * sSuppliers[1].Item2)</td>
+                                        <td><strong>@P(sSuppliers[1].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Persistent Systems Ltd</strong></td>
-                                        <td>₹19 Lakh</td>
-                                        <td><strong>13%</strong></td>
+                                        <td><strong>Supplier C (sample)</strong></td>
+                                        <td>@L(sPurchaseTotal * sSuppliers[2].Item2)</td>
+                                        <td><strong>@P(sSuppliers[2].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                 </tbody>
@@ -566,29 +610,29 @@
                                 </colgroup>
                                 <thead>
                                     <tr>
-                                        <th>Vendor Name</th>
-                                        <th >Purchase Amount (12M)</th>
+                                        <th>Supplier / Vendor</th>
+                                        <th>Purchases (Jan–Jun)</th>
                                         <th>Concentration %</th>
-                                        <th>Risk Classification</th>
+                                        <th>Concentration Risk</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><strong>Microsoft Corporation</strong></td>
-                                        <td>₹32 Lakh</td>
-                                        <td><strong>28%</strong></td>
+                                        <td><strong>Supplier A (sample)</strong></td>
+                                        <td>@L(sPurchaseTotal * sSuppliers[0].Item2)</td>
+                                        <td><strong>@P(sSuppliers[0].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Redington India Ltd</strong></td>
-                                        <td>₹24 Lakh</td>
-                                        <td><strong>18%</strong></td>
+                                        <td><strong>Supplier B (sample)</strong></td>
+                                        <td>@L(sPurchaseTotal * sSuppliers[1].Item2)</td>
+                                        <td><strong>@P(sSuppliers[1].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Persistent Systems Ltd</strong></td>
-                                        <td>₹19 Lakh</td>
-                                        <td><strong>13%</strong></td>
+                                        <td><strong>Supplier C (sample)</strong></td>
+                                        <td>@L(sPurchaseTotal * sSuppliers[2].Item2)</td>
+                                        <td><strong>@P(sSuppliers[2].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                 </tbody>
@@ -604,16 +648,16 @@
                             <div class="col-12 col-sm-6 text-start">
                                 <div class="d-flex flex-column gap-2" style="font-size: 12.5px;">
                                     <div>
-                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOP VENDOR SHARE</span>
-                                        <strong>Microsoft: 28%</strong>
+                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOP SUPPLIER SHARE</span>
+                                        <strong>Supplier A: @P(sSuppliers[0].Item2)</strong>
                                     </div>
                                     <div>
-                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOP 5 VENDOR CONCENTRATION</span>
-                                        <strong>61% Total Share</strong>
+                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOP 5 SUPPLIERS' SHARE</span>
+                                        <strong>@P(sTop5) of purchases</strong>
                                     </div>
                                     <div>
-                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">TOTAL VENDOR COUNT</span>
-                                        <strong>82 Active Vendors</strong>
+                                        <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">ACTIVE SUPPLIERS</span>
+                                        <strong>@sActiveSuppliers</strong>
                                     </div>
                                     <div>
                                         <span class="text-muted d-block" style="font-size: 10px; font-weight: 600;">SUPPLIER DIVERSITY</span>
@@ -632,36 +676,36 @@
             <article class="glass-card">
                 @* <div class="card-title-container">
                     <h4 class="card-heading m-0">
-                        <i class="bi bi-wallet2 text-primary"></i> Tax Payment Ledger &amp; Cash Liability Behavior
+                        <i class="bi bi-wallet2 text-primary"></i> Tax Liability &amp; Payment (GSTR-3B) · ₹ Lakh
                     </h4>
                 </div> *@
-                <div class="fhc-section-label mb-0"><i class="bi bi-wallet2 me-1"></i>Tax Payment Ledger &amp; Cash Liability Behavior</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-wallet2 me-1"></i>Tax Liability &amp; Payment (GSTR-3B) · ₹ Lakh</div>
 
                 <div id="taxPaymentChart" style="min-height: 250px;"></div>
 
                 <div class="row g-3 mt-2">
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Total GST Paid</span>
-                            <strong class="text-primary font-headline" style="font-size: 15px;">₹52.4 Lakh</strong>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Total GST Paid (Jan–Jun)</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">@L(sTaxTotal)</strong>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Paid in Cash</span>
-                            <strong class="text-success font-headline" style="font-size: 15px;">₹18.6 Lakh</strong>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Paid Directly in Cash</span>
+                            <strong class="text-success font-headline" style="font-size: 15px;">@L(sTaxCash)</strong>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Off-set via ITC</span>
-                            <strong class="text-primary font-headline" style="font-size: 15px;">₹33.8 Lakh</strong>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Offset with ITC</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">@L(sTaxItc)</strong>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Reverse Charge (RCM)</span>
-                            <strong class="text-warning font-headline" style="font-size: 15px;">₹1.2 Lakh</strong>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Of Which Reverse Charge (RCM)</span>
+                            <strong class="text-warning font-headline" style="font-size: 15px;">@L(sRcm)</strong>
                         </div>
                     </div>
                 </div>
@@ -673,10 +717,10 @@
             <article class="glass-card h-100">
                 @* <div class="card-title-container">
                     <h4 class="card-heading m-0">
-                        <i class="bi bi-compass text-primary"></i> Multi-Dimensional Stability Index
+                        <i class="bi bi-compass text-primary"></i> Stability Index (Illustrative)
                     </h4>
                 </div> *@
-                <div class="fhc-section-label mb-0"><i class="bi bi-compass me-1"></i>Multi-Dimensional Stability Index</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-compass me-1"></i>Stability Index (Illustrative)</div>
                 <div id="stabilityRadarChart" style="min-height: 220px;"></div>
 
                 <div class="mt-3 text-center border-top pt-3">
@@ -699,13 +743,14 @@
             <article class="glass-card h-100">
                 @* <div class="card-title-container">
                     <h4 class="card-heading m-0">
-                        <i class="bi bi-shield-alert text-primary"></i> Red Flag &amp; Fraud Auditing
+                        <i class="bi bi-shield-alert text-primary"></i> GST Red-Flag Checks (Sample Data)
                     </h4>
                 </div> *@
-                <div class="fhc-section-label mb-0"><i class="bi bi-shield-alert me-1"></i>Red Flag &amp; Fraud Auditing</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-shield-alert me-1"></i>GST Red-Flag Checks (Sample Data)</div>
                 <div class="text-center my-3">
                     <i class="bi bi-shield-check-fill text-success" style="font-size: 56px; filter: drop-shadow(0 0 10px rgba(34,197,94,0.3));"></i>
-                    <h5 class="font-headline text-success mt-2">Zero Red Flags Detected</h5>
+                    <h5 class="font-headline text-success mt-2">No red flags in the sample data</h5>
+                    <p class="small text-muted mb-0">Not a fraud verdict: the bank reviews all sources before deciding.</p>
                 </div>
 
                 <div class="d-flex flex-column gap-2" style="font-size: 13px;">
@@ -718,8 +763,8 @@
                         <strong class="text-success"><i class="bi bi-dash-circle"></i> No</strong>
                     </div>
                     <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
-                        <span>Fake Invoice Circular Trading</span>
-                        <strong class="text-success"><i class="bi bi-shield-check"></i> Not Detected</strong>
+                        <span>Circular Trading / Fake Invoices</span>
+                        <strong class="text-success"><i class="bi bi-dash-circle"></i> None found</strong>
                     </div>
                     <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
                         <span>Missing / Delayed Returns</span>
@@ -736,7 +781,7 @@
         <!-- ============ SECTION 10 — CASH FLOW HEALTH ============ -->
         <div class="col-12 col-md-6">
             <article class="glass-card h-100">
-                <div class="fhc-section-label mb-0"><i class="bi bi-currency-exchange me-1"></i>Operating Cash Flow &amp; Direction</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-currency-exchange me-1"></i>Sales, Purchase &amp; Tax Trends</div>
 
                 <div class="d-flex flex-column gap-3 mb-4">
                     <div class="p-3 border rounded d-flex align-items-center justify-content-between bg-light">
@@ -749,7 +794,7 @@
                     <div class="p-3 border rounded d-flex align-items-center justify-content-between bg-light">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-cart-check text-primary" style="font-size: 20px;"></i>
-                            <span>GSTR-2A Purchase Trend</span>
+                            <span>Purchase Trend (GSTR-2A)</span>
                         </div>
                         <strong class="text-primary" style="font-size: 15px;"><i class="bi bi-arrow-up-right"></i> Increasing</strong>
                     </div>
@@ -763,8 +808,8 @@
                 </div>
 
                 <div class="p-3 border border-success rounded text-center" style="background: var(--color-success-light);">
-                    <span class="text-muted d-block font-headline mb-1" style="font-size: 10px; font-weight: 700;">CASH FLOW FORECAST</span>
-                    <h4 class="text-success-hover font-headline m-0">Positive CF (89% Conf.)</h4>
+                    <span class="text-muted d-block font-headline mb-1" style="font-size: 10px; font-weight: 700;">CASH-FLOW OUTLOOK (ILLUSTRATIVE)</span>
+                    <h4 class="text-success-hover font-headline m-0">Positive</h4>
                 </div>
             </article>
         </div>
@@ -773,20 +818,20 @@
         <div class="col-12 col-xl-8">
             <article class="glass-card">
                
-                <div class="fhc-section-label mb-0"><i class="bi bi-hourglass-split me-1"></i>12-Month Predictive Analytics &amp; Revenue Outlook</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-hourglass-split me-1"></i>12-Month Revenue Outlook (Illustrative) · ₹ Lakh</div>
                 <div id="forecastChart" style="min-height: 250px;"></div>
 
                 <div class="row g-3 mt-2">
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Revenue</span>
-                            <strong class="text-primary font-headline" style="font-size: 15px;">₹4.2 Crore</strong>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Revenue (Next 12 Months)</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">@L(sOutlook.Sum())</strong>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth Rate</span>
-                            <strong class="text-success font-headline" style="font-size: 15px;">15%</strong>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth, June to June (Illustrative)</span>
+                            <strong class="text-success font-headline" style="font-size: 15px;">@P(sOutlookGrowth)</strong>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 d-flex justify-content-center">
@@ -797,8 +842,8 @@
                     </div>
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Forecast Accuracy</span>
-                            <strong class="text-primary font-headline" style="font-size: 15px;">92%</strong>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Outlook Basis</span>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">Sample trend</strong>
                         </div>
                     </div>
                 </div>
@@ -809,32 +854,32 @@
         <div class="col-12 col-xl-4">
             <article class="glass-card h-100">
 
-                <div class="fhc-section-label mb-0"><i class="bi bi-lightbulb-fill me-1"></i>GST Intelligence Observations</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-lightbulb-fill me-1"></i>GST Observations (Sample Data)</div>
 
                 <div class="scroll-panel" style="max-height: 310px;">
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Outward supplies (Sales Revenue) has grown by 18% consistently over the last 6 months.</span>
+                        <span>Outward supplies (sales) grew @P(sSalesGrowth, "0.0") on the same months last year.</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>GST return filing compliance rate has remained at perfect 100% on-time GSTR-3B filings.</span>
+                        <span>All @sReturnsFiled returns (GSTR-1 and Summary Tax Return GSTR-3B) from January to June were filed on time.</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Vendor diversification index is high; top counterparties demonstrate low default risks.</span>
+                        <span>Supplier diversification is high: the largest supplier is @P(sSuppliers[0].Item2) of purchases; the top five are @P(sTop5).</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Fraud check passes with flying colors; no circular invoices or fake GSTR trading signatures detected.</span>
+                        <span>No circular invoices or duplicate supplier patterns appear in the sample returns.</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Tax payments have remained highly consistent and regular month-over-month.</span>
+                        <span>Tax payments are regular month to month.</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>ITC matching and reconciliation efficiency exceeds industry averages by 6%.</span>
+                        <span>ITC claimed closely matches the ITC available in GSTR-2B.</span>
                     </div>
                     <div class="scroll-panel-item warning">
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -842,11 +887,11 @@
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Business demonstrates a highly stable performance score across five core compliance domains.</span>
+                        <span>Filing, ITC and tax payment figures are steady across the sample period.</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Strong indicator for high business growth potential and operational strength.</span>
+                        <span>Sales rose in every month of the sample period.</span>
                     </div>
                 </div>
             </article>
@@ -900,13 +945,36 @@
         gstr3BResponseData: @Json.Serialize(Model.GSTR3BResponseData)
     };
 
-    // Universal chatbot context — identifiers only, not the full payloads.
+    // The page's single sample dataset (defined at the top of this view) for GSTAnalysis.js charts.
+    window.frlGstDemo = {
+        months: @Json.Serialize(sMonths),
+        salesLakh: @Json.Serialize(sSales),
+        purchasesLakh: @Json.Serialize(sPurchases),
+        taxLakh: @Json.Serialize(sTax),
+        suppliers: @Json.Serialize(sSuppliers.Select(s => new { name = s.Item1, share = Math.Round(s.Item2 * 100) })),
+        outlookMonths: @Json.Serialize(sOutlookMonths),
+        outlookLakh: @Json.Serialize(sOutlook),
+        outlookUpperLakh: @Json.Serialize(sOutlookUpper),
+        gstScore: @sScore,
+        itcUtilization: @Json.Serialize(Math.Round(sItcUtil * 100, 1))
+    };
+
+    // Universal chatbot context: the same sample figures the page shows, labelled as sample.
     window.frlChatContext = {
         pageKey: 'GSTAnalysis',
-        pageName: 'GST Analysis (GSTR-2B & GSTR-3B Intelligence) page',
+        pageName: 'GST Analysis (Tax & Sales Compliance) page',
         context: {
+            dataNote: 'All figures on this page are illustrative sample data for the demo, not this business\'s GST returns. No live GST API is connected, and nothing here has been validated.',
             gstin: @Json.Serialize(gstin),
-            filingPeriod: @Json.Serialize(Model.FilingPeriod)
+            samplePeriod: 'Jan–Jun (sample year)',
+            sampleMonthlySalesLakh: @Json.Serialize(sMonths.Zip(sSales).ToDictionary(x => x.First, x => x.Second)),
+            sampleAnnualisedTurnoverLakh: @Json.Serialize(Math.Round(sAnnualised, 1)),
+            sampleSalesGrowthVsLastYear: @Json.Serialize(P(sSalesGrowth, "0.0")),
+            sampleFilingCompliance: @Json.Serialize($"{sReturnsFiled} of {sReturnsDue} returns filed, {sLateReturns} late"),
+            sampleItcUtilization: @Json.Serialize(P(sItcUtil)),
+            sampleTaxPaidLakh: @Json.Serialize(new { total = sTaxTotal, cash = sTaxCash, itc = sTaxItc }),
+            sampleTopSupplierShare: @Json.Serialize(P(sSuppliers[0].Item2)),
+            sampleTop5SupplierShare: @Json.Serialize(P(sTop5))
         }
     };
 </script>
