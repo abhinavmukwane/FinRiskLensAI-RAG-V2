@@ -21,10 +21,12 @@ of voiceover at a calm pace; each block lists what is on screen and what is said
 ### 0:15 – 0:40 · The customer shares data
 
 **Screen:** customer dashboard — Account Aggregator consent, GST, ITR and MCA fetched, then
-**Upload documents** with a bank statement PDF; the upload shows *Reading*.
+**Upload documents** with a bank statement PDF; the upload shows *Reading*. On-screen caption:
+*GST, ITR and MCA: sample data in this demo · Account Aggregator: Finvu sandbox*.
 
 > The business registers with its Udyam number, shares its bank data through Account Aggregator
-> consent, fetches its GST, ITR and company records, and uploads its documents. Every new source
+> consent, fetches its GST, ITR and company records — sample data in this demo — and uploads its
+> documents. Every new source
 > reassesses the customer. Gemini on Vertex AI reads each page in Mumbai, so the documents never
 > leave India.
 
@@ -82,4 +84,6 @@ decision** → the capacity figures, reasons with policy citations → **Accept*
 customers in tabs in this order — `…0302`, `…0306`, `…0301`, and one for the investigation — so
 nothing waits on a page load. Run the investigation beforehand too; press it live only if time allows
 (12–43 s). The demo customers' email addresses are fictional, so record the customer part with a
-registration whose email you can read for the sign-in code.
+registration whose email you can read for the sign-in code. The GST page's figures are a fixed
+sample dataset: don't show them as a customer's findings or quote them (`CONTENT_GUIDELINES.md`),
+and leave the MCA page's demo OFAC/AML screening out of the video.

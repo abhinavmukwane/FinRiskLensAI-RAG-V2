@@ -127,6 +127,12 @@ The truth uploads are checked against, stored per MSME as JSON in
 | **ITR** | ITR connector | Filed turnover and income |
 | **Udyam**, **MCA** | Registry connectors | Identity, company status, directors |
 
+In the demo, Udyam, GST, ITR and MCA payloads are generated samples in the documented API shapes
+(the GST analysis page shows one fixed sample dataset for every business); Account Aggregator runs
+on the live Finvu sandbox. The MCA page's OFAC and AML board screening is a demo
+(`McaController.ScreenDirector`): the director's name against a short fictional list, labelled as
+such on every result — a licensed screening provider replaces it to go live.
+
 Payloads arrive through the ingest API, `PUT /api/msme-data/{uan}/manifest`,
 `PUT /api/msme-data/{uan}/files/{fileName}`, `GET /api/msme-data/{uan}/status` — closed
 unless the caller sends `X-Ingest-Key`.

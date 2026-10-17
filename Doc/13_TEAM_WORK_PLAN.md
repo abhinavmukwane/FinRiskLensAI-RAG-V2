@@ -12,8 +12,9 @@ branch, open a pull request when its *Done when* list is all true, and tick it h
 
 ## 1. Board
 
-**A** = Abhinav (lead: production, deploys, secrets, core engine) · **B** = teammate (checks,
-calculator, demo data, docs). Status: ⏸ to do · 🔨 in progress · 👀 in review · ✅ done.
+**A** = Abhinav (lead: production, deploys, secrets, core engine) · **B** = Sourabh (checks,
+calculator, demo data, docs, user-facing content and UI copy — §8). Status: ⏸ to do · 🔨 in
+progress · 👀 in review · ✅ done.
 
 | ID | Task | Owner | Day | Needs | Status |
 |---|---|---|---|---|---|
@@ -34,10 +35,22 @@ calculator, demo data, docs). Status: ⏸ to do · 🔨 in progress · 👀 in r
 | T13 | README and ARCHITECTURE to the customer flow | B | Oct 18 | T11 | ⏸ |
 | T14 | Deck and video script to the customer flow; record the video | A deck · B records | Oct 18 | T11 | 🔨 deck updated · video ⏸ |
 | T15 | Deploy, smoke test, **submit** | A | Oct 18 | all | ⏸ |
+| C1 | Content guidelines (`CONTENT_GUIDELINES.md`); onboarding, Sign In and dashboard copy | B | Oct 15–16 | — | ✅ |
+| C2 | Home page: headline, hero, feature cards | B | Oct 16 | C1 | ✅ |
+| C3 | International terminology (approved Oct 17): customer dashboard, sidebar, Udyam page | B | Oct 17 | C1 | ✅ |
+| C4 | GST page: one fixed sample dataset, unsupported claims removed; ITR page wording | B | Oct 17 | C1 | ✅ |
+| C5 | MCA director page; OFAC and AML board screening in demo mode | B | Oct 17 | C1 | ✅ |
+| C6 | Account Aggregator page; Risk Lens and bank pages (with A) | B | Oct 18 | C1 | ⏸ |
 
 **Order of play.** Oct 16: T1–T6. Oct 17: T7–T10, start T11. Oct 18: finish T11, then
 T12–T15. Submit **by the evening of Oct 18**, with the deploy done by midday so there is time to
 fix anything the smoke test finds. The cut list is in §6.
+
+**Status, evening of Oct 17.** B's Oct 17 went to content (C3–C5, §8), pushed to `main` directly.
+T3, T4, T5, T6, T8, the T10 payloads, T11 and T13 have not started. T6 holds up T9's live run; T11
+holds up T12, the deck's last screenshots (T14) and the video. A demo customer whose story needs a
+check that is not built (T3 turnover inflation, T8 edited ITR) cannot show *High risk*: if that
+check is cut, drop the customer from T11, from the deck's demo slide and from the README.
 
 ---
 
@@ -453,3 +466,29 @@ finding, and the smoke test.
 
 Fifteen minutes each morning and evening: what moved on the board, what is blocked, what the next
 pull request is. Anything blocked for more than an hour goes to the other person at once.
+
+---
+
+## 8. Content and UI copy (B)
+
+The rules and every approved wording live in [`CONTENT_GUIDELINES.md`](../CONTENT_GUIDELINES.md) at
+the repository root, the single source of truth for text users see. Read it before changing a page.
+Content changes go through a pull request that A merges (§4); on Oct 16 and 17 they went to `main`
+directly.
+
+| Page | Status |
+|---|---|
+| Onboarding, Sign In, OTP | ✅ C1 |
+| Home page | ✅ C2 |
+| Customer dashboard and sidebar | ✅ C3 — international terminology (e.g. *Tax & Sales Compliance (GST)*); the GST card always reads *Retrieved*, because the GST page shows its fixed dataset either way |
+| Udyam page | ✅ C3 — *AI-Powered Business Registration Analysis*; GSTIN and PAN shown as listed on Udyam, not as checked |
+| GST page | ✅ C4 — one fixed sample dataset at the top of `_GstAnalysisBody.cshtml`, the same for every business, until a live GST integration exists. No on-page sample label (B's decision, Oct 17), so the README, the deck and the video say it instead |
+| ITR page | ✅ C4 — the summary claims no more than the return shows |
+| MCA page | ✅ C5 — director (DIN) details in the approved format; **OFAC and AML board screening in demo mode** (`McaController.ScreenDirector`): the director's name compared with a short fictional list, every result labelled *Illustrative Demo — Not a Live OFAC/AML Check* |
+| Account Aggregator page | ⏸ C6 |
+| Risk Lens and the bank pages | ⏸ C6, with A — they show the findings |
+
+**Open for A** (from B's notes): the browser title (`_Layout.cshtml`) still reads *Evidence-based
+fraud detection* — change it only if we agree to; the ITR modal on the dashboard (and the GST modal,
+no longer reachable) asks for a portal password that is never sent to the server — wire it to a real
+portal flow or remove the fields.
