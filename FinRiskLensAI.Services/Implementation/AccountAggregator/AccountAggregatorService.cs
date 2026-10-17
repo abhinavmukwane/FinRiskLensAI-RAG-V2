@@ -32,6 +32,11 @@ namespace FinRiskLensAI.Services.Implementation.AccountAggregator
         private readonly IMsmeDataStore _store;
         private readonly ILogger<AccountAggregatorService> _logger;
 
+        // How long the consent callback waits for the bank to deliver the FI data, and how often it asks.
+        // The sandbox has taken from under 3 s to well over that; production FIPs can be slower still.
+        private static readonly TimeSpan FiPollInterval = TimeSpan.FromSeconds(3);
+        private static readonly TimeSpan FiReadyTimeout = TimeSpan.FromSeconds(90);
+
         public AccountAggregatorService(
             IAccountAggregatorRepository aaRepo, IHttpClientHelper httpClientHelper,
             FinvuSettings config, IHttpContextAccessor httpContextAccessor,
@@ -409,25 +414,36 @@ namespace FinRiskLensAI.Services.Implementation.AccountAggregator
             }
             var sessionId = fiReq.body.sessionId;
 
-            await Task.Delay(3000); // Wait for 3 seconds
-
-            // 2) FI Status
-            var fiStatus = await FinancialInfoReqStatus(consent.consentHandle, consent.custId, consentId, sessionId).ConfigureAwait(false);
-            if (fiStatus?.body == null || fiStatus.body.errorCode != 0)
+            // 2–3) FI Status until the bank has delivered, then FI Fetch. The FIP answers in its own time:
+            // while the status is PENDING a fetch returns 404 "Data not available", so a fixed wait loses the data.
+            string data = null;
+            string status = null;
+            var deadline = DateTime.UtcNow + FiReadyTimeout;
+            while (data == null && DateTime.UtcNow < deadline)
             {
-                _logger.LogError("FI status failed for {Uan}: code={Code} msg={Msg}",
-                    consent.uan, fiStatus?.body?.errorCode, fiStatus?.body?.errorMsg);
-                return false;
+                await Task.Delay(FiPollInterval).ConfigureAwait(false);
+
+                var fiStatus = await FinancialInfoReqStatus(consent.consentHandle, consent.custId, consentId, sessionId).ConfigureAwait(false);
+                var current = fiStatus?.body?.errorCode == 0 ? fiStatus.body.fiRequestStatus?.Trim().ToUpperInvariant() : null;
+                if (current != status) _logger.LogInformation("FI status for {Uan}: {Status}.", consent.uan, current ?? "unavailable");
+                status = current;
+
+                if (status is "DENIED" or "FAILED" or "TIMEOUT" or "EXPIRED" or "REJECTED")
+                {
+                    _logger.LogError("FI request for {Uan} ended {Status}; no data to fetch.", consent.uan, status);
+                    return false;
+                }
+                // READY, a status we don't know, or no status at all: try the fetch — it comes back empty until the data is there
+                if (status != "PENDING")
+                {
+                    var fetched = await FinancialInfoFetch(consent.custId, consentId, sessionId).ConfigureAwait(false);
+                    if (!string.IsNullOrWhiteSpace(fetched)) data = fetched;
+                }
             }
-            _logger.LogInformation("FI status for {Uan}: {Status}.", consent.uan, fiStatus.body.fiRequestStatus);
-
-            await Task.Delay(3000); // Wait for 3 seconds
-
-            // 3) FI Fetch
-            var data = await FinancialInfoFetch(consent.custId, consentId, sessionId).ConfigureAwait(false);
-            if (string.IsNullOrWhiteSpace(data))
+            if (data == null)
             {
-                _logger.LogError("FI fetch returned no data for {Uan}.", consent.uan);
+                _logger.LogError("FI data for {Uan} not available within {Seconds}s (last status {Status}).",
+                    consent.uan, FiReadyTimeout.TotalSeconds, status ?? "unavailable");
                 return false;
             }
 

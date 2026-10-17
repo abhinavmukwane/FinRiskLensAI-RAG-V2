@@ -89,7 +89,7 @@ Cloud Storage stores, and fails on first use if a bucket is not configured.
 |---|---|---|
 | **Vertex AI — Gemini Flash** | Document extraction | `asia-south1` (Mumbai) |
 | **Vertex AI — Gemini embeddings** | 768-dimension vectors for the knowledge base | `asia-south1` |
-| **Vertex AI — Gemini Pro** | Investigator (falls back to a second Pro model) | `global` — sees extracted facts only |
+| **Vertex AI — Gemini Pro** | Investigator and credit decision (falls back to a second Pro model) | `global` — sees extracted facts only |
 | **Vertex AI — Gemini Flash** | Reranker for policy search | `global` |
 | **Cloud Run** | The web app, built from source by buildpacks; one warm instance with session affinity | `asia-south1` |
 | **Cloud SQL for PostgreSQL 16 + pgvector** | Cases, findings, evidence, knowledge chunks and vectors | `asia-south1` |

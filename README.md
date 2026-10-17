@@ -208,7 +208,7 @@ everything.
 | Service | Used for |
 |---|---|
 | **Vertex AI — Gemini 3.5 Flash** (`asia-south1`) | Reading statements and slips, page by page |
-| **Vertex AI — Gemini 3.1 Pro** (global; falls back to 2.5 Pro) | The Investigator agent, function calling |
+| **Vertex AI — Gemini 3.1 Pro** (global; falls back to 2.5 Pro) | The Investigator agent (function calling) and the AI credit decision |
 | **Vertex AI — Gemini 3.8 Flash** (global) | Reranking retrieved policy passages |
 | **Vertex AI — gemini-embedding-001** (`asia-south1`) | 768-dimension embeddings for policy and typology |
 | **Cloud Run** (`asia-south1`) | The application, built from source by Google Cloud buildpacks |
