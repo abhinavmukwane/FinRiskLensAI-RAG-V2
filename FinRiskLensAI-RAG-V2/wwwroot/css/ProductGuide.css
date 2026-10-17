@@ -1,0 +1,128 @@
+/* ============================================================================
+   FinRiskLens AI Product Guide (Views/Home/_ProductGuide.cshtml).
+   Builds on Chatbot.css (panel, header, messages, input, Markdown); this file adds
+   the home page parts: launcher hint, starter topics, feature and analysis cards,
+   follow-up chips and the assessment call to action.
+   ========================================================================== */
+
+/* The panel starts below the site header, so the Sign In menu stays reachable */
+.frl-guide .frl-chat-panel { top: 72px; }
+.frl-guide.expanded .frl-chat-panel { top: 72px; bottom: 3vh; }
+
+/* ── Launcher hint ───────────────────────────────────────────────────── */
+.frl-guide .frl-chat-launcher { width: 96px; height: 96px; }
+.frl-guide-hint {
+    position: absolute;
+    right: 92px;
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    background: #fff;
+    color: var(--brand-primary-dark);
+    border: 1px solid var(--frl-border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: .8rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .10);
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+.frl-guide.seen .frl-guide-hint { opacity: 0; }
+.frl-guide .frl-chat-launcher:hover .frl-guide-hint { opacity: 1; }
+
+/* ── Answers ─────────────────────────────────────────────────────────── */
+.frl-guide .frl-msg-bot { min-width: 0; }
+.frl-guide-welcome-text { margin: 0 0 12px; }
+.frl-guide-fallback { border-left: 3px solid #e0a800; }
+.frl-guide-hidden-msg { font-style: italic; opacity: .85; }
+
+/* Starter topics */
+.frl-guide-starters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.frl-guide-starter {
+    display: flex; align-items: center; gap: 8px;
+    text-align: left; font-size: .84rem; font-weight: 600; line-height: 1.3;
+    color: var(--brand-primary-dark); background: var(--frl-maroon-soft);
+    border: 1px solid var(--frl-border); border-radius: 12px; padding: 9px 12px;
+    transition: border-color .15s ease, transform .15s ease;
+}
+.frl-guide-starter i { color: var(--frl-maroon); font-size: 1rem; flex: none; }
+.frl-guide-starter:hover:not(:disabled), .frl-guide-starter:focus-visible { border-color: var(--frl-maroon); transform: translateY(-1px); outline: none; }
+.frl-guide-starter:disabled { opacity: .55; }
+
+/* Feature cards */
+.frl-guide-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 12px; }
+.frl-guide-card {
+    display: flex; flex-direction: column; gap: 6px;
+    background: #fff; border: 1px solid var(--frl-border); border-radius: 12px; padding: 12px 14px;
+}
+.frl-guide-card-head { display: flex; align-items: flex-start; gap: 8px; }
+.frl-guide-card-head i { color: var(--frl-maroon); font-size: 1.05rem; margin-top: 1px; }
+.frl-guide-card-title { font-weight: 700; font-size: .88rem; color: var(--brand-primary-dark); line-height: 1.3; }
+.frl-guide-card-text { margin: 0; font-size: .83rem; line-height: 1.55; color: #444; flex: 1; }
+.frl-guide-tag {
+    align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    color: var(--brand-secondary); background: var(--frl-maroon-soft); border-radius: 999px; padding: 2px 8px;
+}
+
+/* Types of Analysis: one accordion per analysis */
+.frl-guide-analysis { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.frl-guide-acc { border: 1px solid var(--frl-border); border-radius: 12px; background: #fff; overflow: hidden; }
+.frl-guide-acc summary {
+    display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
+    padding: 10px 14px; font-weight: 700; font-size: .88rem; color: var(--brand-primary-dark);
+}
+.frl-guide-acc summary::-webkit-details-marker { display: none; }
+.frl-guide-acc summary::after { content: "\F282"; font-family: "bootstrap-icons"; margin-left: auto; transition: transform .2s ease; color: var(--frl-maroon); }
+.frl-guide-acc[open] summary::after { transform: rotate(180deg); }
+.frl-guide-acc summary i { color: var(--frl-maroon); }
+.frl-guide-acc summary:focus-visible { outline: 2px solid var(--frl-maroon); outline-offset: -2px; }
+.frl-guide-acc[open] summary { background: var(--frl-maroon-soft); border-bottom: 1px solid var(--frl-border); }
+.frl-guide-acc dl { margin: 0; padding: 10px 14px 12px; display: grid; grid-template-columns: minmax(120px, 30%) 1fr; gap: 6px 14px; }
+.frl-guide-acc dt { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--brand-secondary); padding-top: 2px; }
+.frl-guide-acc dd { margin: 0; font-size: .84rem; line-height: 1.5; color: #333; }
+
+/* Call to action */
+.frl-guide-cta {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: 14px; padding: 12px 14px; border-radius: 12px;
+    background: linear-gradient(120deg, var(--brand-primary-dark) 0%, var(--frl-maroon) 100%); color: #fff;
+}
+.frl-guide-cta span { font-weight: 600; font-size: .88rem; }
+.frl-guide-cta-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff; color: var(--brand-primary-dark); font-weight: 700; font-size: .84rem;
+    border-radius: 10px; padding: 7px 14px; text-decoration: none;
+}
+.frl-guide-cta-btn:hover, .frl-guide-cta-btn:focus-visible { color: var(--frl-maroon); box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); outline: none; }
+
+/* Follow-up chips, directly under the latest answer */
+.frl-guide-next { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--frl-border); }
+.frl-guide-chip {
+    border: 1px solid var(--frl-border); background: var(--frl-maroon-soft); color: var(--brand-primary-dark);
+    border-radius: 999px; padding: 5px 12px; font-size: .8rem; text-align: left; line-height: 1.35;
+}
+.frl-guide-chip:hover:not(:disabled), .frl-guide-chip:focus-visible { border-color: var(--frl-maroon); outline: none; }
+.frl-guide-chip:disabled { opacity: .55; }
+.frl-guide-chip-ghost { background: #fff; color: var(--brand-secondary); }
+
+/* ── Expanded: more reading room ─────────────────────────────────────── */
+.frl-guide.expanded .frl-msg { font-size: .95rem; line-height: 1.7; }
+.frl-guide.expanded .frl-guide-card-text,
+.frl-guide.expanded .frl-guide-acc dd { font-size: .9rem; }
+.frl-guide.expanded .frl-guide-starters { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+
+/* ── Phones: Chatbot.css makes the panel full screen ─────────────────── */
+@media (max-width: 767.98px) {
+    .frl-guide .frl-chat-panel,
+    .frl-guide.expanded .frl-chat-panel { top: 0; }
+    .frl-guide .frl-chat-launcher { width: 76px; height: 76px; }
+    .frl-guide-hint { display: none; }
+    .frl-guide-starters { grid-template-columns: 1fr 1fr; }
+    .frl-guide-acc dl { grid-template-columns: 1fr; gap: 2px; }
+    .frl-guide-acc dd { margin-bottom: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .frl-guide-starter, .frl-guide-acc summary::after, .frl-guide-hint { transition: none; }
+}

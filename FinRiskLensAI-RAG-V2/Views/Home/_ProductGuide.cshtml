@@ -1,0 +1,55 @@
+@*
+    FinRiskLens AI Product Guide — the public assistant on the home page (ProductGuideController).
+    It explains the product only and never sees customer data; the signed-in assistant is
+    Views/Shared/_Chatbot.cshtml. Reuses that panel's styles (Chatbot.css) with its own ids.
+*@
+<link rel="stylesheet" href="~/css/Chatbot.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/ProductGuide.css" asp-append-version="true" />
+
+<div id="frlGuide" class="frl-chatbot frl-guide">
+
+    <button id="frlGuideLauncher" class="frl-chat-launcher" type="button" aria-label="Open the FinRiskLens AI Product Guide"
+            aria-controls="frlGuidePanel" aria-expanded="false">
+        <span class="frl-guide-hint" aria-hidden="true">Ask about FinRiskLens AI</span>
+        <img src="~/ChatBot.gif" alt="" class="frl-chat-launcher-img" />
+    </button>
+
+    <section id="frlGuidePanel" class="frl-chat-panel" role="dialog" aria-modal="false" aria-labelledby="frlGuideTitle" hidden>
+        <header class="frl-chat-header">
+            <div class="frl-chat-avatar" aria-hidden="true"><i class="bi bi-stars"></i></div>
+            <div class="frl-chat-head-text">
+                <h2 id="frlGuideTitle" class="frl-chat-title">FinRiskLens AI Product Guide</h2>
+                <div class="frl-chat-status" id="frlGuideStatus" role="status" aria-live="polite">
+                    <span class="frl-status-dot"></span><span class="frl-status-text">Online</span>
+                </div>
+            </div>
+            <button id="frlGuideClear" class="frl-chat-icon" type="button" title="Start over" aria-label="Start the conversation over">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+            <button id="frlGuideExpand" class="frl-chat-icon frl-chat-expand" type="button" title="Expand"
+                    aria-label="Expand the guide" aria-pressed="false">
+                <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+            <button id="frlGuideClose" class="frl-chat-icon" type="button" aria-label="Close the guide">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </header>
+
+        <div class="frl-chat-scope">Explains the product only. It can't see any business's data, so please don't share personal details.</div>
+
+        <div id="frlGuideMessages" class="frl-chat-messages" aria-live="polite"></div>
+
+        <form id="frlGuideForm" class="frl-chat-input" autocomplete="off">
+            <label for="frlGuideText" class="visually-hidden">Ask about FinRiskLens AI</label>
+            <textarea id="frlGuideText" rows="1" maxlength="500"
+                      placeholder="Ask about features, analysis or how to start…"></textarea>
+            <button id="frlGuideSend" type="submit" aria-label="Send">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </form>
+        <div class="frl-chat-foot">Enter to send · Shift+Enter for a new line · AI answers can be wrong.</div>
+    </section>
+</div>
+
+<script src="~/FRLScripts/Common/ChatMarkdown.js" asp-append-version="true"></script>
+<script src="~/FRLScripts/Home/ProductGuide.js" asp-append-version="true"></script>

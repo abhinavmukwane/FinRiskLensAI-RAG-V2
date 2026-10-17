@@ -7,6 +7,7 @@ using FinRiskLensAI.Fraud.DI;
 using FinRiskLensAI.ML.DI;
 using FinRiskLensAI.Services.DI;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 using System.IO;
 
@@ -72,6 +73,22 @@ builder.Services.AddScoped<FinRiskLensAI.Common.CustomerProfileBuilder>();
 // The FinRiskLens AI Assistant: whole-assessment context (server-side, per session UAN) and the Gemini call.
 builder.Services.AddScoped<FinRiskLensAI.Common.AssessmentContextBuilder>();
 builder.Services.AddScoped<FinRiskLensAI.Common.CreditAssistant>();
+// The public Product Guide on the home page: product knowledge only, no customer data.
+builder.Services.AddScoped<FinRiskLensAI.Common.ProductGuide>();
+// It is public and calls Gemini, so it gets an app-wide budget on top of its per-session pacing.
+// Not per IP: behind Cloud Run the connection address is the front end, not the visitor.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter(FinRiskLensAI.Controllers.ProductGuideController.RateLimitPolicy, o =>
+    {
+        o.PermitLimit = 60;
+        o.Window = TimeSpan.FromMinutes(1);
+        o.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = (context, ct) => new ValueTask(context.HttpContext.Response.WriteAsJsonAsync(
+        new { status = false, error = "The guide is busy right now. Try again in a minute.", retryable = true }, ct));
+});
 
 // Persist DataProtection keys so session cookies survive app restarts / pool
 // recycles — otherwise ephemeral keys regenerate and everyone is silently logged
@@ -132,6 +149,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseSession();
 

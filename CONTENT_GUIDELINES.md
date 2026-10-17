@@ -161,6 +161,23 @@ These are the defaults. A page may adjust its subtitle to match what it actually
 
 The browser title stays `FinRiskLens AI | Evidence-based fraud detection` (set in `_Layout.cshtml`, out of scope for the Home page step).
 
+### Home page Product Guide (`Home/_ProductGuide.cshtml`, C7, in review)
+
+The public assistant on the home page. It explains the product only and never sees customer data; the signed-in assistant is separate.
+
+| Element | Wording |
+|---|---|
+| Name | FinRiskLens AI Product Guide |
+| Launcher hint | Ask about FinRiskLens AI |
+| Scope line | Explains the product only. It can't see any business's data, so please don't share personal details. |
+| Welcome | Welcome to FinRiskLens AI! Discover how our AI-powered credit intelligence platform helps businesses and lenders understand MSME financial health through business registration, tax, banking, income-tax and corporate information. |
+| Starter topics | Explore Product Features · Types of Analysis · Benefits for MSMEs · Benefits for Banks & NBFCs · How It Works · What Makes FinRiskLens AI Different? · How to Start an Assessment |
+| Call to action | Ready to understand your business financial health? · Start MSME Assessment (`/Onboarding/CustOnboarding`) |
+| Off-topic reply | I'm here to explain FinRiskLens AI, its features and how our MSME credit assessment works. What would you like to explore? |
+| Feature card tags | Stored registry record (Udyam) · Sample data in this demo (GST, ITR, MCA) · Consent flow · AA test environment · Review signals, not verdicts · Rule-based scores · AI with human review |
+
+The curated answers and Gemini's fact sheet live in `Common/ProductGuideKnowledge.cs`. Update its claims together with §1 and §4b whenever an integration changes.
+
 ### Approved: customer onboarding (`CustOnboarding.cshtml`)
 
 | Element | Wording |

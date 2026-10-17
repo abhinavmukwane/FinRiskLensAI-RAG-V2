@@ -41,6 +41,7 @@ progress · 👀 in review · ✅ done.
 | C4 | GST page: one fixed sample dataset, unsupported claims removed; ITR page wording | B | Oct 17 | C1 | ✅ |
 | C5 | MCA director page; OFAC and AML board screening in demo mode | B | Oct 17 | C1 | ✅ |
 | C6 | Account Aggregator page; Risk Lens and bank pages (with A) | B | Oct 18 | C1 | ⏸ |
+| C7 | Home page Product Guide: public assistant on Gemini Flash that explains the product, no customer data | B | Oct 18 | C2 | 👀 |
 
 **Order of play.** Oct 16: T1–T6. Oct 17: T7–T10, start T11. Oct 18: finish T11, then
 T12–T15. Submit **by the evening of Oct 18**, with the deploy done by midday so there is time to
@@ -493,6 +494,7 @@ directly.
 | MCA page | ✅ C5 — director (DIN) details in the approved format; **OFAC and AML board screening in demo mode** (`McaController.ScreenDirector`): the director's name compared with a short fictional list, every result labelled *Illustrative Demo — Not a Live OFAC/AML Check* |
 | Account Aggregator page | ⏸ C6 |
 | Risk Lens and the bank pages | ⏸ C6, with A — they show the findings |
+| Home page Product Guide | 👀 C7 — public assistant (`ProductGuideController`), separate from the signed-in assistant: product knowledge only, never customer data |
 
 **Open for A** (from B's notes): the browser title (`_Layout.cshtml`) still reads *Evidence-based
 fraud detection* — change it only if we agree to; the ITR modal on the dashboard (and the GST modal,
