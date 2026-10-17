@@ -56,11 +56,11 @@
         <div class="flex-grow-1">
             <div class="d-flex align-items-center gap-2 mb-1">
                 <span style="font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; opacity:0.7;">
-                    <i class="bi bi-patch-check-fill me-1"></i>@Model.FormType &middot; @Model.ReturnStatus
+                    <i class="bi bi-file-earmark-text me-1"></i>@Model.FormType &middot; @Model.ReturnStatus
                 </span>
             </div>
-            <h2>Income Tax Return Analysis</h2>
-            <p>@Model.EntityName &middot; PAN: @Model.PanMasked &middot; AY @Model.AssessmentYear</p>
+            <h2>Income Tax Filing (ITR) Analysis</h2>
+            <p>@Model.EntityName &middot; PAN: @Model.PanMasked &middot; Assessment Year (AY) @Model.AssessmentYear</p>
             <div class="hero-stats">
                 <div class="hero-stat-item"><div class="value">@Money(Model.GrossTotalIncome)</div><div class="label">Gross Income</div></div>
                 <div class="hero-stat-item"><div class="value">@Money(Model.TotalTaxAndInterest)</div><div class="label">Tax + Interest</div></div>
@@ -93,8 +93,8 @@
                             <h6 class="card-label">Filing Snapshot</h6>
                             <ul class="mini-list">
                                 <li><span>Form</span><strong>@Model.FormType</strong></li>
-                                <li><span>Assessment Year</span><strong>@Model.AssessmentYear</strong></li>
-                                <li><span>Financial Year</span><strong>@Model.FinancialYear</strong></li>
+                                <li><span title="The year in which the income is assessed">Assessment Year (AY)</span><strong>@Model.AssessmentYear</strong></li>
+                                <li><span title="The year in which the income was earned">Financial Year (FY)</span><strong>@Model.FinancialYear</strong></li>
                             </ul>
                         </div>
                         <div class="mt-4">
@@ -111,16 +111,16 @@
                         <ul class="profile-list list-unstyled mb-0">
                             <li><span>Name</span><strong>@Model.EntityName</strong></li>
                             <li><span>Constitution</span><strong>@Model.ConstitutionType</strong></li>
-                            <li><span>PAN</span><strong>@Model.PanMasked</strong></li>
-                            <li><span>GSTIN</span><strong>@Model.GstinMasked</strong></li>
+                            <li><span>Taxpayer / Business Identity (PAN)</span><strong>@Model.PanMasked</strong></li>
+                            <li><span title="GST Identification Number">GSTIN</span><strong>@Model.GstinMasked</strong></li>
                             @if (!string.IsNullOrWhiteSpace(Model.Llpin))
                             {
                                 <li><span>LLPIN</span><strong>@Model.Llpin</strong></li>
                             }
                             <li><span>Formed On</span><strong>@Model.DateOfFormationText</strong></li>
                             <li><span>Registered Address</span><strong>@Model.RegisteredAddress</strong></li>
-                            <li><span>Email</span><strong>@Model.Email</strong></li>
-                            <li><span>Acknowledgement</span><strong>@Model.AcknowledgementNumber</strong></li>
+                            <li><span>Email</span><strong>@(Model.Email == "-" ? "-" : FinRiskLensAI.Core.Common.Universal.MaskEmail(Model.Email))</strong></li>
+                            <li><span>Acknowledgement No.</span><strong>@(Model.AcknowledgementNumber == "-" ? "-" : FinRiskLensAI.Core.Common.Universal.MaskValue(Model.AcknowledgementNumber, 0, 4))</strong></li>
                         </ul>
                     </div>
                 </div>
@@ -128,7 +128,8 @@
 
             <div class="col-12 col-lg-5">
                 <div class="dash-card h-100">
-                    <h6 class="card-heading"><i class="bi bi-stars me-2"></i>AI Observations</h6>
+                    <h6 class="card-heading"><i class="bi bi-list-check me-2"></i>Observations (Rule-Based)</h6>
+                    <p class="small text-muted mb-2">Computed from the return by fixed rules.</p>
                     <ul class="signal-list list-unstyled mb-0">
                         @foreach (var o in Model.Observations)
                         {
@@ -421,7 +422,7 @@
 
             <div class="col-12 col-lg-5">
                 <div class="dash-card h-100">
-                    <h6 class="card-heading mb-3"><i class="bi bi-card-checklist me-2"></i>Verification Matrix</h6>
+                    <h6 class="card-heading mb-3"><i class="bi bi-card-checklist me-2"></i>Checks on This Return</h6>
                     <div class="verif-grid">
                         @foreach (var v in Model.VerificationItems)
                         {

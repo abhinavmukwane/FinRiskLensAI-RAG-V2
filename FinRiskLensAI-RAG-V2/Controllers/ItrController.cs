@@ -414,7 +414,7 @@ namespace FinRiskLensAI.Controllers
                     "obs-risk", "bi-exclamation-triangle-fill");
 
             if (m.EVerified && m.ReturnProcessed)
-                Add("Return is e-verified and processed by CPC, so the declared figures are on record with the department.");
+                Add("The return shows as e-verified and processed by CPC (the department's Centralized Processing Centre).");
             else if (!m.EVerified)
                 Add("Return is not e-verified. Until it is, the department treats it as not filed.",
                     "obs-danger", "bi-x-octagon-fill");
@@ -426,19 +426,19 @@ namespace FinRiskLensAI.Controllers
                 Add("Tax liability is fully discharged with no outstanding demand.");
 
             if (m.Interest234B + m.Interest234C > 0)
-                Add($"Interest of {Money(m.Interest234B + m.Interest234C)} under sections 234B/234C indicates advance tax was short-paid or paid late — a cash-planning signal rather than evasion.",
+                Add($"Interest of {Money(m.Interest234B + m.Interest234C)} under sections 234B/234C indicates advance tax was short-paid or paid late.",
                     "obs-observation", "bi-info-circle-fill");
 
             if (m.AuditApplicable && !m.AuditCompleted)
                 Add($"Tax audit under {m.AuditSection} is applicable but Form 3CA/3CB has not been filed.",
                     "obs-danger", "bi-x-octagon-fill");
             else if (m.AuditCompleted)
-                Add($"Tax audit completed by {m.AuditorName} (UDIN {m.Udin}), giving the reported financials third-party assurance.");
+                Add($"Tax audit report (Form 3CA/3CB) under {m.AuditSection} is on the return, filed by {m.AuditorName} (UDIN {m.Udin}).");
 
             if (m.HasGstReconciliation)
             {
                 if (m.ReconciliationWithinTolerance)
-                    Add($"GST and ITR turnover agree within {Math.Abs(m.VariancePercent):0.##}% — the two filings tell the same revenue story.");
+                    Add($"GST and ITR turnover agree within {Math.Abs(m.VariancePercent):0.##}%.");
                 else
                     Add($"GST turnover differs from ITR-declared turnover by {Math.Abs(m.VariancePercent):0.##}% ({Money(Math.Abs(m.VarianceAmount))}). Worth reconciling before lending.",
                         "obs-risk", "bi-exclamation-triangle-fill");

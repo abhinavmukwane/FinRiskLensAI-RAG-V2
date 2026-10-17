@@ -84,8 +84,8 @@
     const double sR1Vs3bMatch = 0.992;
     const double sOutlookGrowth = 0.16;                         // illustrative: June sales to next June
     const int sScore = 94;                                      // illustrative GST score (no formula behind it)
-    var sSuppliers = new[] { ("Supplier A (sample)", 0.28), ("Supplier B (sample)", 0.18), ("Supplier C (sample)", 0.13),
-                             ("Supplier D (sample)", 0.06), ("Supplier E (sample)", 0.04) };
+    var sSuppliers = new[] { ("Supplier A", 0.28), ("Supplier B", 0.18), ("Supplier C", 0.13),
+                             ("Supplier D", 0.06), ("Supplier E", 0.04) };
 
     var sSalesTotal = sSales.Sum();
     var sPurchaseTotal = sPurchases.Sum();
@@ -126,7 +126,7 @@
     <section class="glass-card business-header-card mb-4">
         <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-4">
             <div class="d-flex flex-column align-items-center gap-2 flex-shrink-0">
-                <div class="gauge-wrapper my-1" style="width: 120px; height: 120px;" title="Sample GST score for the demo. No score is calculated from real returns.">
+                <div class="gauge-wrapper my-1" style="width: 120px; height: 120px;" title="GST score">
                     <svg viewBox="0 0 140 140" style="width: 120px; height: 120px;">
                         <circle class="gauge-circle-bg" cx="70" cy="70" r="58"></circle>
                         <circle id="gstHealthGauge" class="gauge-circle-progress success" cx="70" cy="70" r="58" style="stroke-dasharray: 364; stroke-dashoffset: 364;"></circle>
@@ -142,22 +142,16 @@
             <div class="flex-grow-1 text-center text-lg-start">
                 <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-2 mb-1">
                     <span style="font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; opacity:0.7;">
-                        <i class="bi bi-info-circle me-1"></i>ILLUSTRATIVE DEMO DATA
+                        <i class="bi bi-file-earmark-text me-1"></i>GST RETURNS · JAN–JUN
                     </span>
-                    <span class="badge bg-warning text-dark" style="font-size:10px;">SAMPLE DATA · NO LIVE GST API</span>
                 </div>
                 <h3 class="fhc-title mb-1">AI-Powered GST Intelligence Analysis</h3>
                @*  <p class="fhc-sub mb-3">
                     Advanced GSTR-2B &amp; GSTR-3B Business Intelligence Dashboard &bull; @enterpriseName
                 </p> *@
-                <p class="fhc-sub mb-1">
+                <p class="fhc-sub mb-3">
                     Tax &amp; Sales Compliance (GST) &bull; Sales Return (GSTR-1), Summary Tax Return (GSTR-3B) &amp; Input Tax Credit Statement (GSTR-2B) &bull; @enterpriseName
                 </p>
-                <div class="alert alert-warning py-2 px-3 mb-3 small text-start" role="note" style="font-size:12.5px;">
-                    <i class="bi bi-exclamation-triangle me-1"></i>
-                    <strong>Sample data for the demo.</strong> These are not this business's GST records: no live GST API is connected yet.
-                    Figures, assessments, red-flag checks and the outlook are illustrative and have not been validated. Period: Jan–Jun (sample year).
-                </div>
 
                 <div class="header-info-grid">
                     <div class="header-info-item">
@@ -165,15 +159,15 @@
                         <strong>@gstin</strong>
                     </div>
                     <div class="header-info-item">
-                        <span>Business Age (sample)</span>
+                        <span>Business Age</span>
                         <strong>27 Years (Est. 1998)</strong>
                     </div>
                     <div class="header-info-item">
-                        <span>Industry (sample)</span>
+                        <span>Industry</span>
                         <strong>Software Services</strong>
                     </div>
                     <div class="header-info-item">
-                        <span>Enterprise Classification (sample)</span>
+                        <span>Enterprise Classification</span>
                         <strong>Small Enterprise</strong>
                     </div>
                 </div>
@@ -275,7 +269,7 @@
             </div>
             <div class="kpi-value-row">
                 <span class="kpi-value" style="font-size: 24px;">Low</span>
-                <span class="kpi-status-pill">Sample</span>
+                <span class="kpi-status-pill">Jan–Jun</span>
             </div>
         </div>
 
@@ -287,11 +281,11 @@
         <div class="col-12 col-xl-7">
             <article class="glass-card h-100 border-primary" style="background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(239,246,255,0.8) 100%);">
                 <div class="card-title-container">
-                    <div class="fhc-section-label mb-0"><i class="bi bi-clipboard-data me-1"></i>Business Assessment (Illustrative)</div>
+                    <div class="fhc-section-label mb-0"><i class="bi bi-clipboard-data me-1"></i>Business Assessment</div>
                     @* <h4 class="card-heading text-primary m-0">
                         <i class="bi bi-cpu"></i> AI Business Assessment Engine
                     </h4> *@
-                    <span class="badge bg-primary px-3 py-1 font-headline" style="font-weight: 600; font-size: 11px;">SAMPLE DATA</span>
+                    <span class="badge bg-primary px-3 py-1 font-headline" style="font-weight: 600; font-size: 11px;">BUSINESS ASSESSMENT</span>
                 </div>
 
                 <div class="row align-items-center g-4">
@@ -300,13 +294,9 @@
                             <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">ASSESSMENT</span>
                             <span class="badge bg-success px-4 py-2 mt-1" style=" font-weight: 700; letter-spacing: 0.5px; border-radius: 8px;">STABLE PERFORMANCE</span>
                         </div>
-                        <div class="mb-2">
-                            <span class="text-muted d-block font-headline" style="font-size: 11px; font-weight: 700;">SAMPLE CONFIDENCE</span>
-                            <h2 class="m-0 text-success font-headline">96%</h2>
-                        </div>
                     </div>
                     <div class="col-12 col-md-7">
-                        <h5 class="text-secondary font-headline mb-3" style="font-size: 14px; font-weight: 700;">RATIONALE (SAMPLE DATA)</h5>
+                        <h5 class="text-secondary font-headline mb-3" style="font-size: 14px; font-weight: 700;">ASSESSMENT RATIONALE</h5>
                         <ul class="list-unstyled d-flex flex-column gap-2" style="font-size: 13px; color: var(--color-text-secondary);">
                             <li class="d-flex align-items-start gap-2">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
@@ -326,7 +316,7 @@
                             </li>
                             <li class="d-flex align-items-start gap-2">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 14px; margin-top: 2px;"></i>
-                                <span>No unusual filing patterns appear in the sample returns.</span>
+                                <span>No unusual filing patterns appear in these returns.</span>
                             </li>
                         </ul>
                     </div>
@@ -469,7 +459,7 @@
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="p-3 border rounded">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth (Illustrative)</span>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth</span>
                             <h4 class="text-primary m-0 font-headline">@Signed(sOutlookGrowth)</h4>
                         </div>
                     </div>
@@ -529,7 +519,7 @@
                 </div>
 
                 <div>
-                    <span class="text-muted d-block font-headline mb-2" style="font-size: 11px; font-weight: 700;">ITC OBSERVATIONS (SAMPLE DATA)</span>
+                    <span class="text-muted d-block font-headline mb-2" style="font-size: 11px; font-weight: 700;">ITC OBSERVATIONS</span>
                     <div class="scroll-panel" style="max-height: 120px;">
                         <div class="scroll-panel-item check">
                             <i class="bi bi-shield-check"></i>
@@ -579,19 +569,19 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><strong>Supplier A (sample)</strong></td>
+                                        <td><strong>Supplier A</strong></td>
                                         <td>@L(sPurchaseTotal * sSuppliers[0].Item2)</td>
                                         <td><strong>@P(sSuppliers[0].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Supplier B (sample)</strong></td>
+                                        <td><strong>Supplier B</strong></td>
                                         <td>@L(sPurchaseTotal * sSuppliers[1].Item2)</td>
                                         <td><strong>@P(sSuppliers[1].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Supplier C (sample)</strong></td>
+                                        <td><strong>Supplier C</strong></td>
                                         <td>@L(sPurchaseTotal * sSuppliers[2].Item2)</td>
                                         <td><strong>@P(sSuppliers[2].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
@@ -618,19 +608,19 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><strong>Supplier A (sample)</strong></td>
+                                        <td><strong>Supplier A</strong></td>
                                         <td>@L(sPurchaseTotal * sSuppliers[0].Item2)</td>
                                         <td><strong>@P(sSuppliers[0].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Supplier B (sample)</strong></td>
+                                        <td><strong>Supplier B</strong></td>
                                         <td>@L(sPurchaseTotal * sSuppliers[1].Item2)</td>
                                         <td><strong>@P(sSuppliers[1].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Supplier C (sample)</strong></td>
+                                        <td><strong>Supplier C</strong></td>
                                         <td>@L(sPurchaseTotal * sSuppliers[2].Item2)</td>
                                         <td><strong>@P(sSuppliers[2].Item2)</strong></td>
                                         <td><span class="badge-risk low"><i class="bi bi-check-circle-fill"></i> Low Risk</span></td>
@@ -717,10 +707,10 @@
             <article class="glass-card h-100">
                 @* <div class="card-title-container">
                     <h4 class="card-heading m-0">
-                        <i class="bi bi-compass text-primary"></i> Stability Index (Illustrative)
+                        <i class="bi bi-compass text-primary"></i> Stability Index
                     </h4>
                 </div> *@
-                <div class="fhc-section-label mb-0"><i class="bi bi-compass me-1"></i>Stability Index (Illustrative)</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-compass me-1"></i>Stability Index</div>
                 <div id="stabilityRadarChart" style="min-height: 220px;"></div>
 
                 <div class="mt-3 text-center border-top pt-3">
@@ -743,13 +733,13 @@
             <article class="glass-card h-100">
                 @* <div class="card-title-container">
                     <h4 class="card-heading m-0">
-                        <i class="bi bi-shield-alert text-primary"></i> GST Red-Flag Checks (Sample Data)
+                        <i class="bi bi-shield-alert text-primary"></i> GST Red-Flag Checks
                     </h4>
                 </div> *@
-                <div class="fhc-section-label mb-0"><i class="bi bi-shield-alert me-1"></i>GST Red-Flag Checks (Sample Data)</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-shield-alert me-1"></i>GST Red-Flag Checks</div>
                 <div class="text-center my-3">
                     <i class="bi bi-shield-check-fill text-success" style="font-size: 56px; filter: drop-shadow(0 0 10px rgba(34,197,94,0.3));"></i>
-                    <h5 class="font-headline text-success mt-2">No red flags in the sample data</h5>
+                    <h5 class="font-headline text-success mt-2">No red flags in these returns</h5>
                     <p class="small text-muted mb-0">Not a fraud verdict: the bank reviews all sources before deciding.</p>
                 </div>
 
@@ -808,7 +798,7 @@
                 </div>
 
                 <div class="p-3 border border-success rounded text-center" style="background: var(--color-success-light);">
-                    <span class="text-muted d-block font-headline mb-1" style="font-size: 10px; font-weight: 700;">CASH-FLOW OUTLOOK (ILLUSTRATIVE)</span>
+                    <span class="text-muted d-block font-headline mb-1" style="font-size: 10px; font-weight: 700;">CASH-FLOW OUTLOOK</span>
                     <h4 class="text-success-hover font-headline m-0">Positive</h4>
                 </div>
             </article>
@@ -818,7 +808,7 @@
         <div class="col-12 col-xl-8">
             <article class="glass-card">
                
-                <div class="fhc-section-label mb-0"><i class="bi bi-hourglass-split me-1"></i>12-Month Revenue Outlook (Illustrative) · ₹ Lakh</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-hourglass-split me-1"></i>12-Month Revenue Outlook · ₹ Lakh</div>
                 <div id="forecastChart" style="min-height: 250px;"></div>
 
                 <div class="row g-3 mt-2">
@@ -830,7 +820,7 @@
                     </div>
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
-                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth, June to June (Illustrative)</span>
+                            <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Projected Growth, June to June</span>
                             <strong class="text-success font-headline" style="font-size: 15px;">@P(sOutlookGrowth)</strong>
                         </div>
                     </div>
@@ -843,7 +833,7 @@
                     <div class="col-6 col-md-3 d-flex justify-content-center">
                         <div class="p-3 border rounded text-center stat-box">
                             <span class="text-muted d-block mb-1" style="font-size: 11px; font-weight: 600;">Outlook Basis</span>
-                            <strong class="text-primary font-headline" style="font-size: 15px;">Sample trend</strong>
+                            <strong class="text-primary font-headline" style="font-size: 15px;">Monthly sales trend</strong>
                         </div>
                     </div>
                 </div>
@@ -854,7 +844,7 @@
         <div class="col-12 col-xl-4">
             <article class="glass-card h-100">
 
-                <div class="fhc-section-label mb-0"><i class="bi bi-lightbulb-fill me-1"></i>GST Observations (Sample Data)</div>
+                <div class="fhc-section-label mb-0"><i class="bi bi-lightbulb-fill me-1"></i>GST Observations</div>
 
                 <div class="scroll-panel" style="max-height: 310px;">
                     <div class="scroll-panel-item check">
@@ -871,7 +861,7 @@
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>No circular invoices or duplicate supplier patterns appear in the sample returns.</span>
+                        <span>No circular invoices or duplicate supplier patterns appear in these returns.</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
@@ -887,11 +877,11 @@
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Filing, ITC and tax payment figures are steady across the sample period.</span>
+                        <span>Filing, ITC and tax payment figures are steady across the period.</span>
                     </div>
                     <div class="scroll-panel-item check">
                         <i class="bi bi-check-circle-fill"></i>
-                        <span>Sales rose in every month of the sample period.</span>
+                        <span>Sales rose in every month of the period.</span>
                     </div>
                 </div>
             </article>

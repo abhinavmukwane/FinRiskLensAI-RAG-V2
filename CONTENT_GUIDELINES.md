@@ -124,23 +124,22 @@ These are the defaults. A page may adjust its subtitle to match what it actually
 
 ### Approved: GST analysis (`Shared/_GstAnalysisBody.cshtml`, shared with the bank's Customer 360)
 
-**Decision (Oct 17):** the page shows **static illustrative demo data**, the same for every business, because no live GST API exists. A version with figures extracted from the stored returns was built and set aside; it can come back once a GST integration exists.
+**Decision (Oct 17):** the page shows **static sample data**, the same for every business, because no live GST API exists. It carries no on-page sample label (see Header note). A version with figures extracted from the stored returns was built and set aside; it can come back once a GST integration exists.
 
 | Element | Wording |
 |---|---|
-| Header tag | ILLUSTRATIVE DEMO DATA (never "GST RETURNS VERIFIED") |
-| Header note | Illustrative figures for the demo, not this business's GST returns. No live GST integration is connected yet. |
-| Supplier names | Supplier A / B / C (sample). Never real company names: a real name on a demo page reads as a real trading relationship. |
+| Header tag | GST RETURNS · JAN–JUN. Never "GST RETURNS VERIFIED": nothing is verified. |
+| Header note | None. **Decision (Oct 17, B):** no on-page "sample data" banners or labels on the GST and ITR pages. The data is still generated; say so in the README, deck and video, and the chatbot context still tells the assistant the figures are sample data so it never presents them as real records. |
+| Supplier names | Supplier A / B / C. Never real company names: a real name on a demo page reads as a real trading relationship. |
 | Chatbot context | Tells the assistant that every figure is illustrative demo data |
 | Everything else | The fixed demo figures, charts and texts as in the code (score 94, turnover, ITC, forecast, red flags…). They describe no real business; don't quote them as findings in docs, the deck or the video. |
 | Subtitle | Tax & Sales Compliance (GST) · Sales Return (GSTR-1), Summary Tax Return (GSTR-3B) & Input Tax Credit Statement (GSTR-2B) · [business name] |
 | Key figures | Annual Turnover (GSTR-3B · 12 months) · Turnover Growth (Year on year) · Filing Compliance · ITC Utilization (Claimed vs GSTR-2B) · GSTR-1 vs GSTR-3B Match · Tax Paid Directly in Cash · Active B2B Customers · GST Risk Level |
-| Section titles | Business Assessment (Illustrative) · Tax Filing Compliance (GST) & Filing History · Monthly Sales vs Purchases · Input Tax Credit (ITC) · GSTR-2B vs GSTR-3B · Supplier / Vendor Concentration · Tax Liability & Payment (GSTR-3B) · Stability Index (Illustrative) · GST Red-Flag Checks (Sample Data) · Sales, Purchase & Tax Trends · 12-Month Revenue Outlook (Illustrative) · GST Observations (Sample Data) |
+| Section titles | Business Assessment · Tax Filing Compliance (GST) & Filing History · Monthly Sales vs Purchases · Input Tax Credit (ITC) · GSTR-2B vs GSTR-3B · Supplier / Vendor Concentration · Tax Liability & Payment (GSTR-3B) · Stability Index · GST Red-Flag Checks · Sales, Purchase & Tax Trends · 12-Month Revenue Outlook · GST Observations |
 | Claims removed | "AI" on the assessment card, "Confidence level", "Zero red flags detected", "Not detected", "fraud check passes", "89% Conf.", "Upper bound (95% CI)", "Forecast accuracy 92%", "exceeds industry averages", "perfect 100% on-time" (it contradicted the 98% card). Red flags read "No red flags in the sample data — not a fraud verdict". |
 | Units | Charts and money sections state ₹ Lakh; growth reads "year on year"; the filing timeline states its months (Jan–Jun). |
 | Sample dataset | One dataset at the top of `_GstAnalysisBody.cshtml` (monthly sales, purchases, tax, suppliers, filing counts, ITC available, outlook growth). Every card, sentence and chart reads from it (charts via `window.frlGstDemo`), so the figures can't contradict each other. Change a demo figure there, never in the markup. |
-| Disclaimer | Header badge SAMPLE DATA · NO LIVE GST API, plus a warning box: "Sample data for the demo. These are not this business's GST records: no live GST API is connected yet. Figures, assessments, red-flag checks and the outlook are illustrative and have not been validated. Period: Jan–Jun (sample year)." |
-| Sample labels | Header details read Business Age / Industry / Enterprise Classification (sample); GST Risk Level pill reads Sample; "Growth Stability" became "Months with Sales Growth" (counted from the dataset). |
+| Removed with the labels | The "Sample confidence 96%" block: without a sample label it would read as a model's confidence, and no model exists. Keep wording that claims no checks ("No red flags in these returns", "Not a fraud verdict"). |
 
 ### Approved: Home page (`Home/Index.cshtml`)
 

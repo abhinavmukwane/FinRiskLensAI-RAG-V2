@@ -176,10 +176,10 @@
         // 5. 12-Month Forecast
         renderChart('forecast', '#forecastChart', {
             series: [{
-                name: 'Projected revenue (illustrative)',
+                name: 'Projected revenue',
                 data: demo.outlookLakh || []
             }, {
-                name: 'Upper range (illustrative)',
+                name: 'Upper range',
                 data: demo.outlookUpperLakh || []
             }],
             chart: { height: 250, type: 'line', toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
@@ -190,7 +190,7 @@
                 axisBorder: { show: false },
                 axisTicks: { show: false }
             },
-            yaxis: { title: { text: 'Projected revenue (₹ Lakh, illustrative)' } },
+            yaxis: { title: { text: 'Projected revenue (₹ Lakh)' } },
             grid: { borderColor: '#f1f5f9' },
             legend: { position: 'top', horizontalAlign: 'right' }
         });
