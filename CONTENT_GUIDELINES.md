@@ -76,7 +76,7 @@ bankers outside India should understand the term; Indian users should still reco
 8. Keep the Financial Health Score (not built, §1) separate from the Udyam registration-profile score.
 9. Don't hardcode customer names, registration numbers, scores, addresses or other dynamic values.
 10. Keep text concise. Don't add long explanations to every card.
-11. Preserve language switching (the Bhashini translation plugin).
+11. Preserve language switching (Google Translate / Google Cloud Translation for the JAPAC region).
 12. This document is the single source of truth for user-facing terminology. Every page change follows it.
 
 ---

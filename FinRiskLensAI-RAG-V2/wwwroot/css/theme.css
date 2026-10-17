@@ -1,4 +1,4 @@
-﻿/* =====================================================================
+/* =====================================================================
    FinRiskLens AI — brand theme tokens (switchable)
 
    Theme 1 — IDBI Bank's own site palette:
@@ -159,7 +159,7 @@
 
 /* ---------------------------------------------------------------------
    Theme toggle icon (rendered by Views/Shared/_ThemeSwitch.cshtml) —
-   sits in the header beside the Bhashini translation button. The
+   sits in the header beside the Google translation button. The
    two-tone dot shows the current palette; clicking switches theme.
    Default styling matches a light topbar; .brandbar overrides below
    match the dark landing/onboarding header.

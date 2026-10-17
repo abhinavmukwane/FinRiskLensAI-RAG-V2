@@ -1,0 +1,314 @@
+/* ==========================================================================
+   Google Translate Plugin Stylesheet — JAPAC Edition
+   FinRiskLens AI — Google AI Builder Cup 2026
+   ========================================================================== */
+
+/* Container */
+.google-translate-container,
+.bhashini-plugin-container {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    vertical-align: middle;
+}
+
+.gt-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Dropdown trigger button — perfectly sized and colored to match the Sign In button */
+.gt-dropdown-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 38px;
+    padding: 0 1rem;
+    font-family: var(--font-heading, 'Sora', sans-serif);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.5;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem; /* matching Bootstrap rounded-3 */
+    color: #ffffff !important;
+    text-decoration: none;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    user-select: none;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.gt-dropdown-btn:hover,
+.gt-dropdown-btn:focus-visible,
+.gt-open .gt-dropdown-btn,
+.google-translate-container.gt-open .gt-dropdown-btn {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: var(--gold-soft, #f3e2b2) !important;
+    color: #ffffff !important;
+    outline: none;
+}
+
+/* Icon & Label styling inside button — pure crisp white matching Sign In */
+.gt-dropdown-btn .gt-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #ffffff !important;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.gt-dropdown-btn .gt-current-code {
+    font-family: var(--font-heading, 'Sora', sans-serif);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+.gt-dropdown-btn .gt-caret {
+    display: inline-block;
+    font-size: 0.65rem;
+    color: #ffffff;
+    margin-left: 2px;
+    transition: transform 0.2s ease;
+}
+
+.gt-open .gt-dropdown-btn .gt-caret,
+.google-translate-container.gt-open .gt-caret {
+    transform: rotate(180deg);
+}
+
+/* --------------------------------------------------------------------------
+   Light theme overrides (Dashboard topbar)
+   -------------------------------------------------------------------------- */
+.topbar .gt-dropdown-btn,
+.topbar-actions .gt-dropdown-btn {
+    background: #ffffff;
+    border: 1px solid var(--brand-tint-border, #e2e8f0);
+    border-radius: 10px;
+    color: var(--maroon, #8b1538) !important;
+    height: 38px;
+    padding: 0 0.85rem;
+}
+
+.topbar .gt-dropdown-btn .gt-icon,
+.topbar-actions .gt-dropdown-btn .gt-icon {
+    color: var(--maroon, #8b1538);
+}
+
+.topbar .gt-dropdown-btn .gt-current-code,
+.topbar-actions .gt-dropdown-btn .gt-current-code {
+    color: var(--maroon, #8b1538);
+}
+
+.topbar .gt-dropdown-btn .gt-caret,
+.topbar-actions .gt-dropdown-btn .gt-caret {
+    color: var(--maroon, #8b1538);
+    opacity: 0.7;
+}
+
+.topbar .gt-dropdown-btn:hover,
+.topbar .gt-dropdown-btn:focus-visible,
+.topbar-actions .gt-open .gt-dropdown-btn {
+    background: var(--brand-tint-bg, #f8fafc) !important;
+    border-color: var(--maroon, #8b1538) !important;
+    color: var(--maroon, #8b1538) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Dropdown Menu Panel
+   -------------------------------------------------------------------------- */
+.gt-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 270px;
+    max-width: 320px;
+    max-height: 420px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 0.85rem;
+    box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.22), 0 8px 10px -6px rgba(0, 0, 0, 0.12);
+    z-index: 2500;
+    padding: 6px;
+    box-sizing: border-box;
+    animation: gtFadeIn 0.15s ease-out;
+}
+
+@keyframes gtFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.gt-open .gt-dropdown-menu {
+    display: block;
+}
+
+/* Header inside dropdown */
+.gt-menu-header {
+    padding: 8px 10px 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gt-menu-header-badge {
+    font-size: 0.65rem;
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* Search input inside dropdown */
+.gt-search-box {
+    padding: 6px 6px 4px;
+}
+
+.gt-search-input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    outline: none;
+    box-sizing: border-box;
+    background: #f8fafc;
+    color: #1e293b;
+    transition: border-color 0.15s ease;
+}
+
+.gt-search-input:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+}
+
+/* Language List */
+.gt-language-list {
+    list-style: none;
+    margin: 4px 0;
+    padding: 0;
+    max-height: 270px;
+    overflow-y: auto;
+}
+
+.gt-language-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.84rem;
+    color: #1e293b;
+    transition: background 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+
+.gt-language-item:hover,
+.gt-language-item:focus {
+    background: #f1f5f9;
+    color: #0f172a;
+    outline: none;
+}
+
+.gt-language-item.active {
+    background: #eef2ff;
+    color: #3730a3;
+    font-weight: 600;
+}
+
+.gt-language-item .gt-lang-name {
+    display: flex;
+    flex-direction: column;
+}
+
+.gt-language-item .gt-lang-english {
+    font-size: 0.82rem;
+    color: #1e293b;
+}
+
+.gt-language-item .gt-lang-native {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.gt-language-item.active .gt-lang-native {
+    color: #4f46e5;
+}
+
+.gt-language-item .gt-lang-check {
+    opacity: 0;
+    color: #4f46e5;
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.gt-language-item.active .gt-lang-check {
+    opacity: 1;
+}
+
+/* Footer inside dropdown */
+.gt-menu-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px 4px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.gt-menu-footer svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Toast feedback notification */
+.gt-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(15, 23, 42, 0.92);
+    color: #ffffff;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.25s ease;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gt-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}

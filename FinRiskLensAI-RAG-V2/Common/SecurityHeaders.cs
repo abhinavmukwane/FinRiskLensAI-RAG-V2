@@ -14,12 +14,11 @@ namespace FinRiskLensAI.Common
         //  jsDelivr / cdnjs / unpkg : Bootstrap, Bootstrap Icons, Chart.js,
         //                             ApexCharts, Leaflet, Font Awesome
         //  Google Fonts             : stylesheet (googleapis) + font files (gstatic)
-        //  Bhashini                 : the language-translation widget
+        //  Google Translate         : translation widget scripts, styles, and api
         //  CARTO                    : basemap tiles for the IP-audit map
         //  lh3.googleusercontent    : marketing images on the landing page
         private const string Cdn = "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com";
-        private const string Bhashini = "https://translation-plugin.bhashini.co.in";
-        private const string BhashiniApi = "https://bhashini.gov.in https://api.finrisklensai.com";
+        private const string GoogleTranslate = "https://translate.google.com https://translate.googleapis.com https://www.gstatic.com";
 
         /// <summary>
         /// Builds the CSP. 'unsafe-inline' is required for both scripts and styles:
@@ -41,7 +40,7 @@ namespace FinRiskLensAI.Common
             // is harmless, but it logs a violation whenever DevTools is open — so the
             // CDNs are allowed here too. They already serve executable script, which
             // is the stronger grant.
-            var connect = $"'self' {Cdn} {Bhashini} {BhashiniApi}";
+            var connect = $"'self' {Cdn} {GoogleTranslate}";
 
             if (isDevelopment)
                 connect += " ws://localhost:* wss://localhost:* http://localhost:* https://localhost:*";
@@ -49,12 +48,12 @@ namespace FinRiskLensAI.Common
             return string.Join("; ", new[]
             {
                 "default-src 'self'",
-                $"script-src 'self' 'unsafe-inline' {Cdn} {Bhashini}",
-                $"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com {Cdn} {Bhashini}",
+                $"script-src 'self' 'unsafe-inline' {Cdn} {GoogleTranslate}",
+                $"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com {Cdn} {GoogleTranslate}",
                 $"font-src 'self' data: https://fonts.gstatic.com {Cdn}",
-                $"img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.basemaps.cartocdn.com {Cdn} {Bhashini}",
+                $"img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.basemaps.cartocdn.com {Cdn} {GoogleTranslate}",
                 $"connect-src {connect}",
-                "frame-src 'self'",
+                $"frame-src 'self' {GoogleTranslate}",
                 "object-src 'none'",
                 "base-uri 'self'",
                 "form-action 'self'",

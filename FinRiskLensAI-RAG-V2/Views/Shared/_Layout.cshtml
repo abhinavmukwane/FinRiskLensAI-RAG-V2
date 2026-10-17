@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -14,10 +14,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <link href="~/css/theme.css" asp-append-version="true" rel="stylesheet" />
-    @* Vendored Bhashini plugin stylesheet. Must be a <head> link, not the
-       runtime-injected remote one the plugin JS used to append — that landed
-       after its own markup and flashed the raw language list on every load. *@
-    <link href="~/css/bhashini-plugin.css" rel="stylesheet" asp-append-version="true" />
+    @* Google Translate stylesheet — JAPAC Edition *@
+    <link href="~/css/google-translate.css" rel="stylesheet" asp-append-version="true" />
     <script src="~/js/theme.js" asp-append-version="true"></script>
     <link href="~/css/Index.css" rel="stylesheet" />
     <link href="~/css/SiteLayout.css" rel="stylesheet" asp-append-version="true" />
@@ -56,8 +54,8 @@
                         </a>
                     </div>
                 </div>
-                <!-- Translation Plugin Goes Here -->
-                <div class="bhashini-plugin-container"></div>
+                <!-- Google Translate Plugin (JAPAC) -->
+                <div class="google-translate-container"></div>
                 @await Html.PartialAsync("_ThemeSwitch")
 
             </div>
@@ -170,14 +168,7 @@
         </div>
     </footer>
 
-    <script src="~/js/website_translation_utility.js"
-            asp-append-version="true"
-            page-source-language="en"
-            translation-language-list="en,hi,mr,ta,gu,gom,sa"
-            language_order="en,hi,mr,ta,gu,gom,sa"
-            initial_preferred_language="en"
-            language-icon-color="#F3E2B2">
-    </script>
+    <script src="~/js/google_translate_utility.js" asp-append-version="true"></script>
 
     <script>
         // Login dropdown — hover opens it (see SiteLayout.css); this adds

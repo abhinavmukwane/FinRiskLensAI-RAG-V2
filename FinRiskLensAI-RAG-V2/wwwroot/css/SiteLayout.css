@@ -1,21 +1,36 @@
-﻿/* Extracted from _Layout.cshtml */
-        /* Bhashini language widget — themed to sit in the maroon brandbar */
+/* Extracted from _Layout.cshtml */
+        /* Google Translate language widget — themed to sit in the maroon brandbar */
         .brandbar { overflow: visible !important; }      /* let the language dropdown escape the header (beats page-level index.css) */
-        .bhashini-plugin-container { display: flex; align-items: center; }
+        .google-translate-container, .bhashini-plugin-container { display: flex; align-items: center; position: relative; }
+        .google-translate-container .gt-dropdown-btn,
         .bhashini-plugin-container .bhashini-dropdown-btn {
-            background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .2);
             border-radius: .75rem;
-            padding: .3rem .45rem;
-            display: flex; align-items: center; justify-content: center;
+            height: 38px;
+            padding: 0 1rem;
+            font-family: var(--font-heading, 'Sora', sans-serif);
+            font-size: .85rem;
+            font-weight: 600;
+            line-height: 1.5;
+            color: #ffffff !important;
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
             cursor: pointer;
-            transition: background .2s ease, border-color .2s ease;
+            transition: background .2s ease, border-color .2s ease, color .2s ease;
+            box-sizing: border-box;
+            white-space: nowrap;
         }
-        .bhashini-plugin-container .bhashini-dropdown-btn:hover {
-            background: rgba(255,255,255,.15);
-            border-color: var(--gold-soft);
+        .google-translate-container .gt-dropdown-btn:hover,
+        .bhashini-plugin-container .bhashini-dropdown-btn:hover,
+        .google-translate-container.gt-open .gt-dropdown-btn {
+            background: rgba(255, 255, 255, .15) !important;
+            border-color: var(--gold-soft) !important;
+            color: #ffffff !important;
         }
-        .bhashini-plugin-container .bhashini-dropdown-btn-icon svg { display: block; width: 24px; height: 24px; }
+        .google-translate-container .gt-icon { color: #ffffff !important; font-size: 1.1rem; line-height: 1; vertical-align: middle; }
+        .google-translate-container .gt-current-code { color: #ffffff; font-family: var(--font-heading, 'Sora', sans-serif); font-size: .85rem; font-weight: 600; }
+        .google-translate-container .gt-caret { color: #ffffff; font-size: .65rem; transition: transform 0.2s ease; }
+        .google-translate-container.gt-open .gt-caret { transform: rotate(180deg); }
 
         /* Login dropdown — User Login / Bank Login, opens on hover or click */
         .frl-login-dropdown { position: relative; }

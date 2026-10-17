@@ -162,9 +162,10 @@
     color: var(--brand-on-primary-faint);
     }
 
-    /* Bhashini language widget — themed for the light topbar */
+    /* Google Translate language widget — themed for the light topbar */
     .topbar, .topbar-right, .topbar-actions { overflow: visible; }
-    .bhashini-plugin-container { display: flex; align-items: center; }
+    .google-translate-container, .bhashini-plugin-container { display: flex; align-items: center; position: relative; }
+    .google-translate-container .gt-dropdown-btn,
     .bhashini-plugin-container .bhashini-dropdown-btn {
         background: #fff;
         border: 1px solid var(--brand-tint-border);
@@ -174,11 +175,13 @@
         cursor: pointer;
         transition: background .2s ease, border-color .2s ease;
     }
+    .google-translate-container .gt-dropdown-btn:hover,
     .bhashini-plugin-container .bhashini-dropdown-btn:hover {
         background: var(--brand-tint-bg);
         border-color: var(--maroon);
     }
-    .bhashini-plugin-container .bhashini-dropdown-btn-icon svg { display: block; width: 24px; height: 24px; }
+    .google-translate-container .gt-icon svg,
+    .bhashini-plugin-container .bhashini-dropdown-btn-icon svg { display: block; width: 20px; height: 20px; }
 
         .nav-header-badge {
         background: var(--brand-logout-bg);
