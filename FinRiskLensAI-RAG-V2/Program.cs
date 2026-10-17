@@ -72,6 +72,9 @@ builder.Services.AddAppDbContext(builder.Configuration);
 // customer-facing controllers (UAN from session) and the bank portal (UAN from
 // route), so both render identical data from one code path.
 builder.Services.AddScoped<FinRiskLensAI.Common.CustomerProfileBuilder>();
+// The FinRiskLens AI Assistant: whole-assessment context (server-side, per session UAN) and the Gemini call.
+builder.Services.AddScoped<FinRiskLensAI.Common.AssessmentContextBuilder>();
+builder.Services.AddScoped<FinRiskLensAI.Common.CreditAssistant>();
 
 // Persist DataProtection keys so session cookies survive app restarts / pool
 // recycles — otherwise ephemeral keys regenerate and everyone is silently logged

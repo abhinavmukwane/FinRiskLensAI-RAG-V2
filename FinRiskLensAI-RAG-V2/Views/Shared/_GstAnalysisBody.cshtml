@@ -68,41 +68,39 @@
     var pan = Universal.MaskPan(Model.PanNumber ?? user?.PanNumber ?? "AAAAA1111A");
     var uan = Universal.MaskUdyam(Model.Uan ?? "UDYAM-MH-20-0033382");
 
-    // ── One illustrative sample dataset for the whole page (no live GST API yet) ──
-    // Every card, chart and sentence reads from here, so the figures stay consistent.
-    // Amounts are ₹ lakh; the period is Jan–Jun of one financial year.
-    string[] sMonths = { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
-    double[] sSales = { 84, 90, 105, 112, 122, 130 };           // outward supplies (GSTR-3B)
-    double[] sPurchases = { 62, 65, 78, 80, 85, 92 };           // inward supplies (GSTR-2B)
-    double[] sTax = { 4.2, 4.5, 5.2, 5.6, 6.1, 6.5 };           // tax liability (GSTR-3B), paid in full
-    const double sPriorSales = 543, sPriorPurchases = 412.5;    // same months of the previous year
-    const double sCashShare = 0.29;                             // tax paid directly in cash
-    const double sRcm = 1.2;                                    // reverse charge, paid in cash
-    const double sItcAvailable = 23.5;                          // ITC available in GSTR-2B
-    const int sReturnsDue = 12, sReturnsFiled = 12, sLateReturns = 0;   // GSTR-1 + GSTR-3B, 6 months
-    const int sB2bCustomers = 126, sActiveSuppliers = 82;
-    const double sR1Vs3bMatch = 0.992;
-    const double sOutlookGrowth = 0.16;                         // illustrative: June sales to next June
-    const int sScore = 94;                                      // illustrative GST score (no formula behind it)
-    var sSuppliers = new[] { ("Supplier A", 0.28), ("Supplier B", 0.18), ("Supplier C", 0.13),
-                             ("Supplier D", 0.06), ("Supplier E", 0.04) };
+    // ── The page's single sample dataset (no live GST API yet) lives in GstSampleData, ──
+    // shared with the assistant's assessment context. Every card, chart and sentence below
+    // reads from these locals, so the figures stay consistent. Amounts are ₹ lakh, Jan–Jun.
+    var sMonths = GstSampleData.Months;
+    var sSales = GstSampleData.Sales;
+    var sPurchases = GstSampleData.Purchases;
+    var sTax = GstSampleData.Tax;
+    const double sCashShare = GstSampleData.CashShare;
+    const double sRcm = GstSampleData.Rcm;
+    const double sItcAvailable = GstSampleData.ItcAvailable;
+    const int sReturnsDue = GstSampleData.ReturnsDue, sReturnsFiled = GstSampleData.ReturnsFiled, sLateReturns = GstSampleData.LateReturns;
+    const int sB2bCustomers = GstSampleData.B2bCustomers, sActiveSuppliers = GstSampleData.ActiveSuppliers;
+    const double sR1Vs3bMatch = GstSampleData.R1Vs3bMatch;
+    const double sOutlookGrowth = GstSampleData.OutlookGrowth;
+    const int sScore = GstSampleData.Score;
+    var sSuppliers = GstSampleData.Suppliers.Select(s => (s.Name, s.Share)).ToArray();
 
-    var sSalesTotal = sSales.Sum();
-    var sPurchaseTotal = sPurchases.Sum();
-    var sAnnualised = sSalesTotal / sSales.Length * 12;
-    var sSalesGrowth = sSalesTotal / sPriorSales - 1;
-    var sPurchaseGrowth = sPurchaseTotal / sPriorPurchases - 1;
-    var sMonthsUp = sSales.Zip(sSales.Skip(1), (a, b) => b > a).Count(up => up);
-    var sTaxTotal = sTax.Sum();
-    var sTaxCash = Math.Round(sTaxTotal * sCashShare, 1);
-    var sTaxItc = Math.Round(sTaxTotal - sTaxCash, 1);          // ITC used = ITC claimed
-    var sItcUtil = sTaxItc / sItcAvailable;
-    var sItcUnclaimed = Math.Round(sItcAvailable - sTaxItc, 1);
-    var sFiling = (double)sReturnsFiled / sReturnsDue;
-    var sTop5 = sSuppliers.Sum(s => s.Item2);
-    var sOutlook = Enumerable.Range(1, 12).Select(k => Math.Round(sSales[^1] * (1 + sOutlookGrowth * k / 12), 1)).ToArray();
-    var sOutlookUpper = sOutlook.Select(v => Math.Round(v * 1.06, 1)).ToArray();
-    string[] sOutlookMonths = { "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+    var sSalesTotal = GstSampleData.SalesTotal;
+    var sPurchaseTotal = GstSampleData.PurchaseTotal;
+    var sAnnualised = GstSampleData.Annualised;
+    var sSalesGrowth = GstSampleData.SalesGrowth;
+    var sPurchaseGrowth = GstSampleData.PurchaseGrowth;
+    var sMonthsUp = GstSampleData.MonthsUp;
+    var sTaxTotal = GstSampleData.TaxTotal;
+    var sTaxCash = GstSampleData.TaxCash;
+    var sTaxItc = GstSampleData.TaxItc;
+    var sItcUtil = GstSampleData.ItcUtil;
+    var sItcUnclaimed = GstSampleData.ItcUnclaimed;
+    var sFiling = GstSampleData.Filing;
+    var sTop5 = GstSampleData.Top5;
+    var sOutlook = GstSampleData.Outlook;
+    var sOutlookUpper = GstSampleData.OutlookUpper;
+    var sOutlookMonths = GstSampleData.OutlookMonths;
 
     string L(double lakh) => lakh >= 100 ? $"₹{lakh / 100:0.0} Cr" : $"₹{lakh:0.0} Lakh";
     string P(double v, string fmt = "0") => (v * 100).ToString(fmt) + "%";

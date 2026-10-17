@@ -1,45 +1,51 @@
 @*
-    Universal FinRiskLens AI chatbot — include once per layout. Pages give the
-    bot their screen data by setting (before this partial renders its script):
-
-        window.frlChatContext = {
-            pageKey:  'UdyamDetails',                    // unique per screen
-            pageName: 'Udyam Verification',              // used in the greeting
-            context:  { ...full screen data object... }  // sent once, on first question
-        };
-
-    Pages that don't set it still get the generic assistant.
+    FinRiskLens AI Assistant — include once per layout (customer dashboard).
+    The assistant answers about the signed-in business's whole assessment, whatever page is
+    open: ChatbotController rebuilds the context server-side from the session. Pages may still
+    set window.frlChatContext = { pageKey, pageName } — only the page name is used, as a hint.
 *@
-<link rel="stylesheet" href="~/css/Chatbot.css" />
+<link rel="stylesheet" href="~/css/Chatbot.css" asp-append-version="true" />
 
 <div id="frlChatbot" class="frl-chatbot">
 
-    <button id="frlChatLauncher" class="frl-chat-launcher" type="button" aria-label="Chat with FinRiskLens AI">
+    <button id="frlChatLauncher" class="frl-chat-launcher" type="button" aria-label="Open the FinRiskLens AI Assistant"
+            aria-controls="frlChatPanel" aria-expanded="false">
         <img src="~/ChatBot.gif" alt="" class="frl-chat-launcher-img" />
     </button>
 
-    <div id="frlChatPanel" class="frl-chat-panel" role="dialog" aria-label="FinRiskLens AI Assistant">
-        <div class="frl-chat-header">
-            <div class="frl-chat-avatar"><i class="bi bi-robot"></i></div>
+    <section id="frlChatPanel" class="frl-chat-panel" role="dialog" aria-modal="false" aria-labelledby="frlChatTitle" hidden>
+        <header class="frl-chat-header">
+            <div class="frl-chat-avatar" aria-hidden="true"><i class="bi bi-robot"></i></div>
             <div class="frl-chat-head-text">
-                <div class="frl-chat-title">FinRiskLens AI Assistant</div>
-                <div class="frl-chat-status"><span class="frl-status-dot"></span>Online</div>
+                <h2 id="frlChatTitle" class="frl-chat-title">FinRiskLens AI Assistant</h2>
+                <div class="frl-chat-status" id="frlChatStatus" role="status" aria-live="polite">
+                    <span class="frl-status-dot"></span><span class="frl-status-text">Online</span>
+                </div>
             </div>
-            <button id="frlChatClose" class="frl-chat-close" type="button" aria-label="Close chat">
+            <button id="frlChatClear" class="frl-chat-icon" type="button" title="Clear the conversation" aria-label="Clear the conversation">
+                <i class="bi bi-trash3"></i>
+            </button>
+            <button id="frlChatClose" class="frl-chat-icon" type="button" aria-label="Close the assistant">
                 <i class="bi bi-x-lg"></i>
             </button>
-        </div>
+        </header>
 
-        <div id="frlChatMessages" class="frl-chat-messages"></div>
+        <div class="frl-chat-scope" id="frlChatScope">Answers use this business's whole assessment, not just this page.</div>
 
-        <div class="frl-chat-input">
-            <input id="frlChatText" type="text" maxlength="500" autocomplete="off"
-                   placeholder="Ask about this page…" />
-            <button id="frlChatSend" type="button" aria-label="Send">
+        <div id="frlChatMessages" class="frl-chat-messages" aria-live="polite"></div>
+
+        <div id="frlChatSuggestions" class="frl-chat-suggestions" aria-label="Suggested questions"></div>
+
+        <form id="frlChatForm" class="frl-chat-input" autocomplete="off">
+            <label for="frlChatText" class="visually-hidden">Ask a question</label>
+            <textarea id="frlChatText" rows="1" maxlength="1000"
+                      placeholder="Ask about this business's assessment…"></textarea>
+            <button id="frlChatSend" type="submit" aria-label="Send">
                 <i class="bi bi-send-fill"></i>
             </button>
-        </div>
-    </div>
+        </form>
+        <div class="frl-chat-foot">Enter to send · Shift+Enter for a new line · AI answers can be wrong; check key figures on the source pages.</div>
+    </section>
 </div>
 
-<script src="~/FRLScripts/Common/Chatbot.js"></script>
+<script src="~/FRLScripts/Common/Chatbot.js" asp-append-version="true"></script>
