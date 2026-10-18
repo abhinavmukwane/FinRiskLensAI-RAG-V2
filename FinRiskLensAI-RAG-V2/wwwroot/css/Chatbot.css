@@ -33,6 +33,10 @@
 .frl-chat-launcher:hover { transform: translateY(-2px) scale(1.05); }
 .frl-chat-launcher:focus-visible { outline: 3px solid var(--frl-maroon); outline-offset: 4px; border-radius: 50%; }
 .frl-chat-launcher-img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+/* One robot GIF per theme (data-theme on <html>, set by theme.js): theme1 green, theme2 maroon */
+.frl-chat-launcher-img.frl-bot-theme2 { display: none; }
+:root[data-theme="theme2"] .frl-chat-launcher-img.frl-bot-theme1 { display: none; }
+:root[data-theme="theme2"] .frl-chat-launcher-img.frl-bot-theme2 { display: block; }
 .frl-chatbot.open .frl-chat-launcher { display: none; }
 
 /* ── Panel ───────────────────────────────────────────────────────────── */

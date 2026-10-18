@@ -12,10 +12,20 @@ namespace FinRiskLensAI.Common
     {
         public const string StartRoute = "/Onboarding/CustOnboarding";
 
+        public const string WelcomeTitle = "Meet Your AI Credit Guide";
+
         public const string Welcome =
-            "Welcome to FinRiskLens AI! Discover how our AI-powered credit intelligence platform helps businesses and " +
-            "lenders understand MSME financial health through business registration, tax, banking, income-tax and " +
-            "corporate information.";
+            "FinRiskLens AI helps MSMEs and lenders understand business financial health from registration, tax, " +
+            "banking, income-tax and corporate records. Ask how it works, or start an assessment.";
+
+        /// <summary>The welcome card's suggested questions. Free questions: Gemini answers them, with curated fallbacks.</summary>
+        public static readonly IReadOnlyList<string> SuggestedQuestions = new[]
+        {
+            "What is FinRiskLens AI?",
+            "How does MSME credit risk assessment work?",
+            "Which financial data sources are analyzed?",
+            "How can I start an assessment?",
+        };
 
         public const string OffTopic =
             "I'm here to explain FinRiskLens AI, its features and how our MSME credit assessment works. What would you like to explore?";
@@ -176,7 +186,7 @@ namespace FinRiskLensAI.Common
                 """,
                 null, Array.Empty<Card>(),
                 new[] { "What does the Gemini agent check?", "What are the nine deterministic checks?", "How do I start an assessment?" },
-                true, new[] { "how it work", "how does it work", "process", "step", "pipeline", "workflow" }),
+                true, new[] { "how it work", "how does it work", "process", "step", "pipeline", "workflow", "credit risk", "assessment work" }),
 
             new Topic("different", "What Makes FinRiskLens AI Different?",
                 """

@@ -30,7 +30,6 @@
     var statusEl = document.getElementById('frlGuideStatus');
 
     var EXPANDED_KEY = 'frl-guide-expanded';   // layout preference only
-    var SEEN_KEY = 'frl-guide-seen';           // hides the launcher hint after the first open
     var MAX_CHARS = 500;
     var loaded = false;
     var busy = false;
@@ -38,6 +37,8 @@
     var starters = [];
     var startRoute = '/Onboarding/CustOnboarding';
     var welcomeText = '';
+    var welcomeTitle = 'Meet Your AI Credit Guide';
+    var suggested = [];
 
     // ── helpers ─────────────────────────────────────────────────────────
     function icon(name) {
@@ -61,7 +62,7 @@
         busy = b;
         sendBtn.disabled = b;
         input.setAttribute('aria-busy', b ? 'true' : 'false');
-        messages.querySelectorAll('.frl-guide-chip, .frl-guide-starter').forEach(function (c) { c.disabled = b; });
+        messages.querySelectorAll('.frl-guide-chip, .frl-guide-starter, .frl-guide-question').forEach(function (c) { c.disabled = b; });
     }
 
     function botRow() {
@@ -187,12 +188,47 @@
         if (opts.follow) messages.scrollTop = Math.max(0, parts.row.offsetTop - 8);
     }
 
+    // The opening card: title, introduction, suggested questions, the assessment button and the topics
     function welcome() {
-        var parts = botRow();
-        parts.msg.classList.add('frl-guide-welcome');
-        parts.msg.appendChild(el('p', 'frl-guide-welcome-text', welcomeText));
-        parts.msg.appendChild(starterGrid());
-        messages.appendChild(parts.row);
+        var card = el('section', 'frl-guide-hero');
+        card.setAttribute('aria-label', welcomeTitle);
+        var badge = el('span', 'frl-guide-badge');
+        badge.appendChild(icon('bi-stars'));
+        badge.appendChild(document.createTextNode(' AI Credit Guide'));
+        card.appendChild(badge);
+        card.appendChild(el('h3', null, welcomeTitle));
+        card.appendChild(el('p', null, welcomeText));
+
+        var list = el('div', 'frl-guide-questions');
+        suggested.forEach(function (q) {
+            var b = el('button', 'frl-guide-question');
+            b.type = 'button';
+            b.appendChild(el('span', null, q));
+            b.appendChild(icon('bi-arrow-right'));
+            b.addEventListener('click', function () { send({ question: q }); });
+            list.appendChild(b);
+        });
+        card.appendChild(list);
+
+        var cta = el('a', 'frl-guide-hero-cta');
+        cta.href = startRoute;
+        cta.appendChild(document.createTextNode('Start MSME Assessment'));
+        cta.appendChild(icon('bi-arrow-right'));
+        card.appendChild(cta);
+
+        if (starters.length) {
+            card.appendChild(el('div', 'frl-guide-topics-title', 'Or explore a topic'));
+            var chips = el('div', 'frl-guide-topic-chips');
+            starters.forEach(function (s) {
+                var c = el('button', 'frl-guide-chip');
+                c.type = 'button';
+                c.textContent = s.label;
+                c.addEventListener('click', function () { send({ topic: s.id, label: s.label }); });
+                chips.appendChild(c);
+            });
+            card.appendChild(chips);
+        }
+        messages.appendChild(card);
     }
 
     function showTopics() {
@@ -230,6 +266,8 @@
             starters = json.starters || [];
             startRoute = json.startRoute || startRoute;
             welcomeText = json.welcome || '';
+            welcomeTitle = json.title || welcomeTitle;
+            suggested = json.suggested || [];
             messages.textContent = '';
             welcome();
             var history = json.history || [];
@@ -241,7 +279,8 @@
                 try { reply = t.reply ? JSON.parse(t.reply) : null; } catch (e) { reply = null; }
                 addBot(reply || { answer: t.text }, { chips: n === lastBot });
             });
-            scrollToBottom();
+            // A new conversation opens at the welcome card's heading; a resumed one at its latest answer
+            if (history.length) scrollToBottom(); else messages.scrollTop = 0;
             setStatus('online', 'Online');
         } catch (e) {
             setStatus('error', 'Unavailable');
@@ -335,9 +374,7 @@
     function open() {
         panel.hidden = false;
         root.classList.add('open');
-        root.classList.add('seen');
         launcher.setAttribute('aria-expanded', 'true');
-        try { sessionStorage.setItem(SEEN_KEY, '1'); } catch (e) { /* optional */ }
         if (!loaded) loadState();
         setTimeout(function () { input.focus(); }, 50);
     }
@@ -355,7 +392,6 @@
     }
 
     try { setExpanded(localStorage.getItem(EXPANDED_KEY) === '1'); } catch (e) { setExpanded(false); }
-    try { if (sessionStorage.getItem(SEEN_KEY) === '1') root.classList.add('seen'); } catch (e) { /* optional */ }
 
     launcher.addEventListener('click', open);
     closeBtn.addEventListener('click', close);

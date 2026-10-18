@@ -84,3 +84,16 @@
             color: var(--brand-primary-dark, #57001D);
         }
         .frl-login-menu-item i { font-size: 1rem; color: var(--brand-primary, #7A1230); }
+
+        /* Phones: the header row (brand + Sign In, language and theme buttons) needs about 398px but a
+           375px phone has 351px inside the container, which made the whole page 410px wide. Tighten it
+           here only; tablets and desktop keep the header exactly as it is. The !importants beat the
+           inline logo size and Bootstrap's px-3 / gap-* utilities on these elements. */
+        @media (max-width: 575.98px) {
+            .brandbar .brand-logo { height: 38px !important; }
+            .brandbar .brand-sub { display: none; }   /* the tagline wrapped to three lines beside the buttons */
+            .brandbar .container > a { gap: .6rem !important; }
+            .brandbar .container > .d-flex { gap: 6px !important; }
+            .brandbar .frl-login-toggle,
+            .brandbar .google-translate-container .gt-dropdown-btn { padding-left: 10px !important; padding-right: 10px !important; gap: 6px !important; }
+        }

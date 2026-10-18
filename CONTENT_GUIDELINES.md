@@ -167,12 +167,13 @@ The public assistant on the home page. It explains the product only and never se
 
 | Element | Wording |
 |---|---|
-| Name | FinRiskLens AI Product Guide |
-| Launcher hint | Ask about FinRiskLens AI |
+| Launcher | **Your AI Credit Guide** (sub-line: Ask about FinRiskLens AI), with the active theme's robot and a soft burgundy glow; avatar only on phones |
+| Panel title | AI Credit Guide · Online · FinRiskLens AI. Header buttons: New conversation · Expand · Close |
 | Scope line | Explains the product only. It can't see any business's data, so please don't share personal details. |
-| Welcome | Welcome to FinRiskLens AI! Discover how our AI-powered credit intelligence platform helps businesses and lenders understand MSME financial health through business registration, tax, banking, income-tax and corporate information. |
-| Starter topics | Explore Product Features · Types of Analysis · Benefits for MSMEs · Benefits for Banks & NBFCs · How It Works · What Makes FinRiskLens AI Different? · How to Start an Assessment |
-| Call to action | Ready to understand your business financial health? · Start MSME Assessment (`/Onboarding/CustOnboarding`) |
+| Welcome card | **Meet Your AI Credit Guide** · FinRiskLens AI helps MSMEs and lenders understand business financial health from registration, tax, banking, income-tax and corporate records. Ask how it works, or start an assessment. |
+| Suggested questions | What is FinRiskLens AI? · How does MSME credit risk assessment work? · Which financial data sources are analyzed? · How can I start an assessment? |
+| Topics (Or explore a topic) | Explore Product Features · Types of Analysis · Benefits for MSMEs · Benefits for Banks & NBFCs · How It Works · What Makes FinRiskLens AI Different? · How to Start an Assessment |
+| Call to action | Start MSME Assessment (`/Onboarding/CustOnboarding`) on the welcome card; after relevant answers: Ready to understand your business financial health? · Start MSME Assessment |
 | Off-topic reply | I'm here to explain FinRiskLens AI, its features and how our MSME credit assessment works. What would you like to explore? |
 | Feature card tags | Stored registry record (Udyam) · Sample data in this demo (GST, ITR, MCA) · Consent flow · AA test environment · Review signals, not verdicts · Rule-based scores · AI with human review |
 

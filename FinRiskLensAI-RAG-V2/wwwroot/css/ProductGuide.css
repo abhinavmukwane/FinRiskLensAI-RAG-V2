@@ -1,7 +1,7 @@
 /* ============================================================================
    FinRiskLens AI Product Guide (Views/Home/_ProductGuide.cshtml).
    Builds on Chatbot.css (panel, header, messages, input, Markdown); this file adds
-   the home page parts: launcher hint, starter topics, feature and analysis cards,
+   the home page parts: launcher, welcome card, starter topics, feature and analysis cards,
    follow-up chips and the assessment call to action.
    ========================================================================== */
 
@@ -9,27 +9,98 @@
 .frl-guide .frl-chat-panel { top: 72px; }
 .frl-guide.expanded .frl-chat-panel { top: 72px; bottom: 3vh; }
 
-/* ── Launcher hint ───────────────────────────────────────────────────── */
-.frl-guide .frl-chat-launcher { width: 96px; height: 96px; }
-.frl-guide-hint {
-    position: absolute;
-    right: 92px;
-    top: 50%;
-    transform: translateY(-50%);
-    white-space: nowrap;
+/* ── Launcher: "Your AI Credit Guide" pill with the theme's robot ────── */
+.frl-guide { bottom: 20px; }
+.frl-guide .frl-chat-launcher.frl-guide-launcher {
+    width: auto; height: auto;
+    gap: 12px;
+    padding: 6px 20px 6px 6px;
     background: #fff;
-    color: var(--brand-primary-dark);
     border: 1px solid var(--frl-border);
     border-radius: 999px;
-    padding: 6px 14px;
-    font-size: .8rem;
-    font-weight: 600;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .10);
-    pointer-events: none;
-    transition: opacity .2s ease;
+    box-shadow: 0 12px 32px rgba(var(--brand-primary-rgb), .22), 0 2px 6px rgba(0, 0, 0, .06);
+    transition: transform .2s ease, box-shadow .2s ease;
 }
-.frl-guide.seen .frl-guide-hint { opacity: 0; }
-.frl-guide .frl-chat-launcher:hover .frl-guide-hint { opacity: 1; }
+.frl-guide .frl-guide-launcher:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(var(--brand-primary-rgb), .30), 0 2px 6px rgba(0, 0, 0, .06);
+}
+.frl-guide .frl-guide-launcher:focus-visible { outline: 3px solid var(--frl-maroon); outline-offset: 3px; border-radius: 999px; }
+
+.frl-guide-avatar { position: relative; flex: none; width: 56px; height: 56px; }
+/* A slow burgundy "breathing" ring behind the avatar */
+.frl-guide-avatar::before {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(var(--brand-primary-rgb), .35);
+    animation: frl-guide-glow 3s ease-out infinite;
+}
+.frl-guide-face {
+    position: relative; display: block; width: 100%; height: 100%;
+    border-radius: 50%; overflow: hidden;
+    background: radial-gradient(circle at 50% 40%, #fff 0%, var(--frl-maroon-soft) 100%);
+    border: 1px solid var(--frl-border);
+}
+/* The GIFs are wider than tall with the robot left of centre (about 38% across, 60% down):
+   put that point at the middle of the circle */
+.frl-guide-face .frl-chat-launcher-img {
+    position: absolute; left: 50%; top: 50%; width: 128%; height: auto; max-width: none;
+    transform: translate(-38%, -58%);
+}
+.frl-guide-online {
+    position: absolute; right: 1px; bottom: 2px; width: 13px; height: 13px; border-radius: 50%;
+    background: #22c55e; border: 2px solid #fff;
+}
+.frl-guide-label { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; text-align: left; }
+.frl-guide-label strong { font-size: .92rem; font-weight: 700; color: var(--brand-primary-dark); white-space: nowrap; }
+.frl-guide-label small { font-size: .74rem; color: #6b6b6b; white-space: nowrap; margin-top: 2px; }
+@keyframes frl-guide-glow {
+    0% { box-shadow: 0 0 0 0 rgba(var(--brand-primary-rgb), .35); }
+    70%, 100% { box-shadow: 0 0 0 12px rgba(var(--brand-primary-rgb), 0); }
+}
+
+/* Header avatar: the same robot in a white circle */
+.frl-guide-head-avatar { background: #fff; padding: 0; overflow: hidden; }
+.frl-guide-head-avatar .frl-guide-face { border: 0; }
+.frl-guide-brand { opacity: .8; }
+
+/* ── Welcome card ────────────────────────────────────────────────────── */
+.frl-guide-hero {
+    background: linear-gradient(160deg, #fff 0%, var(--frl-maroon-soft) 100%);
+    border: 1px solid var(--frl-border); border-radius: 16px; padding: 18px;
+}
+.frl-guide-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--frl-maroon); background: #fff; border: 1px solid var(--frl-border); border-radius: 999px; padding: 3px 10px;
+}
+.frl-guide-hero h3 { font-size: 1.15rem; font-weight: 800; color: var(--brand-primary-dark); margin: 12px 0 6px; line-height: 1.25; }
+.frl-guide-hero p { font-size: .88rem; color: #4a4a4a; line-height: 1.55; margin: 0 0 14px; }
+.frl-guide-questions { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.frl-guide-question {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    width: 100%; text-align: left; font-size: .86rem; font-weight: 600; color: #2b2b2b;
+    background: #fff; border: 1px solid var(--frl-border); border-radius: 12px; padding: 10px 14px;
+    transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.frl-guide-question i { color: var(--frl-maroon); transition: transform .15s ease; flex: none; }
+.frl-guide-question:hover:not(:disabled), .frl-guide-question:focus-visible {
+    border-color: var(--frl-maroon); outline: none; box-shadow: 0 4px 14px rgba(var(--brand-primary-rgb), .10);
+}
+.frl-guide-question:hover:not(:disabled) i { transform: translateX(3px); }
+.frl-guide-question:disabled { opacity: .55; }
+.frl-guide-hero-cta {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 11px 16px; border-radius: 12px; text-decoration: none;
+    font-weight: 700; font-size: .92rem; color: #fff;
+    background: linear-gradient(120deg, var(--brand-primary-dark) 0%, var(--frl-maroon) 100%);
+    box-shadow: 0 8px 20px rgba(var(--brand-primary-rgb), .25);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.frl-guide-hero-cta:hover, .frl-guide-hero-cta:focus-visible {
+    color: #fff; transform: translateY(-1px); box-shadow: 0 12px 26px rgba(var(--brand-primary-rgb), .32); outline: none;
+}
+.frl-guide-topics-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--brand-secondary); margin: 14px 0 8px; }
+.frl-guide-topic-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ── Answers ─────────────────────────────────────────────────────────── */
 .frl-guide .frl-msg-bot { min-width: 0; }
@@ -116,13 +187,15 @@
 @media (max-width: 767.98px) {
     .frl-guide .frl-chat-panel,
     .frl-guide.expanded .frl-chat-panel { top: 0; }
-    .frl-guide .frl-chat-launcher { width: 76px; height: 76px; }
-    .frl-guide-hint { display: none; }
+    .frl-guide { right: 14px; bottom: 14px; }
+    .frl-guide .frl-chat-launcher.frl-guide-launcher { padding: 4px; }
+    .frl-guide-label { display: none; }
     .frl-guide-starters { grid-template-columns: 1fr 1fr; }
     .frl-guide-acc dl { grid-template-columns: 1fr; gap: 2px; }
     .frl-guide-acc dd { margin-bottom: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .frl-guide-starter, .frl-guide-acc summary::after, .frl-guide-hint { transition: none; }
+    .frl-guide-starter, .frl-guide-acc summary::after, .frl-guide-launcher, .frl-guide-question, .frl-guide-hero-cta { transition: none; }
+    .frl-guide-avatar::before { animation: none; }
 }

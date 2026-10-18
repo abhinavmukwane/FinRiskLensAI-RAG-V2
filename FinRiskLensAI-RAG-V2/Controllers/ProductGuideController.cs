@@ -46,7 +46,9 @@ namespace FinRiskLensAI.Controllers
             return Json(new
             {
                 status = true,
+                title = ProductGuideKnowledge.WelcomeTitle,
                 welcome = ProductGuideKnowledge.Welcome,
+                suggested = ProductGuideKnowledge.SuggestedQuestions,
                 starters = ProductGuideKnowledge.Starters.Select(s => new { id = s.Id, label = s.Label, icon = s.Icon }),
                 startRoute = ProductGuideKnowledge.StartRoute,
                 history = LoadHistory()

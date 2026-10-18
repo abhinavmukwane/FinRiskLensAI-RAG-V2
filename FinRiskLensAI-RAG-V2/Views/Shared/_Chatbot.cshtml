@@ -10,7 +10,11 @@
 
     <button id="frlChatLauncher" class="frl-chat-launcher" type="button" aria-label="Open the FinRiskLens AI Assistant"
             aria-controls="frlChatPanel" aria-expanded="false">
-        <img src="~/ChatBot.gif" alt="" class="frl-chat-launcher-img" />
+        @* One robot per theme (Chatbot.css shows the one for the active theme). MehrumThemAIBOT.gif is the
+           maroon theme's robot; if it is ever missing, that image falls back to ChatBot.gif. *@
+        <img src="~/ChatBot.gif" alt="" class="frl-chat-launcher-img frl-bot-theme1" loading="lazy" />
+        <img src="~/MehrumThemAIBOT.gif" alt="" class="frl-chat-launcher-img frl-bot-theme2" loading="lazy"
+             onerror="this.onerror=null;this.src='/ChatBot.gif'" />
     </button>
 
     <section id="frlChatPanel" class="frl-chat-panel" role="dialog" aria-modal="false" aria-labelledby="frlChatTitle" hidden>
