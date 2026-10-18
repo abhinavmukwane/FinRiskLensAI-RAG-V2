@@ -1,4 +1,5 @@
 using FinRiskLensAI.Core.Models.Facts;
+using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Core.Models.Storage;
 
 namespace FinRiskLensAI.Core.Interfaces
@@ -23,5 +24,10 @@ namespace FinRiskLensAI.Core.Interfaces
         /// and a fact computed per request can never be stale. Null when the folder is empty.
         /// </summary>
         Task<SourceFacts?> GetFactsAsync(string uan, CancellationToken ct = default);
+
+        /// <summary>
+        /// Evaluates the 6-dimension credit health score and lending assessment for the MSME.
+        /// </summary>
+        Task<RiskAnalysisResult?> GetResultAsync(string uan, CancellationToken ct = default);
     }
 }

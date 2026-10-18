@@ -1,5 +1,6 @@
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Models.Facts;
+using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Core.Models.Storage;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -16,13 +17,16 @@ namespace FinRiskLensAI.ML.Services
     {
         private readonly IMsmeDataStore _store;
         private readonly ISourceFactsService _facts;
+        private readonly IRiskScoringService _scoring;
         private readonly ILogger<BlobAnalysisService> _logger;
 
         public BlobAnalysisService(IMsmeDataStore store, ISourceFactsService facts,
+            IRiskScoringService scoring,
             ILogger<BlobAnalysisService> logger)
         {
             _store = store;
             _facts = facts;
+            _scoring = scoring;
             _logger = logger;
         }
 
@@ -91,6 +95,13 @@ namespace FinRiskLensAI.ML.Services
             }
 
             return _facts.Build(request);
+        }
+
+        public async Task<RiskAnalysisResult?> GetResultAsync(string uan, CancellationToken ct = default)
+        {
+            var facts = await GetFactsAsync(uan, ct);
+            if (facts == null) return null;
+            return _scoring.Analyze(facts);
         }
 
         private async Task<List<string>> ListDataFilesAsync(string uan, CancellationToken ct)

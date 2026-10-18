@@ -5,6 +5,7 @@ using FinRiskLensAI.Core.Models.Itr;
 using FinRiskLensAI.Core.Models.GST;
 using FinRiskLensAI.Core.Models.Mca;
 using FinRiskLensAI.Core.Models.Onboarding;
+using FinRiskLensAI.Core.Models.Scoring;
 
 namespace FinRiskLensAI.Core.Models.Admin
 {
@@ -40,6 +41,9 @@ namespace FinRiskLensAI.Core.Models.Admin
 
         /// <summary>The customer's assessment — findings, documents, AI investigation — or null before any upload.</summary>
         public CaseDetailViewModel? Risk { get; set; }
+
+        /// <summary>The customer's 6-dimension Financial Health Card score.</summary>
+        public FinancialHealthCardViewModel? Card { get; set; }
 
         /// <summary>The latest AI credit decision — shown on the Risk Lens once the customer is Clear.</summary>
         public CreditDecision? Decision { get; set; }

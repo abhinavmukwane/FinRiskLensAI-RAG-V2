@@ -1,0 +1,27 @@
+@model FinRiskLensAI.Core.Models.Scoring.FinancialHealthCardViewModel
+@{
+    ViewBag.Title = "Financial Health Card";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var r = Model.Result;
+}
+
+<link href="~/css/FinancialHealthCard.css" rel="stylesheet" />
+
+<div class="fhc-wrap">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h3 class="fhc-title mb-1">Financial Health Card</h3>
+            <div class="fhc-sub">AI-computed 6-dimension credit health score from GST, ITR, bank &amp; Udyam data</div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.EnterpriseName))
+        {
+            <div class="text-end">
+                <div class="fhc-title" style="font-size:1rem;">@Model.EnterpriseName</div>
+                <div class="fhc-sub"><i class="bi bi-patch-check me-1"></i>@Model.Uan</div>
+            </div>
+        }
+    </div>
+
+    @await Html.PartialAsync("_FinancialHealthCardBody", Model)
+</div>

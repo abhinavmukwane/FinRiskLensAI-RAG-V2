@@ -1,4 +1,4 @@
-﻿using FinRiskLensAI.Controllers;
+using FinRiskLensAI.Controllers;
 using FinRiskLensAI.Core.Common;
 using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Interfaces.IServices.AccountAggregator;
@@ -11,6 +11,7 @@ using FinRiskLensAI.Core.Interfaces.IServices.GST;
 using FinRiskLensAI.Core.Interfaces.IServices.OnBoarding;
 using FinRiskLensAI.Core.Models.Mca;
 using FinRiskLensAI.Core.Models.Onboarding;
+using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Core.Models.Storage;
 using FinRiskLensAI.Core.Models.Universal;
 using Newtonsoft.Json;
@@ -19,8 +20,8 @@ using Newtonsoft.Json.Linq;
 namespace FinRiskLensAI.Common
 {
     /// <summary>
-    /// Builds an MSME's page view models <b>by UAN</b> — Udyam, MCA, GST and the
-    /// source-IP audit.
+    /// Builds an MSME's page view models <b>by UAN</b> — Udyam, MCA, GST, Financial Health Card
+    /// and the source-IP audit.
     /// <para>
     /// The customer-facing controllers take the UAN from the authenticated session
     /// (an MSME may only ever see its own data); the bank portal takes it from the
@@ -41,6 +42,7 @@ namespace FinRiskLensAI.Common
         private readonly IGSTR2And3BResponceService _gstResponces;
         private readonly IIpRiskService _ipRisk;
         private readonly IAaStatementAnalysisService _aaAnalysis;
+        private readonly IBlobAnalysisService _analysis;
         private readonly ILogger<CustomerProfileBuilder> _logger;
 
         public CustomerProfileBuilder(
@@ -50,6 +52,7 @@ namespace FinRiskLensAI.Common
             IGSTR2And3BResponceService gstResponces,
             IIpRiskService ipRisk,
             IAaStatementAnalysisService aaAnalysis,
+            IBlobAnalysisService analysis,
             ILogger<CustomerProfileBuilder> logger)
         {
             _staticResponses = staticResponses;
@@ -58,6 +61,7 @@ namespace FinRiskLensAI.Common
             _gstResponces = gstResponces;
             _ipRisk = ipRisk;
             _aaAnalysis = aaAnalysis;
+            _analysis = analysis;
             _logger = logger;
         }
 
@@ -360,6 +364,37 @@ namespace FinRiskLensAI.Common
                 vm.Ip = ip;
 
             return vm;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        //  Financial Health Card — 6-dimension credit score & lending
+        // ─────────────────────────────────────────────────────────────
+        public async Task<FinancialHealthCardViewModel> GetFinancialHealthCardAsync(string? uan, string? enterpriseName = null, CancellationToken ct = default)
+        {
+            var model = new FinancialHealthCardViewModel { Uan = uan, EnterpriseName = enterpriseName };
+            if (string.IsNullOrWhiteSpace(uan))
+            {
+                model.LoadError = "No Udyam number is linked to this account.";
+                return model;
+            }
+
+            try
+            {
+                model.Status = await _analysis.GetStatusAsync(uan, ct);
+                model.Result = await _analysis.GetResultAsync(uan, ct);
+                if (string.IsNullOrWhiteSpace(model.EnterpriseName))
+                {
+                    var udyam = await GetUdyamAsync(uan);
+                    model.EnterpriseName = udyam.EnterpriseName;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed loading Financial Health Card for {Uan}", uan);
+                model.LoadError = "Could not load the Financial Health Card right now.";
+            }
+
+            return model;
         }
     }
 }

@@ -10,6 +10,7 @@ using FinRiskLensAI.Core.Interfaces.IServices.Common;
 using FinRiskLensAI.Core.Interfaces.IServices.GST;
 using FinRiskLensAI.Core.Models.Mca;
 using FinRiskLensAI.Core.Models.Storage;
+using FinRiskLensAI.Core.Models.Scoring;
 using FinRiskLensAI.Core.Models.Universal;
 using FinRiskLensAI.Utility;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -120,6 +121,34 @@ namespace FinRiskLensAI.Controllers
                 : (await _cases.GetByUanAsync(uan, ct))?.Application.Documents ?? new List<CaseDocument>();
 
             return View();
+        }
+
+        /// <summary>
+        /// Customer's Risk Lens — evidence-based fraud detection assessment and status.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> RiskLens(CancellationToken ct)
+        {
+            var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
+            if (string.IsNullOrWhiteSpace(uan)) return RedirectToAction(nameof(CustDashboard));
+
+            var assessment = await _cases.GetByUanAsync(uan, ct);
+            return View(assessment);
+        }
+
+        /// <summary>
+        /// Customer's Financial Health Card — 6-dimension credit health score (0-1000)
+        /// and lending assessment.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> FinancialHealthCard(CancellationToken ct)
+        {
+            var user = HttpContext.Session.GetCurrentUser();
+            var uan = user?.UdyamNumber;
+            var enterpriseName = user?.NameOfEnterprise;
+
+            var model = await _profile.GetFinancialHealthCardAsync(uan, enterpriseName, ct);
+            return View(model);
         }
 
         /// <summary>

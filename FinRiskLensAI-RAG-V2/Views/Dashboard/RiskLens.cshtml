@@ -1,0 +1,140 @@
+@model FinRiskLensAI.Core.Models.Cases.CaseDetailViewModel
+@{
+    ViewBag.Title = "Risk Lens";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var app = Model?.Application;
+    var findings = Model?.Findings ?? (IReadOnlyList<FinRiskLensAI.Core.Models.Cases.Finding>)Array.Empty<FinRiskLensAI.Core.Models.Cases.Finding>();
+    var verdict = app == null ? FinRiskLensAI.Core.Models.Cases.RiskVerdict.AwaitingData : FinRiskLensAI.Core.Models.Cases.RiskSummary.Of(app, findings);
+    var uan = app?.Uan ?? Context.Session.GetCurrentUser()?.UdyamNumber;
+    var enterpriseName = Context.Session.GetCurrentUser()?.NameOfEnterprise;
+
+    string Chip(FinRiskLensAI.Core.Models.Cases.RiskVerdict v) => v switch
+    {
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.Clear => "bp-case-clear",
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.Review => "bp-case-review",
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.HighRisk => "bp-case-hold",
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.Assessing => "bp-case-processing",
+        _ => "bp-case-new"
+    };
+
+    string VerdictLabel(FinRiskLensAI.Core.Models.Cases.RiskVerdict v) => v switch
+    {
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.Clear => "Clear — No fraud findings detected",
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.Review => "Under Review — Findings flagged for bank verification",
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.HighRisk => "High Risk — Critical inconsistencies detected",
+        FinRiskLensAI.Core.Models.Cases.RiskVerdict.Assessing => "Assessing — Pipeline running verification checks",
+        _ => "Awaiting Data — Upload documents or connect sources to begin"
+    };
+}
+
+<link href="~/css/FinancialHealthCard.css" rel="stylesheet" />
+<link href="~/css/BankAdmin.css" rel="stylesheet" />
+
+<div class="fhc-wrap">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h3 class="fhc-title mb-1"><i class="bi bi-shield-exclamation text-primary me-2"></i>Risk Lens</h3>
+            <div class="fhc-sub">Automated fraud detection, multi-source consistency verification, and evidence-grounded checks</div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            @if (!string.IsNullOrWhiteSpace(enterpriseName))
+            {
+                <div class="text-end me-2">
+                    <div class="fhc-title" style="font-size:1rem;">@enterpriseName</div>
+                    <div class="fhc-sub"><i class="bi bi-patch-check me-1"></i>@uan</div>
+                </div>
+            }
+            <a href="/Dashboard/FinancialHealthCard" class="btn text-white" style="background:var(--brand-btn-bg);border-radius:10px;padding:8px 20px;font-weight:600;">
+                <i class="bi bi-speedometer2 me-1"></i> View Financial Score
+            </a>
+        </div>
+    </div>
+
+    <!-- Verdict Banner -->
+    <div class="card p-4 rounded-4 shadow-sm border-0 mb-4" style="background:var(--brand-tint-bg-2);">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="fhc-section-label mb-1">Assessment Verdict</div>
+                <div class="fs-4 fw-bold text-dark">
+                    <span class="bp-case-pill @Chip(verdict) me-2">@verdict</span>
+                    @VerdictLabel(verdict)
+                </div>
+                <div class="text-muted small mt-1">
+                    Last evaluated: @(app?.UpdatedAt.ToString("dd MMM yyyy HH:mm") ?? "Pending initial upload") &middot; @findings.Count total check finding(s)
+                </div>
+            </div>
+            <div>
+                <a href="/Dashboard/CustDashboard" class="btn btn-outline-secondary rounded-pill px-3 py-1 btn-sm">
+                    <i class="bi bi-cloud-arrow-up me-1"></i> Upload More Data
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finding breakdown -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="fhc-card">
+                <div class="fhc-section-label mb-3">Verification Findings</div>
+                @if (findings.Count == 0)
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-shield-check text-success fs-1"></i>
+                        <p class="mt-3 mb-1 fw-bold text-dark">No Fraud Findings On Record</p>
+                        <p class="small text-muted mb-0">All verified sources and documents conform to lending policy rules and thresholds.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var f in findings.OrderByDescending(x => x.Severity))
+                        {
+                            var badgeCls = f.Severity switch
+                            {
+                                FinRiskLensAI.Core.Models.Cases.FindingSeverity.High => "badge bg-danger",
+                                FinRiskLensAI.Core.Models.Cases.FindingSeverity.Medium => "badge bg-warning text-dark",
+                                _ => "badge bg-info text-dark"
+                            };
+
+                            <div class="p-3 rounded-3 border bg-white shadow-sm">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold text-dark"><i class="bi bi-info-circle me-1"></i>@(string.IsNullOrWhiteSpace(f.Title) ? f.Type : f.Title)</span>
+                                    <span class="@badgeCls">@f.Severity</span>
+                                </div>
+                                <div class="text-secondary small mb-2">@f.Explanation</div>
+                                @if (f.Evidence.Count > 0)
+                                {
+                                    <div class="p-2 rounded-2 bg-light small text-muted">
+                                        <b>Evidence:</b> @string.Join(" · ", f.Evidence.Select(e => e.Note ?? e.Kind.ToString()))
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="fhc-card">
+                <div class="fhc-section-label mb-3">Next Step: Financial Score Card</div>
+                <p class="text-muted small">
+                    After evaluating evidence and fraud risk, FinRiskLens AI computes a 6-dimension credit health score (0–1000) incorporating Revenue Vitality, Cash Flow Health, Banking Discipline, Tax Compliance, and Business Stability.
+                </p>
+                <div class="p-3 rounded-3 border mb-3 text-center" style="background:var(--brand-tint-bg);">
+                    <i class="bi bi-speedometer2 fs-2 text-primary"></i>
+                    <div class="fw-bold text-dark mt-1">Financial Score Card</div>
+                    <div class="small text-muted mb-3">RBI lending ratios, working capital limit, and term capacity</div>
+                    <a href="/Dashboard/FinancialHealthCard" class="btn btn-sm text-white w-100" style="background:var(--brand-btn-bg);border-radius:8px;font-weight:600;">
+                        Open Score Card
+                    </a>
+                </div>
+                <div class="fhc-sub">
+                    <i class="bi bi-info-circle me-1"></i> Your bank evaluates both the Risk Lens findings and the Financial Health Score Card when appraising loan applications.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

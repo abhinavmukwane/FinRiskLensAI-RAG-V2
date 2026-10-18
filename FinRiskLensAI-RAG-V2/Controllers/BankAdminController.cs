@@ -194,6 +194,9 @@ namespace FinRiskLensAI.Controllers
                 // The Risk Lens: this customer's one assessment, if they have shared anything to assess
                 model.Risk = await _cases.GetByUanAsync(model.Uan, ct);
                 model.Decision = await _credit.GetLatestAsync(model.Uan, ct);
+
+                // Financial Health Card (score card right after Risk Lens)
+                model.Card = await _profile.GetFinancialHealthCardAsync(model.Uan, model.Customer.EnterpriseName, ct);
             }
             catch (OperationCanceledException)
             {
