@@ -24,6 +24,10 @@ namespace FinRiskLensAI.Fraud.Checks
         public int AaDateSlackDays { get; set; } = 1;
         /// <summary>When no account number ties a statement to an AA account, the share of its rows that must agree before it counts as the same account.</summary>
         public decimal AaMinMatchShare { get; set; } = 0.5m;
+        /// <summary>Maximum allowed ratio of monthly bank credits to the higher of GST or ITR turnover before flagging income inflation.</summary>
+        public decimal BankToTurnoverMax { get; set; } = 1.5m;
+        /// <summary>Maximum allowed percentage discrepancy between GST turnover and ITR business turnover.</summary>
+        public decimal GstItrVariancePct { get; set; } = 25.0m;
         /// <summary>Producer/creator substrings that mean a consumer tool touched the file, not a bank system.</summary>
         public string[] ConsumerEditors { get; set; } =
         {

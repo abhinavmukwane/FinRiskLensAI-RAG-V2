@@ -55,6 +55,14 @@
     };
 }
 
+@if (TempData["Error"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+        <div>@err</div>
+    </div>
+}
+
 @* ── Verdict ─────────────────────────────────────────────────────────────── *@
 <div class="bp-card rl-verdict">
     <div class="rl-verdict-main">

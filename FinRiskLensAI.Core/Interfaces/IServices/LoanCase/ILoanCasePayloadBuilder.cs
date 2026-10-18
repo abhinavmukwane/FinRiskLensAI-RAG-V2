@@ -1,4 +1,5 @@
 using FinRiskLensAI.Core.Models.Admin;
+using FinRiskLensAI.Core.Models.Cases;
 using FinRiskLensAI.Core.Models.LoanCase;
 using FinRiskLensAI.Core.Models.Facts;
 
@@ -37,5 +38,39 @@ namespace FinRiskLensAI.Core.Interfaces.IServices.LoanCase
         public string? BranchName { get; set; }
         /// <summary>Which raw sources were present in the MSME's data folder.</summary>
         public List<string> DataSources { get; set; } = new();
+
+        /// <summary>Risk Lens verdict and reviewed findings summary (Task T10).</summary>
+        public LoanCaseRiskAssessment? RiskAssessment { get; set; }
+
+        /// <summary>Accepted AI credit decision details (Task T10).</summary>
+        public LoanCaseCreditDecision? CreditDecision { get; set; }
+    }
+
+    public class LoanCaseRiskAssessment
+    {
+        public RiskVerdict Verdict { get; set; }
+        public DateTime? AssessedAt { get; set; }
+        public List<LoanCaseFindingSummary> ReviewedFindings { get; set; } = new();
+    }
+
+    public class LoanCaseFindingSummary
+    {
+        public string Type { get; set; } = string.Empty;
+        public FindingSeverity Severity { get; set; }
+        public ReviewStatus ReviewStatus { get; set; }
+    }
+
+    public class LoanCaseCreditDecision
+    {
+        public string Decision { get; set; } = string.Empty;
+        public string Product { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public int TenureMonths { get; set; }
+        public decimal? Emi { get; set; }
+        public decimal? Foir { get; set; }
+        public object? Reasons { get; set; }
+        public List<string> Conditions { get; set; } = new();
+        public string Model { get; set; } = string.Empty;
+        public string? AcceptedBy { get; set; }
     }
 }

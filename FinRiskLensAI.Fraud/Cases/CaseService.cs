@@ -27,16 +27,19 @@ namespace FinRiskLensAI.Fraud.Cases
         private readonly FraudOptions _options;
         private readonly IMsmeDataStore? _sources;
         private readonly IAaStatementAnalysisService? _aa;
+        private readonly IBlobAnalysisService? _facts;
 
         /// <param name="sources">With <paramref name="aa"/>, the bank's own record of linked accounts; without them check 9 does not run.</param>
         public CaseService(ICaseRepository cases, ICaseDocumentStore store, FraudOptions options,
-                           IMsmeDataStore? sources = null, IAaStatementAnalysisService? aa = null)
+                           IMsmeDataStore? sources = null, IAaStatementAnalysisService? aa = null,
+                           IBlobAnalysisService? facts = null)
         {
             _cases = cases;
             _store = store;
             _options = options;
             _sources = sources;
             _aa = aa;
+            _facts = facts;
         }
 
         public async Task<CaseIntakeResult> CreateAsync(NewCaseRequest request, IReadOnlyList<CaseUpload> files,
@@ -297,6 +300,51 @@ namespace FinRiskLensAI.Fraud.Cases
             await _cases.SetBankDataAsync(loanApplicationId, bank?.HasData == true ? DateTime.UtcNow : null, ct);
             var findings = DeterministicChecks.Run(new CaseData(application, rows, pages, fields, rows.Count > 0 ? bank?.Transactions : null), _options);
             findings.AddRange(SourceChecks.BankFlags(bank, loanApplicationId));
+
+            if (!string.IsNullOrWhiteSpace(application.Uan))
+            {
+                // Turnover check (Task T3): GST vs ITR vs bank credits
+                if (_facts != null)
+                {
+                    try
+                    {
+                        var msmeFacts = await _facts.GetFactsAsync(application.Uan, ct);
+                        if (msmeFacts?.Features != null)
+                        {
+                            var turnoverFinding = SourceChecks.Turnover(msmeFacts.Features, _options, loanApplicationId);
+                            if (turnoverFinding != null) findings.Add(turnoverFinding);
+                        }
+                    }
+                    catch
+                    {
+                        // source facts not yet computed or unavailable
+                    }
+                }
+
+                // Identity check (Task T4): PAN, GSTIN, business name across sources, MCA status
+                if (_sources != null)
+                {
+                    try
+                    {
+                        var files = await _sources.ListFilesAsync(application.Uan, ct);
+                        string? udyamJson = files.Contains(MsmeDataFiles.Udyam, StringComparer.OrdinalIgnoreCase)
+                            ? await _sources.DownloadAsync(application.Uan, MsmeDataFiles.Udyam, ct) : null;
+                        string? gstTaxpayerJson = files.Contains(MsmeDataFiles.GstTaxpayer, StringComparer.OrdinalIgnoreCase)
+                            ? await _sources.DownloadAsync(application.Uan, MsmeDataFiles.GstTaxpayer, ct) : null;
+                        string? itrJson = files.Contains(MsmeDataFiles.Itr, StringComparer.OrdinalIgnoreCase)
+                            ? await _sources.DownloadAsync(application.Uan, MsmeDataFiles.Itr, ct) : null;
+                        string? mcaJson = files.Contains(MsmeDataFiles.Mca, StringComparer.OrdinalIgnoreCase)
+                            ? await _sources.DownloadAsync(application.Uan, MsmeDataFiles.Mca, ct) : null;
+
+                        var idFindings = SourceChecks.Identity(udyamJson, gstTaxpayerJson, itrJson, mcaJson, loanApplicationId);
+                        findings.AddRange(idFindings);
+                    }
+                    catch
+                    {
+                        // sources not yet uploaded or unavailable
+                    }
+                }
+            }
 
             var ring = (await ListRingsAsync(ct)).FirstOrDefault(r => r.Members.Any(m => m.LoanApplicationID == loanApplicationId));
             if (ring != null) findings.Add(NetworkLens.FindingFor(ring, loanApplicationId));

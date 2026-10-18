@@ -91,6 +91,21 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                                 ["EXISTING_MONTHLY_EMI"] = Rupees(f.AaEmiMonthlyOutflow).ToString("0"),
                                 ["BOUNCES"] = (facts.BankAnalysis?.BounceCount ?? 0).ToString()
                             }),
+                            Tag("RISK_ASSESSMENT", new Dictionary<string, string>
+                            {
+                                ["VERDICT"] = ctx.RiskAssessment?.Verdict.ToString() ?? "AwaitingData",
+                                ["ASSESSED_AT"] = ctx.RiskAssessment?.AssessedAt?.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'") ?? "",
+                                ["REVIEWED_FINDINGS_COUNT"] = (ctx.RiskAssessment?.ReviewedFindings.Count ?? 0).ToString()
+                            }),
+                            Tag("CREDIT_DECISION", new Dictionary<string, string>
+                            {
+                                ["DECISION"] = ctx.CreditDecision?.Decision ?? "",
+                                ["PRODUCT"] = ctx.CreditDecision?.Product ?? "",
+                                ["AMOUNT"] = (ctx.CreditDecision?.Amount ?? 0).ToString("0"),
+                                ["TENURE"] = (ctx.CreditDecision?.TenureMonths ?? 0).ToString(),
+                                ["EMI"] = (ctx.CreditDecision?.Emi ?? 0).ToString("0"),
+                                ["ACCEPTED_BY"] = ctx.CreditDecision?.AcceptedBy ?? ""
+                            }),
                             Tag("DATA_SOURCES", ctx.DataSources
                                 .Select((s, i) => (key: $"SOURCE_{i + 1}", value: s))
                                 .ToDictionary(x => x.key, x => x.value))

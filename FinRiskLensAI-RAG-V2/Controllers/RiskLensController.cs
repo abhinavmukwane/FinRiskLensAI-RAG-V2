@@ -46,13 +46,19 @@ namespace FinRiskLensAI.Controllers
             return Redirect(Back(returnUrl));
         }
 
-        /// <summary>Confirm, dismiss, or reopen a finding. The note travels with it into case memory later.</summary>
+        /// <summary>Confirm, dismiss, or reopen a finding. Dismissing requires a written reason (policy §6.3).</summary>
         [HttpPost("{id:int}/findings/{findingId:int}/review")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Review(int id, int findingId, ReviewStatus status, string? note, string? returnUrl,
                                                 CancellationToken ct)
         {
             if (!Enum.IsDefined(status) || note?.Length > 2000) return BadRequest();
+
+            if (status == ReviewStatus.Dismissed && string.IsNullOrWhiteSpace(note))
+            {
+                TempData["Error"] = "Dismissing a finding requires a written rationale on the case file (Credit Policy §6.3).";
+                return Redirect(Back(returnUrl) + $"#finding-{findingId}");
+            }
 
             var user = HttpContext.Session.GetCurrentBankUser()!;
             if (!await _cases.ReviewFindingAsync(id, findingId, status, user.UserId, note, ct)) return NotFound();

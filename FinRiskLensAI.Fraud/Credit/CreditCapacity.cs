@@ -38,12 +38,108 @@ namespace FinRiskLensAI.Fraud.Credit
     public static class CreditCapacityCalculator
     {
         /// <summary>
-        /// T6 — to be implemented (Doc/13_TEAM_WORK_PLAN.md): pure, no Gemini, no database. Rupee figures rounded to
-        /// whole rupees. <paramref name="bank"/> is null when no Account Aggregator data was shared — then the bank
-        /// income is zero, and so is the assessed income (the lower of the two).
+        /// T6 (Doc/13_TEAM_WORK_PLAN.md): pure, no Gemini, no database. Rupee figures rounded to whole rupees.
+        /// <paramref name="bank"/> is null when no Account Aggregator data was shared — then bank income is zero,
+        /// and so is assessed income (the lower of bank and ITR under §3.1.2).
         /// </summary>
         public static CreditCapacity Compute(MsmeFeatureSet facts, AaAnalysisResult? bank,
                                              decimal requestedAmount, int tenureMonths, decimal annualRatePct)
-            => throw new NotImplementedException("T6 — the credit capacity calculator is not built yet (Doc/13_TEAM_WORK_PLAN.md).");
+        {
+            // 1. Bank monthly income: AA sustainable inflow ÷ months covered (§3.1.2)
+            decimal bankMonthlyIncome = bank != null && bank.MonthsCovered > 0 && bank.EstimatedSustainableInflow > 0
+                ? Math.Round(bank.EstimatedSustainableInflow / bank.MonthsCovered)
+                : 0m;
+
+            // 2. ITR monthly income: gross total income ÷ 12 (§3.1.2)
+            decimal itrMonthlyIncome = facts.HasItr && facts.ItrLatestIncome > 0
+                ? Math.Round((decimal)facts.ItrLatestIncome / 12m)
+                : 0m;
+
+            // 3. Assessed monthly income: the lower of the two (§3.1.2)
+            decimal assessedMonthlyIncome = Math.Min(bankMonthlyIncome, itrMonthlyIncome);
+            if (assessedMonthlyIncome < 0m) assessedMonthlyIncome = 0m;
+
+            // 4. Maximum FOIR by assessed income (§3.1.3):
+            // Up to ₹50,000 -> 45%; ₹50,001 to ₹2,00,000 -> 55%; above ₹2,00,000 -> 65%
+            decimal maxFoirPct = assessedMonthlyIncome switch
+            {
+                <= 50_000m => 45m,
+                <= 200_000m => 55m,
+                _ => 65m
+            };
+
+            // 5. Existing EMIs: from AA data (§3.1.4)
+            decimal existingMonthlyEmi = Math.Max(0m, Math.Round((decimal)facts.AaEmiMonthlyOutflow));
+
+            // 6. Room for new EMI: Max FOIR × income − existing EMIs, never below zero
+            decimal maxTotalObligation = Math.Round((maxFoirPct / 100m) * assessedMonthlyIncome);
+            decimal maxNewMonthlyEmi = Math.Max(0m, maxTotalObligation - existingMonthlyEmi);
+
+            // 7. Requested EMI
+            decimal requestedMonthlyEmi = 0m;
+            if (requestedAmount > 0m && tenureMonths > 0)
+            {
+                if (annualRatePct > 0m)
+                {
+                    double r = (double)annualRatePct / 1200.0;
+                    double pow = Math.Pow(1.0 + r, tenureMonths);
+                    double emi = (double)requestedAmount * (r * pow) / (pow - 1.0);
+                    requestedMonthlyEmi = Math.Round((decimal)emi);
+                }
+                else
+                {
+                    requestedMonthlyEmi = Math.Round(requestedAmount / tenureMonths);
+                }
+            }
+
+            // 8. FOIR with requested loan
+            decimal foirWithRequestedPct = assessedMonthlyIncome > 0m
+                ? Math.Round((existingMonthlyEmi + requestedMonthlyEmi) / assessedMonthlyIncome * 100m, 1)
+                : (existingMonthlyEmi + requestedMonthlyEmi > 0m ? 100m : 0m);
+
+            // 9. Eligible limit: loan that MaxNewMonthlyEmi repays over tenure at the rate
+            decimal eligibleAmount = 0m;
+            if (maxNewMonthlyEmi > 0m && tenureMonths > 0)
+            {
+                if (annualRatePct > 0m)
+                {
+                    double r = (double)annualRatePct / 1200.0;
+                    double pow = Math.Pow(1.0 + r, tenureMonths);
+                    double loan = (double)maxNewMonthlyEmi * (pow - 1.0) / (r * pow);
+                    eligibleAmount = Math.Max(0m, Math.Round((decimal)loan));
+                }
+                else
+                {
+                    eligibleAmount = maxNewMonthlyEmi * tenureMonths;
+                }
+            }
+
+            // 10. Audit cap: ₹50,00,000 when 44AB-liable without a tax audit report (§5.3.2)
+            decimal? auditCapAmount = facts.ItrAuditApplicable && !facts.ItrAuditCompleted
+                ? 5_000_000m
+                : null;
+
+            // 11. Applied policy clauses
+            var clauses = new List<string> { "§3.1.2", "§3.1.3" };
+            if (existingMonthlyEmi > 0m) clauses.Add("§3.1.4");
+            if (auditCapAmount != null) clauses.Add("§5.3.2");
+
+            return new CreditCapacity(
+                BankMonthlyIncome: bankMonthlyIncome,
+                ItrMonthlyIncome: itrMonthlyIncome,
+                AssessedMonthlyIncome: assessedMonthlyIncome,
+                MaxFoirPct: maxFoirPct,
+                ExistingMonthlyEmi: existingMonthlyEmi,
+                MaxNewMonthlyEmi: maxNewMonthlyEmi,
+                RequestedAmount: requestedAmount,
+                TenureMonths: tenureMonths,
+                AnnualRatePct: annualRatePct,
+                RequestedMonthlyEmi: requestedMonthlyEmi,
+                FoirWithRequestedPct: foirWithRequestedPct,
+                EligibleAmount: eligibleAmount,
+                AuditCapAmount: auditCapAmount,
+                PolicyClauses: clauses
+            );
+        }
     }
 }

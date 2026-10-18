@@ -37,10 +37,14 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
         private readonly IHttpClientHelper _http;
         private readonly LoanCaseSettings _settings;
         private readonly ILogger<LoanCaseService> _logger;
+        private readonly FinRiskLensAI.Core.Interfaces.IServices.Cases.ICreditDecisionService? _credit;
+        private readonly FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService? _cases;
 
         public LoanCaseService(IEnumerable<ILoanCasePayloadBuilder> builders, ILoanCasePushRepository pushes,
             IBankAdminService bankAdmin, IBlobAnalysisService analysis, IHttpClientHelper http,
-            LoanCaseSettings settings, ILogger<LoanCaseService> logger)
+            LoanCaseSettings settings, ILogger<LoanCaseService> logger,
+            FinRiskLensAI.Core.Interfaces.IServices.Cases.ICreditDecisionService? credit = null,
+            FinRiskLensAI.Core.Interfaces.IServices.Cases.ICaseService? cases = null)
         {
             _builders = builders.ToDictionary(b => b.Channel);
             _pushes = pushes;
@@ -49,6 +53,8 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
             _http = http;
             _settings = settings;
             _logger = logger;
+            _credit = credit;
+            _cases = cases;
         }
 
         public bool IsLive(LoanCaseChannel channel) => _settings.EndpointFor(channel) != null;
@@ -218,6 +224,91 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
                 _logger.LogWarning(ex, "LoanCase: could not list data sources for {Uan}", uan);
             }
 
+            LoanCaseRiskAssessment? riskAssessment = null;
+            if (_cases != null)
+            {
+                try
+                {
+                    var caseDetail = await _cases.GetByUanAsync(uan, ct);
+                    if (caseDetail != null)
+                    {
+                        var verdict = FinRiskLensAI.Core.Models.Cases.RiskSummary.Of(caseDetail.Application, caseDetail.Findings);
+                        riskAssessment = new LoanCaseRiskAssessment
+                        {
+                            Verdict = verdict,
+                            AssessedAt = caseDetail.Application.InvestigatedAt ?? caseDetail.Application.SubmittedAt,
+                            ReviewedFindings = caseDetail.Findings
+                                .Select(f => new LoanCaseFindingSummary
+                                {
+                                    Type = f.Type,
+                                    Severity = f.Severity,
+                                    ReviewStatus = f.ReviewStatus
+                                }).ToList()
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "LoanCase: could not fetch risk assessment for {Uan}", uan);
+                }
+            }
+
+            LoanCaseCreditDecision? creditDecision = null;
+            if (_credit != null)
+            {
+                try
+                {
+                    var latest = await _credit.GetLatestAsync(uan, ct);
+                    if (latest != null)
+                    {
+                        decimal? emi = null;
+                        decimal? foir = null;
+                        if (!string.IsNullOrWhiteSpace(latest.Capacity))
+                        {
+                            try
+                            {
+                                var cap = JObject.Parse(latest.Capacity);
+                                emi = cap.Value<decimal?>("proposedMonthlyEmi") ?? cap.Value<decimal?>("proposed_monthly_emi");
+                                foir = cap.Value<decimal?>("maxFoirPct") ?? cap.Value<decimal?>("max_foir_pct");
+                            }
+                            catch { }
+                        }
+
+                        object? reasonsObj = null;
+                        if (!string.IsNullOrWhiteSpace(latest.Reasons))
+                        {
+                            try { reasonsObj = JsonConvert.DeserializeObject(latest.Reasons); }
+                            catch { }
+                        }
+
+                        var conditionsList = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(latest.Conditions))
+                        {
+                            try { conditionsList = JsonConvert.DeserializeObject<List<string>>(latest.Conditions) ?? new(); }
+                            catch { }
+                        }
+
+                        creditDecision = new LoanCaseCreditDecision
+                        {
+                            Decision = latest.Outcome.ToString(),
+                            Product = latest.Product.ToString(),
+                            Amount = latest.AcceptedAmount ?? latest.RecommendedAmount,
+                            TenureMonths = latest.TenureMonths,
+                            Emi = emi,
+                            Foir = foir,
+                            Reasons = reasonsObj,
+                            Conditions = conditionsList,
+                            Model = latest.Model,
+                            AcceptedBy = latest.AcceptedBy
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "LoanCase: could not fetch credit decision for {Uan}", uan);
+                }
+            }
+
             return new LoanCaseContext
             {
                 CaseReference = NewCaseReference(channel, uan, now),
@@ -231,7 +322,9 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase
                 RequestedByName = user.FullName,
                 BranchIfsc = user.IfscCode,
                 BranchName = user.BranchName,
-                DataSources = sources
+                DataSources = sources,
+                RiskAssessment = riskAssessment,
+                CreditDecision = creditDecision
             };
         }
 

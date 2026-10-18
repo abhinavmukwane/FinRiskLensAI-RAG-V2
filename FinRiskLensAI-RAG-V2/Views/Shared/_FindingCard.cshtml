@@ -64,10 +64,13 @@
         }
         else
         {
-            <input type="text" name="note" maxlength="2000" class="bp-select" placeholder="Note for the file (optional)"
+            <input type="text" name="note" maxlength="2000" class="bp-select" placeholder="Note for the file (required to dismiss)"
                    aria-label="Review note for this finding" />
             <button type="submit" name="status" value="Confirmed" class="bp-btn bp-btn-sm"><i class="bi bi-check2"></i> Confirm</button>
-            <button type="submit" name="status" value="Dismissed" class="bp-btn bp-btn-ghost bp-btn-sm"><i class="bi bi-x"></i> Dismiss</button>
+            <button type="submit" name="status" value="Dismissed" class="bp-btn bp-btn-ghost bp-btn-sm"
+                    onclick="if(!this.form.note.value.trim()){ alert('Credit Policy §6.3 requires a written reason to dismiss a finding.'); this.form.note.focus(); return false; }">
+                <i class="bi bi-x"></i> Dismiss
+            </button>
         }
     </form>
 </article>

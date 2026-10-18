@@ -112,8 +112,8 @@ namespace FinRiskLensAI.Core.Models.Cases
 
         public static string Of(string findingType) => findingType switch
         {
-            "IDENTITY_MISMATCH" or "IMPLAUSIBLE_EMPLOYER" or "EMPLOYER_INACTIVE" => Identity,
-            "INCOME_MISMATCH" => Gst,
+            "IDENTITY_MISMATCH" or "IMPLAUSIBLE_EMPLOYER" or "EMPLOYER_INACTIVE" or "COMPANY_INACTIVE" => Identity,
+            "INCOME_MISMATCH" or "TURNOVER_MISMATCH" => Gst,
             "ITR_MISMATCH" => Itr,
             "SALARY_ROUNDTRIP" or "PRE_APPLICATION_WINDOW_DRESSING" or "PASS_THROUGH" or "BOUNCES" or "UNDECLARED_EMI"
                 or "LOAN_STACKING" or "GAMBLING_CRYPTO_EXPOSURE" or "SALARY_SOURCE_MISMATCH" => Bank,

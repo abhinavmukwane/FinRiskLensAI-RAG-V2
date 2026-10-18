@@ -102,6 +102,30 @@ namespace FinRiskLensAI.Services.Implementation.LoanCase.Payloads
                                     declaredTurnover = Rupees(facts.Financials.BusinessTurnover),
                                     netWorth = Rupees(facts.Financials.NetWorth),
                                     taxDemandOutstanding = facts.Financials.HasTaxDemand
+                                },
+                                riskAssessment = ctx.RiskAssessment == null ? null : new
+                                {
+                                    verdict = ctx.RiskAssessment.Verdict.ToString(),
+                                    assessedAt = ctx.RiskAssessment.AssessedAt,
+                                    reviewedFindings = ctx.RiskAssessment.ReviewedFindings.Select(f => new
+                                    {
+                                        type = f.Type,
+                                        severity = f.Severity.ToString(),
+                                        reviewStatus = f.ReviewStatus.ToString()
+                                    })
+                                },
+                                creditDecision = ctx.CreditDecision == null ? null : new
+                                {
+                                    decision = ctx.CreditDecision.Decision,
+                                    product = ctx.CreditDecision.Product,
+                                    amount = ctx.CreditDecision.Amount,
+                                    tenure = ctx.CreditDecision.TenureMonths,
+                                    emi = ctx.CreditDecision.Emi,
+                                    foir = ctx.CreditDecision.Foir,
+                                    reasons = ctx.CreditDecision.Reasons,
+                                    conditions = ctx.CreditDecision.Conditions,
+                                    model = ctx.CreditDecision.Model,
+                                    acceptedBy = ctx.CreditDecision.AcceptedBy
                                 }
                             }
                         }

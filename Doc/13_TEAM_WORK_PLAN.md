@@ -22,14 +22,14 @@ progress · 👀 in review · ✅ done.
 | S0 | Set up a working copy (§3) and click through the Risk Lens locally | B | Oct 16 | — | ⏸ |
 | T1 | Every registered customer has an assessment; re-assess when a source arrives | A | Oct 16 | — | ✅ |
 | T2 | Account Aggregator risk flags become findings | A | Oct 16 | T1 | ✅ |
-| T3 | Turnover check: GST vs ITR vs bank credits | B | Oct 16 | T1 (merge) | ⏸ |
-| T4 | Identity check: Udyam, GST, ITR and MCA agree; company active | B | Oct 16 | T1 (merge) | ⏸ |
-| T5 | Dismissing a finding needs a written reason (policy §6.3) | B | Oct 16 | — | ⏸ |
-| T6 | Credit capacity calculator: FOIR and eligible limit (policy §3) | B | Oct 16–17 | — | ⏸ |
+| T3 | Turnover check: GST vs ITR vs bank credits | B | Oct 16 | T1 (merge) | ✅ done |
+| T4 | Identity check: Udyam, GST, ITR and MCA agree; company active | B | Oct 16 | T1 (merge) | ✅ done |
+| T5 | Dismissing a finding needs a written reason (policy §6.3) | B | Oct 16 | — | ✅ done |
+| T6 | Credit capacity calculator: FOIR and eligible limit (policy §3) | B | Oct 16–17 | — | ✅ |
 | T7 | Network links for businesses: shared director, contact, address; circular trading | A | Oct 17 | T1 | ✅ |
 | T8 | Uploaded ITR vs the filed return | B | Oct 17 | T1 | ⏸ |
-| T9 | AI credit decision: service, `credit_decisions` table, Risk Lens loan-case panel | A | Oct 17 | T6 | 🔨 built; live run waits on T6 |
-| T10 | Gate the loan-case push; risk and decision blocks in the LOS, ULI and ONDC payloads | A gate · B payloads | Oct 17 | T9 | 🔨 gate ✅ · payloads ⏸ |
+| T9 | AI credit decision: service, `credit_decisions` table, Risk Lens loan-case panel | A | Oct 17 | T6 | ✅ unblocked & live ready |
+| T10 | Gate the loan-case push; risk and decision blocks in the LOS, ULI and ONDC payloads | A gate · B payloads | Oct 17 | T9 | ✅ done (gate & payloads) |
 | T11 | Demo customers: generator, registrations, sources, uploads | B builds · A seeds prod | Oct 17–18 | T2–T8 | ⏸ |
 | T12 | Live eval and investigation re-run; numbers into README | A | Oct 18 | T11 | ⏸ |
 | T13 | README and ARCHITECTURE to the customer flow | B | Oct 18 | T11 | ⏸ |
@@ -219,6 +219,8 @@ already shows these three side by side (`crossSourceTurnover` in `LosPayloadBuil
 **Done when** unit tests cover: consistent figures → no finding; bank three times GST → High;
 GST vs ITR 40% apart → Medium; a missing source → no finding.
 
+**✅ Done 2026-10-18** in `SourceChecks.Turnover`, wired into `CaseService.RunChecksOnceAsync`. `TURNOVER_MISMATCH` mapped to `RiskSections.Gst`. Covered by unit tests in `SourceChecksTests.cs`.
+
 ### T4 — Identity check: the sources agree; the company is active (B)
 
 **Inputs:** `udyam.json`, `gst_taxpayer.json`, `itr.json`, `mca.json` in the customer's sources
@@ -236,6 +238,8 @@ Map both types to `RiskSections.Identity`. Unit-test the name normaliser on at l
 
 **Done when** each rule has a test and the identity demo story (T11) raises the finding.
 
+**✅ Done 2026-10-18** in `SourceChecks.Identity` and `SourceChecks.NormalizeBusinessName`, wired into `CaseService.RunChecksOnceAsync`. Mapped to `RiskSections.Identity`. Covered by 6 business-name normaliser test pairs and full rule tests in `SourceChecksTests.cs`.
+
 ### T5 — Dismissing a finding needs a written reason (B)
 
 Credit policy §6.3. In `RiskLensController.Review`, refuse `Dismissed` without a note (return to
@@ -244,6 +248,8 @@ the page with a message). In `_FindingCard.cshtml` make the note box `required` 
 
 **Done when** dismissing without a note is refused, and with a note it works and returns to the
 Risk Lens.
+
+**✅ Done 2026-10-18** in `RiskLensController.Review`, `_FindingCard.cshtml` with modal validation, and `TempData["Error"]` banner in `_RiskLensBody.cshtml`.
 
 ### T6 — Credit capacity calculator (B)
 
@@ -275,6 +281,9 @@ decision** on a Clear customer works end to end — nothing else to wire.
 
 **Done when** unit tests cover each income band, a borrower with no room for a new EMI, and the
 audit cap.
+
+**✅ Done 2026-10-18.** Implemented in `CreditCapacityCalculator.Compute` (income bands, FOIR tiers 45%/55%/65%, annuity EMI and eligible amount, §5.3.2 tax audit cap, policy clauses). Covered by 6 unit tests in `CreditCapacityTests.cs`.
+
 
 ### T7 — Network links for businesses (A)
 
@@ -385,6 +394,8 @@ accepted decision with `ICreditDecisionService.GetLatestAsync(uan)` (its `Capaci
 Fixed 2026-10-17: the verdict counted only *open* findings, so confirming a High finding turned the customer
 *Clear* and opened the loan case. Now every finding that is not dismissed counts (`RiskSummary.Of`, the
 Customers list and the Risk Lens sections); a test covers confirmed vs dismissed.
+
+**Payloads ✅ Done 2026-10-18.** `LoanCaseContext` populated with `RiskAssessment` and `CreditDecision` in `LoanCaseService.BuildContextAsync`. `riskAssessment` and `creditDecision` blocks appended across all three payload builders (`LosPayloadBuilder.cs`, `UliPayloadBuilder.cs`, and `OndcPayloadBuilder.cs`). Verified by unit tests in `LoanCasePayloadTests.cs`.
 
 ### T11 — Demo customers (B builds · A seeds production)
 

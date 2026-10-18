@@ -12,10 +12,7 @@ never declared, a director shared with another borrower — found, explained in 
 the evidence, before a credit officer relies on them.
 
 Built on Google Cloud with **Gemini on Vertex AI** for the **Google AI Builder Cup 2026
-(BFSI track)** by team **AS FinTech Developer**. It grows out of
-[FinRiskLensAI](https://github.com/abhinavmukwane/FinRiskLensAI), our MSME credit platform
-shortlisted in the top 5 at IDBI Innovate 2026, and reuses its verification-source
-integrations.
+(BFSI track)** by team **AS FinTech Developer**.
 
 ---
 
