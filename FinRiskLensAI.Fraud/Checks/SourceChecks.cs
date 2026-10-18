@@ -27,6 +27,16 @@ namespace FinRiskLensAI.Fraud.Checks
         public string? McaName { get; set; }
     }
 
+    /// <summary>Official filed ITR figures from the verified return (itr.json) for cross-checking uploaded ITRs (Task T8).</summary>
+    public sealed class FiledItrFacts
+    {
+        public string? AssessmentYear { get; set; }
+        public decimal? GrossTotalIncome { get; set; }
+        public decimal? BusinessTurnover { get; set; }
+        public decimal? TotalIncome { get; set; }
+        public decimal? TaxPaid { get; set; }
+    }
+
     /// <summary>
     /// Checks on what the customer shared from its sources — the bank's Account Aggregator record, GST,
     /// ITR, the registries — rather than on an uploaded document (Doc/12_CUSTOMER_RISK_LENS.md §4).
@@ -481,6 +491,182 @@ namespace FinRiskLensAI.Fraud.Checks
 
         public static List<Finding> Identity(string? udyamJson, string? gstTaxpayerJson, string? itrJson, string? mcaJson, int loanApplicationId)
             => Identity(ParseIdentityFacts(udyamJson, gstTaxpayerJson, itrJson, mcaJson), loanApplicationId);
+
+        // ─────────────────────────── Task T8: Uploaded ITR vs Filed Return ───────────────────────────
+
+        /// <summary>
+        /// Task T8 (Doc/13_TEAM_WORK_PLAN.md): Uploaded ITR vs the filed return.
+        /// Compares extracted fields (assessment_year, gross_total_income, business_turnover,
+        /// total_income, tax_paid) from customer-uploaded ITR copies against the verified return
+        /// from the Income Tax Department (itr.json). Any figure differing by more than ₹1 raises
+        /// an ITR_MISMATCH finding with Field evidence.
+        /// </summary>
+        public static List<Finding> ItrMismatch(IReadOnlyList<CaseDocument> docs, IReadOnlyList<DocField> fields,
+                                                string? itrJson, int loanApplicationId, FraudOptions? options = null)
+        {
+            var filed = ParseFiledItr(itrJson);
+            if (filed == null || docs == null || docs.Count == 0 || fields == null || fields.Count == 0)
+                return new List<Finding>();
+
+            var findings = new List<Finding>();
+            foreach (var doc in docs)
+            {
+                var docFields = fields.Where(f => f.CaseDocumentID == doc.CaseDocumentID).ToList();
+                if (docFields.Count == 0) continue;
+
+                // An ITR document is classified as CaseDocType.Itr, or carries ITR-specific fields
+                bool isItr = doc.DocType == CaseDocType.Itr
+                    || docFields.Any(f => f.Name is "assessment_year" or "gross_total_income" or "business_turnover" or "total_income" or "tax_paid");
+
+                if (!isItr) continue;
+
+                var f = ItrMismatch(doc, docFields, filed, loanApplicationId, options);
+                if (f != null) findings.Add(f);
+            }
+            return findings;
+        }
+
+        public static Finding? ItrMismatch(CaseDocument doc, IReadOnlyList<DocField> docFields,
+                                           FiledItrFacts filed, int loanApplicationId, FraudOptions? options = null)
+        {
+            if (doc == null || docFields == null || docFields.Count == 0 || filed == null)
+                return null;
+
+            var tolerance = options?.AmountTolerance ?? 1.00m;
+            var uploadedAy = Field(docFields, "assessment_year");
+            var uploadedGti = Field(docFields, "gross_total_income");
+            var uploadedTo = Field(docFields, "business_turnover");
+            var uploadedTi = Field(docFields, "total_income");
+            var uploadedTaxPaid = Field(docFields, "tax_paid");
+
+            var mismatches = new List<string>();
+            var evidence = new List<Evidence>();
+
+            // 1. Assessment year comparison
+            if (!string.IsNullOrWhiteSpace(uploadedAy?.Value) && !string.IsNullOrWhiteSpace(filed.AssessmentYear))
+            {
+                var uAy = NormalizeAy(uploadedAy.Value);
+                var fAy = NormalizeAy(filed.AssessmentYear);
+                if (!string.Equals(uAy, fAy, StringComparison.OrdinalIgnoreCase))
+                {
+                    mismatches.Add($"assessment year {uploadedAy.Value.Trim()} (verified filing is {filed.AssessmentYear.Trim()})");
+                    evidence.Add(new Evidence
+                    {
+                        Kind = EvidenceKind.Field,
+                        RefId = uploadedAy.DocFieldID,
+                        CaseDocumentID = doc.CaseDocumentID,
+                        PageNo = uploadedAy.PageNo > 0 ? uploadedAy.PageNo : 1,
+                        Box = uploadedAy.Box,
+                        Note = $"Assessment year: uploaded {uploadedAy.Value.Trim()}, filed return shows {filed.AssessmentYear.Trim()}"
+                    });
+                }
+            }
+
+            // 2. Numeric figures comparison
+            void CheckNum(DocField? field, decimal? filedVal, string label)
+            {
+                if (field?.NumValue == null || !filedVal.HasValue) return;
+                decimal diff = field.NumValue.Value - filedVal.Value;
+                if (Math.Abs(diff) > tolerance)
+                {
+                    string dir = diff > 0 ? $"{Rs(diff)} higher" : $"{Rs(-diff)} lower";
+                    mismatches.Add($"{label.ToLowerInvariant()} {Rs(field.NumValue.Value)} vs filed {Rs(filedVal.Value)} ({dir})");
+                    evidence.Add(new Evidence
+                    {
+                        Kind = EvidenceKind.Field,
+                        RefId = field.DocFieldID,
+                        CaseDocumentID = doc.CaseDocumentID,
+                        PageNo = field.PageNo > 0 ? field.PageNo : 1,
+                        Box = field.Box,
+                        Note = $"{label}: uploaded {Rs(field.NumValue.Value)}, filed return shows {Rs(filedVal.Value)}"
+                    });
+                }
+            }
+
+            CheckNum(uploadedTo, filed.BusinessTurnover, "Business turnover");
+            CheckNum(uploadedGti, filed.GrossTotalIncome, "Gross total income");
+            CheckNum(uploadedTi, filed.TotalIncome, "Total income");
+            CheckNum(uploadedTaxPaid, filed.TaxPaid, "Taxes paid");
+
+            if (mismatches.Count == 0) return null;
+
+            return new Finding
+            {
+                LoanApplicationID = loanApplicationId,
+                Type = "ITR_MISMATCH",
+                Category = FindingCategory.Tampering,
+                Severity = FindingSeverity.High,
+                Title = $"Uploaded ITR differs from filed return: {doc.FileName}",
+                Explanation = $"Compared with the verified return on record with the Income Tax Department"
+                    + (!string.IsNullOrWhiteSpace(filed.AssessmentYear) ? $" (assessment year {filed.AssessmentYear.Trim()})" : "")
+                    + $": {string.Join("; ", mismatches)}. An uploaded PDF can be altered; the department's verified filing cannot.",
+                RecommendedAction = "Assess credit capacity using the verified tax filing rather than the uploaded copy, and require the applicant to explain the discrepancy.",
+                DetectedBy = FindingSource.Deterministic,
+                DedupKey = $"ITR_MISMATCH:doc{doc.CaseDocumentID}",
+                Evidence = evidence
+            };
+        }
+
+        /// <summary>
+        /// Parses official filed return figures from <c>itr.json</c> (both ITR-4 presumptive and ITR-5 books shapes).
+        /// </summary>
+        public static FiledItrFacts? ParseFiledItr(string? itrJson)
+        {
+            if (string.IsNullOrWhiteSpace(itrJson)) return null;
+            try
+            {
+                using var doc = JsonDocument.Parse(itrJson);
+                var data = At(doc.RootElement, "data");
+                if (data.ValueKind != JsonValueKind.Object) data = doc.RootElement;
+                if (data.ValueKind != JsonValueKind.Object) return null;
+
+                var filing = At(data, "filing_details");
+                var income = At(data, "income_details");
+                var pl = At(data, "profit_and_loss_summary");
+                var presumptive = At(data, "presumptive_income_details");
+                var recon = At(data, "gst_turnover_reconciliation");
+                var tax = At(data, "tax_computation");
+                var taxesPaid = At(tax, "taxes_paid");
+
+                return new FiledItrFacts
+                {
+                    AssessmentYear = Text(filing, "assessment_year") ?? Text(data, "assessment_year"),
+                    GrossTotalIncome = Num(income, "gross_total_income") ?? Num(data, "gross_total_income") ?? Num(data, "total_income"),
+                    BusinessTurnover = Num(pl, "revenue_from_operations")
+                                    ?? Num(presumptive, "gross_turnover_or_gross_receipts")
+                                    ?? Num(recon, "itr_declared_turnover")
+                                    ?? Num(data, "business_turnover"),
+                    TotalIncome = Num(data, "total_income") ?? Num(income, "total_income"),
+                    TaxPaid = Num(taxesPaid, "total_taxes_paid") ?? Num(tax, "total_taxes_paid") ?? Num(data, "tax_paid")
+                };
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        private static string NormalizeAy(string s)
+        {
+            var cleaned = s.Replace("A.Y.", "", StringComparison.OrdinalIgnoreCase)
+                           .Replace("AY", "", StringComparison.OrdinalIgnoreCase)
+                           .Replace(" ", "")
+                           .Trim();
+            return cleaned;
+        }
+
+        private static decimal? Num(JsonElement e, string name)
+        {
+            if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty(name, out var v)) return null;
+            if (v.ValueKind == JsonValueKind.Number && v.TryGetDecimal(out var d)) return d;
+            if (v.ValueKind == JsonValueKind.String && decimal.TryParse(v.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var s)) return s;
+            return null;
+        }
+
+        private static DocField? Field(IReadOnlyList<DocField> fields, string name)
+            => fields.FirstOrDefault(f => string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        private static string Rs(decimal? v) => v == null ? "—" : "₹" + v.Value.ToString("N0", InIndia);
 
         private static string Clip(string s, int max) => s.Length <= max ? s : s[..(max - 1)] + "…";
     }

@@ -46,7 +46,8 @@ namespace FinRiskLensAI.Fraud.Checks
         IReadOnlyList<StatementRow> Rows,
         IReadOnlyList<PageSummary> Pages,
         IReadOnlyList<DocField> Fields,
-        IReadOnlyList<AaTransaction>? BankRecord = null);
+        IReadOnlyList<AaTransaction>? BankRecord = null,
+        string? ItrJson = null);
 
     /// <summary>
     /// The deterministic checks (Doc/10_FRAUD_LENS_BUILD.md §4, reference design §11).
@@ -81,6 +82,13 @@ namespace FinRiskLensAI.Fraud.Checks
                 Add(findings, Metadata(doc, o));
                 if (data.BankRecord != null) Add(findings, BankRecordMismatch(doc, rows, fields, data.BankRecord, o));
             }
+
+            // Task T8: Uploaded ITR vs filed return
+            if (!string.IsNullOrWhiteSpace(data.ItrJson))
+            {
+                findings.AddRange(SourceChecks.ItrMismatch(docs, data.Fields, data.ItrJson, data.Application.LoanApplicationID, o));
+            }
+
             return findings;
         }
 

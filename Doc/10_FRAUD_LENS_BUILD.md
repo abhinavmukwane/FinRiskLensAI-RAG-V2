@@ -580,10 +580,10 @@ stays — each linked customer gets a finding in its **Network** section naming 
 name and Udyam number. The `DEMO-*` scenarios stay in the databases as the synthetic test set behind
 `DemoData eval`; the portal shows the demo customers (T11).
 | Assessment for every customer when a source arrives; Account Aggregator risk flags as findings | ✅ 2026-10-16 — `EnsureAssessmentAsync`, `SourceChecks.BankFlags`; the verdict needs bank evidence (`applications.bank_data_at`). Details in `13_TEAM_WORK_PLAN.md` T1–T2 |
-| GST–ITR–bank turnover reconciliation · identity consistency · uploaded ITR vs filed | ⏸ Oct 16–17 (T3, T4, T8) |
+| GST–ITR–bank turnover reconciliation · identity consistency · uploaded ITR vs filed | ✅ 2026-10-18 (T3, T4, T8) — `SourceChecks.Turnover`, `SourceChecks.Identity`, `SourceChecks.ItrMismatch` |
 | Network lens: shared director, shared mobile / email / address, circular GST trading | ✅ 2026-10-16 — `NetworkLens.BusinessLinks`; details in `13_TEAM_WORK_PLAN.md` T7 |
-| AI credit decision (Gemini Pro, grounded) + `credit_decisions` table + gate on the verdict | 🔨 2026-10-16 — built against the T6 contract (`CreditDecisionService`, `Ground`, Risk Lens *Loan case* panel, `PushBlockedAsync` gate); live decisions once the credit capacity calculator (T6) is filled in. Details in `13_TEAM_WORK_PLAN.md` T9–T10 |
-| `riskAssessment` and `creditDecision` blocks in the LOS, ULI and ONDC payloads | ⏸ Oct 17 |
+| AI credit decision (Gemini Pro, grounded) + `credit_decisions` table + gate on the verdict | ✅ 2026-10-18 (T9) — `CreditDecisionService`, `CreditCapacityCalculator`, Risk Lens loan case panel |
+| `riskAssessment` and `creditDecision` blocks in the LOS, ULI and ONDC payloads | ✅ 2026-10-18 (T10) — gate and payloads across LOS, ULI, ONDC |
 | Demo customers in both databases; eval re-run | ⏸ Oct 17–18 |
 | README, architecture, deck and video to the customer flow; deploy; submit | ⏸ Oct 18 |
 

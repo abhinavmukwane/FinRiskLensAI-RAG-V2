@@ -17,6 +17,8 @@ namespace FinRiskLensAI.DemoData
         public string[] ExpectedAi { get; init; } = Array.Empty<string>();
         /// <summary>The bank's own record of the account, as Account Aggregator delivers it, when the applicant linked one.</summary>
         public string? AaJson { get; init; }
+        /// <summary>The verified ITR filing from the Income Tax department (itr.json) for cross-checking uploaded ITRs.</summary>
+        public string? ItrJson { get; init; }
         /// <summary>The planted ring this case belongs to; cases sharing a name must form exactly one ring.</summary>
         public string? Ring { get; init; }
     }
@@ -404,6 +406,38 @@ namespace FinRiskLensAI.DemoData
             }, new JsonSerializerOptions { WriteIndented = true });
         }
 
+        public static DemoDoc ItrDoc(string entityName, string pan, string assessmentYear,
+                                     decimal grossTotalIncome, decimal businessTurnover,
+                                     decimal totalIncome, decimal taxPaid,
+                                     bool tampered = false, decimal? tamperedTurnover = null)
+        {
+            var fileName = $"itr_{assessmentYear.Replace("-", "_")}.pdf";
+            var truthTurnover = tampered ? (tamperedTurnover ?? Math.Round(businessTurnover * 1.8m)) : businessTurnover;
+            var truth = new ExtractedDocument
+            {
+                DocType = CaseDocType.Itr,
+                ClaimedIssuer = "Income Tax Department",
+                LayoutText = "ITR-V acknowledgement: department header, AY top right, taxpayer details, computation table, synthetic-data footer",
+                Fields = new List<ExtractedField>
+                {
+                    Field("assessment_year", assessmentYear),
+                    Field("gross_total_income", grossTotalIncome),
+                    Field("business_turnover", truthTurnover),
+                    Field("total_income", totalIncome),
+                    Field("tax_paid", taxPaid),
+                    Field("pan_masked", pan)
+                }
+            };
+
+            var pdf = Render.Itr(entityName, pan, assessmentYear, grossTotalIncome, truthTurnover, totalIncome, taxPaid,
+                                 tampered ? "Canva" : "Income Tax e-Filing Portal 3.0",
+                                 tampered ? "Canva PDF" : "ITD e-Filing Utility",
+                                 new DateTime(2026, 7, 31, 14, 20, 0),
+                                 tampered ? new DateTime(2026, 8, 15, 10, 0, 0) : new DateTime(2026, 7, 31, 14, 20, 0));
+
+            return new DemoDoc(fileName, pdf, truth);
+        }
+
         private static ExtractedField Field(string name, string value) => new() { Name = name, Value = value };
         private static ExtractedField Field(string name, decimal value) => new() { Name = name, Value = Render.Inr(value), NumValue = value };
 
@@ -524,7 +558,7 @@ namespace FinRiskLensAI.DemoData
             }
 
             var bankRecord = c.AaJson == null ? null : new AaStatementAnalysisService().Analyze(c.AaJson).Transactions;
-            return DeterministicChecks.Run(new CaseData(app, rows, pages, fields, bankRecord), options)
+            return DeterministicChecks.Run(new CaseData(app, rows, pages, fields, bankRecord, c.ItrJson), options)
                                       .Select(f => f.Type).Distinct().OrderBy(t => t).ToArray();
         }
     }

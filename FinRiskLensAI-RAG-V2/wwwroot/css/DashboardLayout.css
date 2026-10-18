@@ -162,6 +162,125 @@
     color: var(--brand-on-primary-faint);
     }
 
+    /* Risk Lens & Financial Score Card Hub */
+    .hub-card {
+        background: var(--brand-tint-bg-2);
+        border: 1px solid var(--brand-tint-border);
+        border-radius: 16px;
+        padding: 22px 24px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 8px rgba(var(--brand-primary-dark-rgb), 0.04);
+    }
+
+    .hub-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(var(--brand-primary-dark-rgb), 0.1);
+        border-color: var(--brand-primary);
+    }
+
+    .hub-card-score:hover {
+        border-color: var(--brand-accent-deep);
+    }
+
+    .hub-badge-risk {
+        background: linear-gradient(135deg, var(--brand-primary-dark), var(--brand-primary));
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 2px 6px rgba(var(--brand-primary-dark-rgb), 0.2);
+    }
+
+    .hub-badge-score {
+        background: linear-gradient(135deg, var(--brand-accent-deep), var(--brand-accent-alt));
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .hub-icon-risk {
+        color: var(--brand-primary);
+        font-size: 1.85rem;
+        line-height: 1;
+    }
+
+    .hub-icon-score {
+        color: var(--brand-accent-deep);
+        font-size: 1.85rem;
+        line-height: 1;
+    }
+
+    .hub-title {
+        font-weight: 700;
+        color: var(--brand-ink);
+        margin-bottom: 4px;
+        font-size: 1.15rem;
+    }
+
+    .hub-desc {
+        font-size: 0.85rem;
+        color: var(--brand-on-surface-variant);
+        margin-bottom: 18px;
+        line-height: 1.5;
+    }
+
+    .hub-btn-risk {
+        border: 1.5px solid var(--brand-primary);
+        color: var(--brand-primary);
+        background: transparent;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 7px 20px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        margin-top: auto;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .hub-btn-risk:hover {
+        background: var(--brand-primary);
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(var(--brand-primary-rgb), 0.25);
+        transform: translateX(2px);
+    }
+
+    .hub-btn-score {
+        border: 1.5px solid var(--brand-accent-deep);
+        color: var(--brand-accent-deep);
+        background: transparent;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 7px 20px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        margin-top: auto;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .hub-btn-score:hover {
+        background: var(--brand-accent-deep);
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(var(--brand-accent-deep-rgb, 114, 92, 30), 0.25);
+        transform: translateX(2px);
+    }
+
     /* Google Translate language widget — themed for the light topbar */
     .topbar, .topbar-right, .topbar-actions { overflow: visible; }
     .google-translate-container, .bhashini-plugin-container { display: flex; align-items: center; position: relative; }

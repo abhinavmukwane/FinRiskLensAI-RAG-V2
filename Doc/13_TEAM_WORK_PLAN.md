@@ -27,7 +27,7 @@ progress · 👀 in review · ✅ done.
 | T5 | Dismissing a finding needs a written reason (policy §6.3) | B | Oct 16 | — | ✅ done |
 | T6 | Credit capacity calculator: FOIR and eligible limit (policy §3) | B | Oct 16–17 | — | ✅ |
 | T7 | Network links for businesses: shared director, contact, address; circular trading | A | Oct 17 | T1 | ✅ |
-| T8 | Uploaded ITR vs the filed return | B | Oct 17 | T1 | ⏸ |
+| T8 | Uploaded ITR vs the filed return | B | Oct 17 | T1 | ✅ done |
 | T9 | AI credit decision: service, `credit_decisions` table, Risk Lens loan-case panel | A | Oct 17 | T6 | ✅ unblocked & live ready |
 | T10 | Gate the loan-case push; risk and decision blocks in the LOS, ULI and ONDC payloads | A gate · B payloads | Oct 17 | T9 | ✅ done (gate & payloads) |
 | T11 | Demo customers: generator, registrations, sources, uploads | B builds · A seeds prod | Oct 17–18 | T2–T8 | ⏸ |
@@ -328,6 +328,8 @@ Needs an ITR PDF in the demo set: add `Render.Itr(...)` to `tools/FinRiskLensAI.
 
 **Done when** the demo customer with an edited ITR copy (T11) raises `ITR_MISMATCH`, and Gemini
 reads the rendered ITR's five fields correctly in `eval`.
+
+**✅ Done 2026-10-18** in `SourceChecks.ItrMismatch`, wired into `CaseService.RunChecksOnceAsync` and `DeterministicChecks.Run`. `Render.Itr` in `Render.cs` and `ItrDoc` in `Scenarios.cs`. Section: ITR (`RiskSections.Itr`). Covered by 9 unit tests in `SourceChecksTests.cs` (106/106 tests green).
 
 ### T9 — AI credit decision (A)
 

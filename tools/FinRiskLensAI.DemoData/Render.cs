@@ -136,13 +136,101 @@ namespace FinRiskLensAI.DemoData
             .WithMetadata(Metadata($"Payslip {month}", producer, creator, created, modified))
             .GeneratePdf();
 
+        public static byte[] Itr(string entityName, string pan, string assessmentYear,
+                                 decimal grossTotalIncome, decimal businessTurnover,
+                                 decimal totalIncome, decimal taxPaid,
+                                 string producer, string creator, DateTime created, DateTime modified)
+            => Document.Create(c => c.Page(p =>
+            {
+                p.Size(PageSizes.A4);
+                p.Margin(32);
+                p.DefaultTextStyle(t => t.FontSize(9));
+
+                p.Header().Column(col =>
+                {
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Column(c2 =>
+                        {
+                            c2.Item().Text("INCOME TAX DEPARTMENT").FontSize(14).Bold().FontColor(Colors.Blue.Darken3);
+                            c2.Item().Text("Government of India").FontSize(10).FontColor(Colors.Grey.Darken2);
+                            c2.Item().PaddingTop(2).Text("Indian Income Tax Return Acknowledgement / Verification").Bold();
+                        });
+                        r.ConstantItem(120).AlignRight().Column(c2 =>
+                        {
+                            c2.Item().Text($"AY {assessmentYear}").FontSize(12).Bold();
+                            c2.Item().Text("FORM ITR-V").FontSize(9).FontColor(Colors.Grey.Darken1);
+                        });
+                    });
+
+                    col.Item().PaddingTop(10).BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingBottom(6).Row(r =>
+                    {
+                        r.RelativeItem().Text($"Name: {entityName}").Bold();
+                        r.RelativeItem().AlignRight().Text($"PAN: {pan}").Bold();
+                    });
+                });
+
+                p.Content().PaddingTop(16).Column(col =>
+                {
+                    col.Item().Text("PART B - COMPUTATION OF TOTAL INCOME AND TAX").FontSize(10).Bold();
+
+                    col.Item().PaddingTop(8).Table(t =>
+                    {
+                        t.ColumnsDefinition(cd =>
+                        {
+                            cd.ConstantColumn(40);
+                            cd.RelativeColumn();
+                            cd.ConstantColumn(120);
+                        });
+
+                        t.Header(h =>
+                        {
+                            h.Cell().BorderBottom(1).PaddingVertical(3).Text("No.").Bold();
+                            h.Cell().BorderBottom(1).PaddingVertical(3).Text("Particulars").Bold();
+                            h.Cell().BorderBottom(1).PaddingVertical(3).AlignRight().Text("Amount (₹)").Bold();
+                        });
+
+                        void AddRow(int no, string desc, decimal amount)
+                        {
+                            t.Cell().BorderBottom(0.25f).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).Text(no.ToString());
+                            t.Cell().BorderBottom(0.25f).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).Text(desc);
+                            t.Cell().BorderBottom(0.25f).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).AlignRight().Text(Inr(amount));
+                        }
+
+                        AddRow(1, "Gross Turnover / Revenue from Operations", businessTurnover);
+                        AddRow(2, "Gross Total Income (GTI)", grossTotalIncome);
+                        AddRow(3, "Total Taxable Income", totalIncome);
+                        AddRow(4, "Total Taxes Paid (Advance Tax + TDS + Self Assessment)", taxPaid);
+                    });
+
+                    col.Item().PaddingTop(20).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).Column(box =>
+                    {
+                        box.Item().Text("VERIFICATION SUMMARY").Bold().FontSize(8.5f);
+                        box.Item().PaddingTop(4).Text($"This acknowledgement is electronically generated for Assessment Year {assessmentYear}. "
+                            + $"All figures stated above reflect the taxpayer's return submission under the Income-tax Act, 1961.").FontSize(8).FontColor(Colors.Grey.Darken1);
+                    });
+                });
+
+                p.Footer().Column(col =>
+                {
+                    col.Item().PaddingTop(4).Text(Synthetic).FontSize(6.5f).FontColor(Colors.Grey.Medium);
+                });
+            }))
+            .WithMetadata(Metadata($"ITR-V Acknowledgement {assessmentYear}", producer, creator, created, modified))
+            .GeneratePdf();
+
         private static DocumentMetadata Metadata(string title, string producer, string creator, DateTime created, DateTime modified) => new()
         {
             Title = title,
             Producer = producer,
             Creator = creator,
-            CreationDate = new DateTimeOffset(created, Ist),
-            ModifiedDate = new DateTimeOffset(modified, Ist)
+            CreationDate = ToOffset(created),
+            ModifiedDate = ToOffset(modified)
         };
+
+        private static DateTimeOffset ToOffset(DateTime dt)
+            => dt.Kind == DateTimeKind.Utc
+                ? new DateTimeOffset(dt).ToOffset(Ist)
+                : new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Unspecified), Ist);
     }
 }

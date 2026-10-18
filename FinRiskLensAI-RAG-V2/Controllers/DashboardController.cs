@@ -105,8 +105,10 @@ namespace FinRiskLensAI.Controllers
         public async Task<IActionResult> CustDashboard(CancellationToken ct)
         {
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
-            ViewBag.ItrFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Itr, ct);
-            ViewBag.McaFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Mca, ct);
+            var itrFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Itr, ct);
+            var mcaFetched = !string.IsNullOrWhiteSpace(uan) && await _store.ExistsAsync(uan, MsmeDataFiles.Mca, ct);
+            ViewBag.ItrFetched = itrFetched;
+            ViewBag.McaFetched = mcaFetched;
 
             // MCA only exists for companies and LLPs. Show the card either way — the
             // customer should see the platform covers it — but offer the fetch only
@@ -116,9 +118,15 @@ namespace FinRiskLensAI.Controllers
             ViewBag.McaApplicable = CustomerProfileBuilder.IsMcaRegistered(org);
 
             // What the customer has uploaded so far, and whether each is read yet — never the findings
-            ViewBag.Uploads = string.IsNullOrWhiteSpace(uan)
-                ? new List<CaseDocument>()
-                : (await _cases.GetByUanAsync(uan, ct))?.Application.Documents ?? new List<CaseDocument>();
+            var assessment = string.IsNullOrWhiteSpace(uan)
+                ? null
+                : await _cases.GetByUanAsync(uan, ct);
+            var uploads = assessment?.Application.Documents ?? new List<CaseDocument>();
+            ViewBag.Uploads = uploads;
+
+            // Determine if data is available to generate scores and check risk
+            bool hasData = await CheckHasDataAsync(uan, assessment, itrFetched, mcaFetched, ct);
+            ViewBag.HasData = hasData;
 
             return View();
         }
@@ -131,6 +139,13 @@ namespace FinRiskLensAI.Controllers
         {
             var uan = HttpContext.Session.GetCurrentUser()?.UdyamNumber;
             if (string.IsNullOrWhiteSpace(uan)) return RedirectToAction(nameof(CustDashboard));
+
+            var hasData = await CheckHasDataAsync(uan, ct);
+            if (!hasData)
+            {
+                TempData["InfoMessage"] = "Please connect at least one data source or upload documents before viewing the Risk Lens.";
+                return RedirectToAction(nameof(CustDashboard));
+            }
 
             var assessment = await _cases.GetByUanAsync(uan, ct);
             return View(assessment);
@@ -146,9 +161,64 @@ namespace FinRiskLensAI.Controllers
             var user = HttpContext.Session.GetCurrentUser();
             var uan = user?.UdyamNumber;
             var enterpriseName = user?.NameOfEnterprise;
+            if (string.IsNullOrWhiteSpace(uan)) return RedirectToAction(nameof(CustDashboard));
+
+            var hasData = await CheckHasDataAsync(uan, ct);
+            if (!hasData)
+            {
+                TempData["InfoMessage"] = "Please connect at least one data source or upload documents before viewing the Financial Score Card.";
+                return RedirectToAction(nameof(CustDashboard));
+            }
 
             var model = await _profile.GetFinancialHealthCardAsync(uan, enterpriseName, ct);
             return View(model);
+        }
+
+        /// <summary>
+        /// Checks whether the MSME has any data available (documents, banking statement, ITR, MCA, or GST)
+        /// to evaluate fraud risk or generate financial health score.
+        /// </summary>
+        private async Task<bool> CheckHasDataAsync(string? uan, CaseDetailViewModel? assessment, bool itrFetched, bool mcaFetched, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(uan)) return false;
+
+            // 1. Uploaded documents, AA bank data, or findings in the loan application
+            if (assessment != null && (assessment.Application.Documents.Count > 0
+                || assessment.Application.BankDataAt != null
+                || assessment.Findings.Count > 0))
+            {
+                return true;
+            }
+
+            // 2. Sources already fetched
+            if (itrFetched || mcaFetched) return true;
+
+            // 3. Stored source files in blob storage (excluding manifest, legacy result, and base udyam registration)
+            var files = await _store.ListFilesAsync(uan, ct);
+            if (files.Any(f => !f.Equals(MsmeDataFiles.Manifest, StringComparison.OrdinalIgnoreCase)
+                            && !f.Equals(MsmeDataFiles.LegacyResult, StringComparison.OrdinalIgnoreCase)
+                            && !f.Equals(MsmeDataFiles.Udyam, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            // 4. Stored GST responses in database
+            var gst = await _gstResponces.GetResponcesByUan(uan);
+            if (gst != null && (gst.GSTR2BResponseData != null || gst.GSTR3BResponseData != null))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task<bool> CheckHasDataAsync(string? uan, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(uan)) return false;
+            var assessment = await _cases.GetByUanAsync(uan, ct);
+            var itrFetched = await _store.ExistsAsync(uan, MsmeDataFiles.Itr, ct);
+            var mcaFetched = await _store.ExistsAsync(uan, MsmeDataFiles.Mca, ct);
+            return await CheckHasDataAsync(uan, assessment, itrFetched, mcaFetched, ct);
         }
 
         /// <summary>

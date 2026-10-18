@@ -338,6 +338,10 @@ namespace FinRiskLensAI.Fraud.Cases
 
                         var idFindings = SourceChecks.Identity(udyamJson, gstTaxpayerJson, itrJson, mcaJson, loanApplicationId);
                         findings.AddRange(idFindings);
+
+                        // Uploaded ITR vs filed return (Task T8)
+                        var itrMismatchFindings = SourceChecks.ItrMismatch(application.Documents, fields, itrJson, loanApplicationId, _options);
+                        findings.AddRange(itrMismatchFindings);
                     }
                     catch
                     {

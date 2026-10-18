@@ -58,7 +58,7 @@
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
-    color: #ffffff !important;
+    /*color: #ffffff !important;*/
     line-height: 1;
     vertical-align: middle;
 }

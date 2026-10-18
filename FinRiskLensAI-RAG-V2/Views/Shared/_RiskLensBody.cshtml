@@ -48,8 +48,10 @@
             aa?.HasData == true
                 ? $"Account Aggregator: {aa.MonthsCovered} months, {aa.TransactionCount} transactions, average monthly credit {Money(aa.AvgMonthlyCredit)}"
                 : "Account Aggregator not linked — uploaded statements only"),
-        (RiskSections.Itr, "bi-file-earmark-text", "ITR", "itr", Model.Itr?.HasData == true,
-            Model.Itr?.HasData == true ? $"{Model.Itr.FormType} · assessment year {Model.Itr.AssessmentYear}" : "ITR not shared yet"),
+        (RiskSections.Itr, "bi-file-earmark-text", "ITR", "itr", Model.Itr?.HasData == true || app?.Documents.Any(d => d.DocType == CaseDocType.Itr) == true,
+            Model.Itr?.HasData == true
+                ? $"{Model.Itr.FormType} · assessment year {Model.Itr.AssessmentYear}" + (app?.Documents.Any(d => d.DocType == CaseDocType.Itr) == true ? " · ITR copy uploaded" : "")
+                : (app?.Documents.Any(d => d.DocType == CaseDocType.Itr) == true ? "Uploaded ITR copy on file · registry return not fetched" : "ITR not shared yet")),
         (RiskSections.Network, "bi-diagram-3", "Network", "", true,
             findings.Any(f => f.Type == "FRAUD_RING") ? "Linked to other customers — see the finding below" : "No links to other customers")
     };
