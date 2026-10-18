@@ -19,8 +19,8 @@
 /* ── Launcher — the robot mascot GIF floating free, no button chrome ──── */
 .frl-chat-launcher {
     position: relative;
-    width: 100px;
-    height: 100px;
+    width: 117px;
+    height: 106px;
     border: none;
     padding: 0;
     background: transparent;
@@ -37,6 +37,9 @@
 .frl-chat-launcher-img.frl-bot-theme2 { display: none; }
 :root[data-theme="theme2"] .frl-chat-launcher-img.frl-bot-theme1 { display: none; }
 :root[data-theme="theme2"] .frl-chat-launcher-img.frl-bot-theme2 { display: block; }
+/* The maroon GIF has more empty space around its robot (about 66% of the height vs 73%), so it is
+   drawn 10% larger to look the same size as the green one */
+.frl-chat-launcher > .frl-chat-launcher-img.frl-bot-theme2 { transform: scale(1.1); }
 .frl-chatbot.open .frl-chat-launcher { display: none; }
 
 /* ── Panel ───────────────────────────────────────────────────────────── */

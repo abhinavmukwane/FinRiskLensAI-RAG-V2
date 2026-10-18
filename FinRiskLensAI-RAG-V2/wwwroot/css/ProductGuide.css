@@ -46,6 +46,7 @@
     position: absolute; left: 50%; top: 50%; width: 128%; height: auto; max-width: none;
     transform: translate(-38%, -58%);
 }
+.frl-guide-face .frl-chat-launcher-img.frl-bot-theme2 { width: 141%; }   /* same 10% size match as Chatbot.css */
 .frl-guide-online {
     position: absolute; right: 1px; bottom: 2px; width: 13px; height: 13px; border-radius: 50%;
     background: #22c55e; border: 2px solid #fff;
