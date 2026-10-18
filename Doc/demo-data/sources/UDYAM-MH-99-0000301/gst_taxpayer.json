@@ -1,0 +1,19 @@
+{
+  "client_id": "GST-TAX-27AAACS0301K1Z1",
+  "gstin": "27AAACS0301K1Z1",
+  "trade_name": "Sankalp Enterprise",
+  "legal_name": "Sankalp Autotech Private Limited",
+  "pan": "AAACS0301K",
+  "status": "Active",
+  "registration_date": "2017-07-01",
+  "taxpayer_type": "Regular",
+  "constitution_of_business": "Private Limited Company",
+  "principal_place_address": {
+    "bno": "Plot 42",
+    "bnm": "MIDC Industrial Area",
+    "st": "Station Road",
+    "loc": "Nashik",
+    "pncd": "422007",
+    "stcd": "Maharashtra"
+  }
+}

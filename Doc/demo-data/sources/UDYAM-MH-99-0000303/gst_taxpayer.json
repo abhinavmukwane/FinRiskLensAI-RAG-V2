@@ -1,0 +1,19 @@
+{
+  "client_id": "GST-TAX-27AAACA0303L1Z6",
+  "gstin": "27AAACA0303L1Z6",
+  "trade_name": "Apex Enterprise",
+  "legal_name": "Apex Trading Corporation Private Limited",
+  "pan": "AAACA0303L",
+  "status": "Active",
+  "registration_date": "2017-07-01",
+  "taxpayer_type": "Regular",
+  "constitution_of_business": "Private Limited Company",
+  "principal_place_address": {
+    "bno": "Plot 42",
+    "bnm": "MIDC Industrial Area",
+    "st": "Station Road",
+    "loc": "Mumbai",
+    "pncd": "400051",
+    "stcd": "Maharashtra"
+  }
+}

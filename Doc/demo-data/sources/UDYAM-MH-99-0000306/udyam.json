@@ -1,0 +1,52 @@
+{
+  "client_id": "FRL-DUMMY-000306",
+  "uan": "UDYAM-MH-99-0000306",
+  "certificate_url": "https://udyamregistration.gov.in/certificate/UDYAM-MH-99-0000306.pdf",
+  "main_details": {
+    "enterprise_type_list": [
+      {
+        "classification_year": "2024",
+        "enterprise_type": "Small",
+        "classification_date": "2024-04-01T00:00:00"
+      }
+    ],
+    "name_of_enterprise": "Zenith Components Private Limited",
+    "major_activity": "Manufacturing",
+    "social_category": "General",
+    "date_of_commencement": "2016-06-18T00:00:00",
+    "dic_name": "AURANGABAD",
+    "state": "MAHARASHTRA",
+    "applied_date": "2020-07-02T00:00:00",
+    "flat": "Plot No. 42",
+    "name_of_building": "MIDC Industrial Area",
+    "road": "Station Road",
+    "city": "Aurangabad",
+    "pin": "431005",
+    "mobile_number": "9823714407",
+    "email": "zenith.comp@finrisklens.demo",
+    "organization_type": "Private Limited Company",
+    "date_of_incorporation": "2016-06-18T00:00:00",
+    "registration_date": "2020-07-02T00:00:00",
+    "gstin_number": "27AAACZ0306A1Z1",
+    "pan_number": "AAACZ0306A"
+  },
+  "plants": [
+    {
+      "unit_name": "Zenith Components Private Limited - Unit 1",
+      "flat": "Plot 42",
+      "building": "MIDC Industrial Area",
+      "road": "Station Road",
+      "city": "Aurangabad",
+      "pin": "431005",
+      "state": "MAHARASHTRA"
+    }
+  ],
+  "nic_codes": [
+    {
+      "nic_2_digit": "28",
+      "nic_4_digit": "2811",
+      "nic_5_digit": "28110",
+      "activity_type": "Manufacturing"
+    }
+  ]
+}

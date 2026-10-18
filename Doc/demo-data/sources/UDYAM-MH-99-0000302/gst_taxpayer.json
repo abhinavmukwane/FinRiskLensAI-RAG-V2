@@ -1,0 +1,19 @@
+{
+  "client_id": "GST-TAX-27AAACM0302K1Z5",
+  "gstin": "27AAACM0302K1Z5",
+  "trade_name": "Mahalaxmi Enterprise",
+  "legal_name": "Mahalaxmi Agro Implements Private Limited",
+  "pan": "AAACM0302K",
+  "status": "Active",
+  "registration_date": "2017-07-01",
+  "taxpayer_type": "Regular",
+  "constitution_of_business": "Private Limited Company",
+  "principal_place_address": {
+    "bno": "Plot 42",
+    "bnm": "MIDC Industrial Area",
+    "st": "Station Road",
+    "loc": "Pune",
+    "pncd": "411014",
+    "stcd": "Maharashtra"
+  }
+}

@@ -1,11 +1,17 @@
 using System.Text.Json;
+using FinRiskLensAI.Core.Interfaces;
 using FinRiskLensAI.Core.Models.Cases;
+using FinRiskLensAI.Core.Models.Storage;
 using FinRiskLensAI.Data.DbContextEDMX;
 using FinRiskLensAI.Data.Repositories.Cases;
 using FinRiskLensAI.DemoData;
 using FinRiskLensAI.Fraud.Ai;
 using FinRiskLensAI.Fraud.Cases;
 using FinRiskLensAI.Fraud.Checks;
+using FinRiskLensAI.Fraud.Storage;
+using FinRiskLensAI.ML.Features;
+using FinRiskLensAI.ML.Services;
+using FinRiskLensAI.Services.Implementation.AccountAggregator;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -18,10 +24,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 //                    genuine cases expect nothing, so anything raised there is a false positive
 //   eval [ref…]      live Gemini extraction of every demo document scored against its truth, then
 //                    the checks run on what Gemini read — the end-to-end number.
+//   customers [--export-dir <dir>] seeds synthetic registered customers with structured
+//                    JSON source files (udyam, gst, itr, mca, aa, din) customer-wise in the
+//                    storage bucket (and optional export dir), registers them in DB, and runs checks.
 
-if (args.Length == 0 || args[0] is not ("generate" or "seed" or "eval" or "investigate") || (args[0] == "generate" && args.Length < 2))
+if (args.Length == 0 || args[0] is not ("generate" or "seed" or "eval" or "investigate" or "customers") || (args[0] == "generate" && args.Length < 2))
 {
-    Console.Error.WriteLine("usage: generate <dir> | seed | eval [ref…] | investigate [ref…]");
+    Console.Error.WriteLine("usage: generate <dir> | seed | eval [ref…] | investigate [ref…] | customers [--export-dir <dir>]");
     return 2;
 }
 
@@ -59,6 +68,11 @@ if (args[0] == "generate")
 }
 
 var config = ApplicationDbContextFactory.BuildConfiguration();
+
+if (args[0] == "customers")
+{
+    return await DemoCustomers.RunAsync(config, args);
+}
 
 if (args[0] == "investigate")
 {

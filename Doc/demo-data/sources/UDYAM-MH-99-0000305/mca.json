@@ -1,0 +1,22 @@
+{
+  "status": true,
+  "message": {
+    "details": {
+      "cin": "U29299MH2016PTC000305",
+      "company_name": "Sunrise Trading Co Private Limited",
+      "company_status": "ACTIVE",
+      "date_of_incorporation": "2016-06-18",
+      "paid_up_capital": "5000000",
+      "authorized_capital": "10000000",
+      "directors": [
+        {
+          "din_number": "07000305",
+          "director_name": "Sunrise Director",
+          "designation": "Director",
+          "date_of_appointment": "2016-06-18",
+          "end_date": null
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "client_id": "GST-TAX-27AAACC0307B1Z2",
+  "gstin": "27AAACC0307B1Z2",
+  "trade_name": "Coral Enterprise",
+  "legal_name": "Coral Systems Private Limited",
+  "pan": "AAACC0307B",
+  "status": "Active",
+  "registration_date": "2017-07-01",
+  "taxpayer_type": "Regular",
+  "constitution_of_business": "Private Limited Company",
+  "principal_place_address": {
+    "bno": "Plot 42",
+    "bnm": "MIDC Industrial Area",
+    "st": "Station Road",
+    "loc": "Aurangabad",
+    "pncd": "431005",
+    "stcd": "Maharashtra"
+  }
+}

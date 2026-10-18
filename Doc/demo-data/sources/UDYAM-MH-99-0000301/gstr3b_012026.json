@@ -1,0 +1,47 @@
+{
+  "response": {
+    "message": {
+      "data": {
+        "gstin": "27AAACS0301K1Z1",
+        "ret_period": "012026",
+        "ret_prd": "012026",
+        "filing_date": "2026-02-18",
+        "status": "Filed",
+        "sup_details": {
+          "osup_det": {
+            "txval": 1200000,
+            "iamt": 108000.00,
+            "camt": 54000.00,
+            "samt": 54000.00,
+            "csamt": 0.00
+          },
+          "osup_zero": {
+            "txval": 0.00,
+            "iamt": 0.00
+          },
+          "osup_nil_exmp": {
+            "txval": 0.00
+          }
+        },
+        "itc_elg": {
+          "itc_net": {
+            "iamt": 97200.00,
+            "camt": 47520.00,
+            "samt": 47520.00,
+            "csamt": 0.00
+          }
+        },
+        "tx_pmt": {
+          "pdcash": [
+            {
+              "iamt": 10800.00,
+              "camt": 6480.00,
+              "samt": 6480.00,
+              "csamt": 0.00
+            }
+          ]
+        }
+      }
+    }
+  }
+}

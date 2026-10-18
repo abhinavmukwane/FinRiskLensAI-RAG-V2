@@ -1,0 +1,50 @@
+{
+  "request_id": "REQ-ITR-000307",
+  "status": "SUCCESS",
+  "message": "ITR details fetched successfully",
+  "data": {
+    "source_identifiers": {
+      "udyam_registration_number": "UDYAM-MH-99-0000307",
+      "gstin": "27AAACC0307B1Z2",
+      "pan": "AAACC0307B"
+    },
+    "entity_details": {
+      "trade_name": "Coral Systems Private Limited",
+      "company_name": "Coral Systems Private Limited"
+    },
+    "filing_details": {
+      "assessment_year": "2026-27",
+      "financial_year": "2025-26",
+      "itr_form_type": "ITR-6",
+      "filing_date": "2026-07-31",
+      "acknowledgement_number": "12345678900307",
+      "e_verification_status": "VERIFIED",
+      "return_status": "PROCESSED"
+    },
+    "income_details": {
+      "gross_total_income": 2500000,
+      "profits_and_gains_of_business_or_profession": 2500000
+    },
+    "profit_and_loss_summary": {
+      "revenue_from_operations": 18000000,
+      "gross_turnover": 18000000,
+      "net_profit_before_tax": 2125000.00,
+      "net_profit_after_tax": 1750000.00
+    },
+    "gst_turnover_reconciliation": {
+      "itr_declared_turnover": 18000000,
+      "reconciliation_status": "WITHIN_TOLERANCE"
+    },
+    "tax_computation": {
+      "total_tax_and_interest": 562500.00,
+      "taxes_paid": {
+        "total_taxes_paid": 562500.00
+      }
+    },
+    "total_income": 2250000.00,
+    "business_turnover": 18000000,
+    "gross_total_income": 2500000,
+    "tax_paid": 562500.00,
+    "assessment_year": "2026-27"
+  }
+}

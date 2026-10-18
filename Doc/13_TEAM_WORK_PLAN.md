@@ -425,8 +425,7 @@ Six synthetic businesses, each a registered customer with source data and upload
 
 A runs it against production through the Cloud SQL Auth Proxy (`DB_SCRIPTS.md`).
 
-**Done when** both databases show the six customers on **Customers** with the expected verdicts,
-and running the command twice changes nothing.
+**Status: ✅ Done 2026-10-18.** Implemented `customers [--export-dir <dir>]` CLI command in `tools/FinRiskLensAI.DemoData/DemoCustomers.cs`. Generates structured JSON source files customer-wise (`udyam.json`, `gst_taxpayer.json`, `gstr3b_*.json`, `gstr1_b2b_*.json`, `itr.json`, `mca.json`, `DIN_*.json`, `aa.json`) into `gs://finrisklensai-sources/{UAN}/` and local directory. Seeds registration in DB (`MsmeEnquiries`, `UserRegistration`, `UserOtpModel` with OTP `123456`) and runs case checks with exact expected findings matching all 8 entities (6 business scenarios). Idempotent across re-runs.
 
 ### T12 — Measurements (A)
 

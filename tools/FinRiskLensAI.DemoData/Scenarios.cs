@@ -375,7 +375,7 @@ namespace FinRiskLensAI.DemoData
         /// The bank's own record of the account in the Finvu FI-data shape Account Aggregator delivers.
         /// Every seventh posting clears the day after its statement date, as real value dates do.
         /// </summary>
-        private static string AaFeed(Bank bank, string account, ExtractedDocument statement)
+        public static string AaFeed(Bank bank, string account, ExtractedDocument statement)
         {
             static string Amt(decimal? v) => v?.ToString("0.00", CultureInfo.InvariantCulture) ?? "0.00";
             var rows = statement.Pages.SelectMany(p => p.Rows).ToList();
@@ -430,12 +430,35 @@ namespace FinRiskLensAI.DemoData
             };
 
             var pdf = Render.Itr(entityName, pan, assessmentYear, grossTotalIncome, truthTurnover, totalIncome, taxPaid,
-                                 tampered ? "Canva" : "Income Tax e-Filing Portal 3.0",
-                                 tampered ? "Canva PDF" : "ITD e-Filing Utility",
+                                 "Income Tax e-Filing Portal 3.0",
+                                 "ITD e-Filing Utility",
                                  new DateTime(2026, 7, 31, 14, 20, 0),
-                                 tampered ? new DateTime(2026, 8, 15, 10, 0, 0) : new DateTime(2026, 7, 31, 14, 20, 0));
+                                 new DateTime(2026, 7, 31, 14, 20, 0));
 
             return new DemoDoc(fileName, pdf, truth);
+        }
+
+        public static (DemoDoc? Doc, string? AaJson) BuildCustomerDoc(DemoCustomerSpec c)
+        {
+            if (c.Uan == "UDYAM-MH-99-0000301")
+            {
+                var demo = Sme("DEMO-C301", seed: 101, c.EnterpriseName, c.Uan, Banks.Kaveri, c.Story, tamper: null, aaLinked: true);
+                return (demo.Docs[0], demo.AaJson);
+            }
+            if (c.Uan == "UDYAM-MH-99-0000302")
+            {
+                var demo = Sme("DEMO-C302", seed: 102, c.EnterpriseName, c.Uan, Banks.Kaveri, c.Story, tamper: Tamper.CleanForgery, aaLinked: true);
+                return (demo.Docs[0], demo.AaJson);
+            }
+            if (c.Uan == "UDYAM-MH-99-0000304")
+            {
+                decimal annualTurnover = c.MonthlyTurnover * 12m;
+                decimal totalIncome = Math.Round(c.AnnualIncome * 0.90m, 2);
+                decimal taxPaid = Math.Round(totalIncome * 0.25m, 2);
+                var doc = ItrDoc(c.EnterpriseName, c.Pan, "2026-27", c.AnnualIncome, annualTurnover, totalIncome, taxPaid, tampered: true, tamperedTurnover: annualTurnover * 2m);
+                return (doc, null);
+            }
+            return (null, null);
         }
 
         private static ExtractedField Field(string name, string value) => new() { Name = name, Value = value };

@@ -1,0 +1,642 @@
+{
+  "body": [
+    {
+      "fipName": "Kaveri Demo Bank",
+      "fiObjects": [
+        {
+          "maskedAccNumber": "XXXXXXXX0305",
+          "type": "deposit",
+          "Summary": {
+            "currentBalance": "542000.00",
+            "type": "CURRENT",
+            "status": "ACTIVE",
+            "branch": "Pune Main Branch",
+            "ifscCode": "KVDB0000412"
+          },
+          "Transactions": {
+            "startDate": "2026-06-01",
+            "endDate": "2026-09-30",
+            "Transaction": [
+              {
+                "txnId": "TXN030500001",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "650000.00",
+                "transactionTimestamp": "2026-06-04T10:00:00",
+                "valueDate": "2026-06-04",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000001"
+              },
+              {
+                "txnId": "TXN030500002",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "501500.00",
+                "transactionTimestamp": "2026-06-04T10:00:00",
+                "valueDate": "2026-06-04",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000002"
+              },
+              {
+                "txnId": "TXN030500003",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "651500.00",
+                "transactionTimestamp": "2026-06-08T10:00:00",
+                "valueDate": "2026-06-08",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000003"
+              },
+              {
+                "txnId": "TXN030500004",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "503000.00",
+                "transactionTimestamp": "2026-06-08T10:00:00",
+                "valueDate": "2026-06-08",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000004"
+              },
+              {
+                "txnId": "TXN030500005",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "653000.00",
+                "transactionTimestamp": "2026-06-12T10:00:00",
+                "valueDate": "2026-06-12",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000005"
+              },
+              {
+                "txnId": "TXN030500006",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "504500.00",
+                "transactionTimestamp": "2026-06-12T10:00:00",
+                "valueDate": "2026-06-12",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000006"
+              },
+              {
+                "txnId": "TXN030500007",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "654500.00",
+                "transactionTimestamp": "2026-06-16T10:00:00",
+                "valueDate": "2026-06-16",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000007"
+              },
+              {
+                "txnId": "TXN030500008",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "506000.00",
+                "transactionTimestamp": "2026-06-16T10:00:00",
+                "valueDate": "2026-06-16",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000008"
+              },
+              {
+                "txnId": "TXN030500009",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "656000.00",
+                "transactionTimestamp": "2026-06-20T10:00:00",
+                "valueDate": "2026-06-20",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000009"
+              },
+              {
+                "txnId": "TXN030500010",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "507500.00",
+                "transactionTimestamp": "2026-06-20T10:00:00",
+                "valueDate": "2026-06-20",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000010"
+              },
+              {
+                "txnId": "TXN030500011",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "657500.00",
+                "transactionTimestamp": "2026-06-24T10:00:00",
+                "valueDate": "2026-06-24",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000011"
+              },
+              {
+                "txnId": "TXN030500012",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "509000.00",
+                "transactionTimestamp": "2026-06-24T10:00:00",
+                "valueDate": "2026-06-24",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000012"
+              },
+              {
+                "txnId": "TXN030500013",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "659000.00",
+                "transactionTimestamp": "2026-06-28T10:00:00",
+                "valueDate": "2026-06-28",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000013"
+              },
+              {
+                "txnId": "TXN030500014",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "510500.00",
+                "transactionTimestamp": "2026-06-28T10:00:00",
+                "valueDate": "2026-06-28",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000014"
+              },
+              {
+                "txnId": "TXN030500015",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "660500.00",
+                "transactionTimestamp": "2026-07-04T10:00:00",
+                "valueDate": "2026-07-04",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000015"
+              },
+              {
+                "txnId": "TXN030500016",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "512000.00",
+                "transactionTimestamp": "2026-07-04T10:00:00",
+                "valueDate": "2026-07-04",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000016"
+              },
+              {
+                "txnId": "TXN030500017",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "662000.00",
+                "transactionTimestamp": "2026-07-08T10:00:00",
+                "valueDate": "2026-07-08",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000017"
+              },
+              {
+                "txnId": "TXN030500018",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "513500.00",
+                "transactionTimestamp": "2026-07-08T10:00:00",
+                "valueDate": "2026-07-08",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000018"
+              },
+              {
+                "txnId": "TXN030500019",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "663500.00",
+                "transactionTimestamp": "2026-07-12T10:00:00",
+                "valueDate": "2026-07-12",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000019"
+              },
+              {
+                "txnId": "TXN030500020",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "515000.00",
+                "transactionTimestamp": "2026-07-12T10:00:00",
+                "valueDate": "2026-07-12",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000020"
+              },
+              {
+                "txnId": "TXN030500021",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "665000.00",
+                "transactionTimestamp": "2026-07-16T10:00:00",
+                "valueDate": "2026-07-16",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000021"
+              },
+              {
+                "txnId": "TXN030500022",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "516500.00",
+                "transactionTimestamp": "2026-07-16T10:00:00",
+                "valueDate": "2026-07-16",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000022"
+              },
+              {
+                "txnId": "TXN030500023",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "666500.00",
+                "transactionTimestamp": "2026-07-20T10:00:00",
+                "valueDate": "2026-07-20",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000023"
+              },
+              {
+                "txnId": "TXN030500024",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "518000.00",
+                "transactionTimestamp": "2026-07-20T10:00:00",
+                "valueDate": "2026-07-20",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000024"
+              },
+              {
+                "txnId": "TXN030500025",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "668000.00",
+                "transactionTimestamp": "2026-07-24T10:00:00",
+                "valueDate": "2026-07-24",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000025"
+              },
+              {
+                "txnId": "TXN030500026",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "519500.00",
+                "transactionTimestamp": "2026-07-24T10:00:00",
+                "valueDate": "2026-07-24",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000026"
+              },
+              {
+                "txnId": "TXN030500027",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "669500.00",
+                "transactionTimestamp": "2026-07-28T10:00:00",
+                "valueDate": "2026-07-28",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000027"
+              },
+              {
+                "txnId": "TXN030500028",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "521000.00",
+                "transactionTimestamp": "2026-07-28T10:00:00",
+                "valueDate": "2026-07-28",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000028"
+              },
+              {
+                "txnId": "TXN030500029",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "671000.00",
+                "transactionTimestamp": "2026-08-04T10:00:00",
+                "valueDate": "2026-08-04",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000029"
+              },
+              {
+                "txnId": "TXN030500030",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "522500.00",
+                "transactionTimestamp": "2026-08-04T10:00:00",
+                "valueDate": "2026-08-04",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000030"
+              },
+              {
+                "txnId": "TXN030500031",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "672500.00",
+                "transactionTimestamp": "2026-08-08T10:00:00",
+                "valueDate": "2026-08-08",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000031"
+              },
+              {
+                "txnId": "TXN030500032",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "524000.00",
+                "transactionTimestamp": "2026-08-08T10:00:00",
+                "valueDate": "2026-08-08",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000032"
+              },
+              {
+                "txnId": "TXN030500033",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "674000.00",
+                "transactionTimestamp": "2026-08-12T10:00:00",
+                "valueDate": "2026-08-12",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000033"
+              },
+              {
+                "txnId": "TXN030500034",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "525500.00",
+                "transactionTimestamp": "2026-08-12T10:00:00",
+                "valueDate": "2026-08-12",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000034"
+              },
+              {
+                "txnId": "TXN030500035",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "675500.00",
+                "transactionTimestamp": "2026-08-16T10:00:00",
+                "valueDate": "2026-08-16",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000035"
+              },
+              {
+                "txnId": "TXN030500036",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "527000.00",
+                "transactionTimestamp": "2026-08-16T10:00:00",
+                "valueDate": "2026-08-16",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000036"
+              },
+              {
+                "txnId": "TXN030500037",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "677000.00",
+                "transactionTimestamp": "2026-08-20T10:00:00",
+                "valueDate": "2026-08-20",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000037"
+              },
+              {
+                "txnId": "TXN030500038",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "528500.00",
+                "transactionTimestamp": "2026-08-20T10:00:00",
+                "valueDate": "2026-08-20",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000038"
+              },
+              {
+                "txnId": "TXN030500039",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "678500.00",
+                "transactionTimestamp": "2026-08-24T10:00:00",
+                "valueDate": "2026-08-24",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000039"
+              },
+              {
+                "txnId": "TXN030500040",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "530000.00",
+                "transactionTimestamp": "2026-08-24T10:00:00",
+                "valueDate": "2026-08-24",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000040"
+              },
+              {
+                "txnId": "TXN030500041",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "680000.00",
+                "transactionTimestamp": "2026-08-28T10:00:00",
+                "valueDate": "2026-08-28",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000041"
+              },
+              {
+                "txnId": "TXN030500042",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "531500.00",
+                "transactionTimestamp": "2026-08-28T10:00:00",
+                "valueDate": "2026-08-28",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000042"
+              },
+              {
+                "txnId": "TXN030500043",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "681500.00",
+                "transactionTimestamp": "2026-09-04T10:00:00",
+                "valueDate": "2026-09-04",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000043"
+              },
+              {
+                "txnId": "TXN030500044",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "533000.00",
+                "transactionTimestamp": "2026-09-04T10:00:00",
+                "valueDate": "2026-09-04",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000044"
+              },
+              {
+                "txnId": "TXN030500045",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "683000.00",
+                "transactionTimestamp": "2026-09-08T10:00:00",
+                "valueDate": "2026-09-08",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000045"
+              },
+              {
+                "txnId": "TXN030500046",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "534500.00",
+                "transactionTimestamp": "2026-09-08T10:00:00",
+                "valueDate": "2026-09-08",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000046"
+              },
+              {
+                "txnId": "TXN030500047",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "684500.00",
+                "transactionTimestamp": "2026-09-12T10:00:00",
+                "valueDate": "2026-09-12",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000047"
+              },
+              {
+                "txnId": "TXN030500048",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "536000.00",
+                "transactionTimestamp": "2026-09-12T10:00:00",
+                "valueDate": "2026-09-12",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000048"
+              },
+              {
+                "txnId": "TXN030500049",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "686000.00",
+                "transactionTimestamp": "2026-09-16T10:00:00",
+                "valueDate": "2026-09-16",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000049"
+              },
+              {
+                "txnId": "TXN030500050",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "537500.00",
+                "transactionTimestamp": "2026-09-16T10:00:00",
+                "valueDate": "2026-09-16",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000050"
+              },
+              {
+                "txnId": "TXN030500051",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "687500.00",
+                "transactionTimestamp": "2026-09-20T10:00:00",
+                "valueDate": "2026-09-20",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000051"
+              },
+              {
+                "txnId": "TXN030500052",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "539000.00",
+                "transactionTimestamp": "2026-09-20T10:00:00",
+                "valueDate": "2026-09-20",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000052"
+              },
+              {
+                "txnId": "TXN030500053",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "689000.00",
+                "transactionTimestamp": "2026-09-24T10:00:00",
+                "valueDate": "2026-09-24",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000053"
+              },
+              {
+                "txnId": "TXN030500054",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "540500.00",
+                "transactionTimestamp": "2026-09-24T10:00:00",
+                "valueDate": "2026-09-24",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000054"
+              },
+              {
+                "txnId": "TXN030500055",
+                "type": "CREDIT",
+                "mode": "NEFT",
+                "amount": "150000.00",
+                "currentBalance": "690500.00",
+                "transactionTimestamp": "2026-09-28T10:00:00",
+                "valueDate": "2026-09-28",
+                "narration": "NEFT CR CLIENT INWARD ZENPAY",
+                "reference": "REF000055"
+              },
+              {
+                "txnId": "TXN030500056",
+                "type": "DEBIT",
+                "mode": "IMPS",
+                "amount": "148500.00",
+                "currentBalance": "542000.00",
+                "transactionTimestamp": "2026-09-28T10:00:00",
+                "valueDate": "2026-09-28",
+                "narration": "IMPS DR FORWARD WALLET ZENPAY",
+                "reference": "REF000056"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
