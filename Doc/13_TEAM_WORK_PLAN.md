@@ -30,10 +30,10 @@ progress · 👀 in review · ✅ done.
 | T8 | Uploaded ITR vs the filed return | B | Oct 17 | T1 | ✅ done |
 | T9 | AI credit decision: service, `credit_decisions` table, Risk Lens loan-case panel | A | Oct 17 | T6 | ✅ unblocked & live ready |
 | T10 | Gate the loan-case push; risk and decision blocks in the LOS, ULI and ONDC payloads | A gate · B payloads | Oct 17 | T9 | ✅ done (gate & payloads) |
-| T11 | Demo customers: generator, registrations, sources, uploads | B builds · A seeds prod | Oct 17–18 | T2–T8 | ⏸ |
+| T11 | Demo customers: generator, registrations, sources, uploads | B builds · A seeds prod | Oct 17–18 | T2–T8 | ✅ done |
 | T12 | Live eval and investigation re-run; numbers into README | A | Oct 18 | T11 | ⏸ |
-| T13 | README and ARCHITECTURE to the customer flow | B | Oct 18 | T11 | ⏸ |
-| T14 | Deck and video script to the customer flow; record the video | A deck · B records | Oct 18 | T11 | 🔨 deck updated · video ⏸ |
+| T13 | README and ARCHITECTURE to the customer flow | B | Oct 18 | T11 | ✅ done |
+| T14 | Deck and video script to the customer flow; record the video | A deck · B records | Oct 18 | T11 | 🔨 deck & script updated · record ⏸ |
 | T15 | Deploy, smoke test, **submit** | A | Oct 18 | all | ⏸ |
 | C1 | Content guidelines (`CONTENT_GUIDELINES.md`); onboarding, Sign In and dashboard copy | B | Oct 15–16 | — | ✅ |
 | C2 | Home page: headline, hero, feature cards | B | Oct 16 | C1 | ✅ |

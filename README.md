@@ -316,6 +316,7 @@ FinRiskLensAI-RAG-V2/
    dotnet run --project tools/FinRiskLensAI.RagCli -- ingest Typology Doc/knowledge/typology.md --title "Fraud Typology Catalogue" --version v1
    dotnet run --project tools/FinRiskLensAI.RagCli -- ingest Policy Doc/knowledge/credit-policy.md --title "Sample Credit Policy" --version v3
    dotnet run --project tools/FinRiskLensAI.DemoData -- seed
+   dotnet run --project tools/FinRiskLensAI.DemoData -- customers
    ```
 
 6. **Run the Application:**

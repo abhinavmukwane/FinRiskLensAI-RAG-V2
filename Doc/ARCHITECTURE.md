@@ -20,8 +20,8 @@ How the system is put together. The build history and every measurement are in
  ① Register with Udyam ✅                ③ Customers — risk status per customer ✅
  ② Share data ──────────────────────►   ④ Risk Lens — verdict + a section per source ✅
     fetch: AA ✅ · GST ✅ · ITR ✅ · MCA ✅  ⑤ Confirm / dismiss findings ✅
-    upload documents ✅                  ⑥ Clear? → loan case + AI credit decision ✅ (capacity: T6 🆕)
-                                         ⑦ Send to LOS · ULI (OCEN) · ONDC ✅ (+ decision blocks 🆕)
+    upload documents ✅                  ⑥ Clear? → loan case + AI credit decision ✅ (capacity: T6 ✅)
+                                         ⑦ Send to LOS · ULI (OCEN) · ONDC ✅ (+ decision blocks: T10 ✅)
 ```
 
 The customer shares what lenders ask for — bank statements through Account Aggregator, GST,
