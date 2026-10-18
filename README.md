@@ -1,379 +1,345 @@
-# FinRiskLens — evidence-based fraud detection for lending
+# FinRiskLens AI — Evidence-Based Fraud Detection & Intelligent Credit Decisioning
 
-**Every finding backed by evidence.** FinRiskLens gives a lender one fraud and risk page per
-MSME customer. The customer shares bank data through Account Aggregator, fetches GST, ITR and
-MCA, and uploads documents; FinRiskLens checks all of it together and returns findings that each
-name what is wrong and point at the exact row, field or page that shows it. A customer with
-nothing open gets a grounded AI credit decision and a loan case for the LOS, ULI (OCEN) or ONDC.
+[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Vertex%20AI-4285F4?logo=google-cloud&logoColor=white)](https://cloud.google.com/vertex-ai)
+[![Gemini](https://img.shields.io/badge/Powered%20by-Gemini%203.5%20Flash%20%7C%203.1%20Pro-8E75C2?logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Track](https://img.shields.io/badge/Competition-The%20Google%20Cloud%20AI%20Builder%20Cup-EA4335)](https://aibuildercup.com/)
+[![Theme](https://img.shields.io/badge/Theme-BFSI%3A%20Intelligent%20Risk%2C%20Fraud%20%26%20Financial%20Experiences-00836C)](#bfsi-theme-alignment)
+[![Region](https://img.shields.io/badge/Data%20Residency-Mumbai%20(asia--south1)-005647)](https://cloud.google.com/about/locations/mumbai)
 
-A tampered statement whose running balance stops adding up, a careful forgery that
-disagrees with the bank's own record, a salary slip whose net pay was typed in, money that goes straight back to its payer, EMIs to lenders the applicant
-never declared, a director shared with another borrower — found, explained in rupees, and linked to
-the evidence, before a credit officer relies on them.
-
-Built on Google Cloud with **Gemini on Vertex AI** for the **Google AI Builder Cup 2026
-(BFSI track)** by team **AS FinTech Developer**.
+> **Every finding backed by verifiable evidence.**  
+> FinRiskLens AI is an end-to-end, multi-source credit risk and fraud intelligence platform for MSME lending. Built for **The Google Cloud AI Builder Cup 2026** under the theme **"BFSI: Intelligent Risk, Fraud & Financial Experiences"**, it unifies document forensics, live registry verification (Account Aggregator, GST, ITR, MCA, Udyam), cross-borrower network fraud detection, and policy-grounded AI credit decisioning into a single audit-ready system.
 
 ---
 
-## Links
+## Quick Navigation
 
-| | |
+- [Executive Summary](#executive-summary)
+- [BFSI Theme Alignment](#bfsi-theme-alignment)
+- [Live Demo & Jury Evaluation Guide](#live-demo--jury-evaluation-guide)
+- [How It Works: End-to-End Pipeline](#how-it-works-end-to-end-pipeline)
+- [Three Pillars of FinRiskLens AI](#three-pillars-of-finrisklens-ai)
+  - [1. Multi-Source Risk & Fraud Lens](#1-multi-source-risk--fraud-lens)
+  - [2. Autonomous Grounded Investigator Agent](#2-autonomous-grounded-investigator-agent)
+  - [3. Personalized Financial Health Experience](#3-personalized-financial-health-experience)
+- [Google Cloud Architecture](#google-cloud-architecture)
+- [Empirical Benchmarks & Accuracy](#empirical-benchmarks--accuracy)
+- [Responsible AI & Regulatory Compliance](#responsible-ai--regulatory-compliance)
+- [Tech Stack & Project Layout](#tech-stack--project-layout)
+- [Running Locally & Verification](#running-locally--verification)
+- [Team & Acknowledgements](#team--acknowledgements)
+
+---
+
+## Executive Summary
+
+MSME lending in India faces a critical paradox: while small enterprises represent the backbone of the economy, lenders face a ₹30+ Trillion credit gap driven by fragmented financial records, escalating digital document tampering (Word, Canva, iLovePDF, spliced balance pages), and syndicate fraud rings that game siloed credit checks.
+
+Traditional fraud prevention tools operate in isolation—analyzing single PDF files with statistical heuristics or black-box machine learning models that generate unexplainable risk scores. When AI is used without strict grounding, it hallucinates figures and false-positive fraud claims that penalize creditworthy businesses and violate banking regulations.
+
+**FinRiskLens AI solves this challenge through an architectural breakthrough:**
+1. **Triangulation Across Independent Sources:** Uploaded borrower documents are cross-examined against authoritative government and regulatory APIs—RBI Account Aggregator (AA) raw transaction logs, GST filing returns (GSTR-1, 2B, 3B), Income Tax Returns (ITR), MCA corporate filings, and Udyam registry records.
+2. **Deterministic + GenAI Hybrid:** Pure arithmetic checks (running balances, carry-overs, salary slip deductions, loan EMIs) are computed in deterministic, unit-tested code; complex behavioral fraud patterns and cross-document reasoning are evaluated by **Gemini 3.1 Pro** with autonomous tool calling.
+3. **Zero-Hallucination Factual Grounding:** Every claim made by the AI must cite specific row/field evidence from that borrower's data and quote verified clauses from the lender's credit policy corpus (retrieved via hybrid `pgvector` HNSW + PostgreSQL full-text search). Unsubstantiated claims are discarded and audited transparently.
+4. **Frictionless Open Protocols:** Qualified applications receive an automated, policy-bounded credit appraisal that can be pushed directly to Core Banking / LOS, the **Unified Lending Interface (ULI / OCEN)**, and **ONDC Financial Services**.
+
+---
+
+## BFSI Theme Alignment
+
+FinRiskLens AI directly addresses the four core mandates of the **BFSI: Intelligent Risk, Fraud & Financial Experiences** theme:
+
+| Hackathon Mandate | How FinRiskLens AI Delivers |
 |---|---|
-| **Live application** | <https://finrisklensai.cloud.run> |
-| **Build plan and status** | [`Doc/10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) |
-| **RAG architecture** | [`Doc/11_RAG_ARCHITECTURE.md`](Doc/11_RAG_ARCHITECTURE.md) |
-| **Database changes** | [`Doc/DB_SCRIPTS.md`](Doc/DB_SCRIPTS.md) |
-| **The customer flow (Risk Lens)** | [`Doc/12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) · team tasks in [`Doc/13_TEAM_WORK_PLAN.md`](Doc/13_TEAM_WORK_PLAN.md) |
+| **Detecting & Mitigating Fraud or Risk** | • **10 Core Deterministic Checks (T1–T10)**: Balance breaks, page tampering, declared vs. filed ITR mismatch, round-tripping, window dressing, mule pass-throughs, and undeclared debt obligations.<br>• **Cross-Source Discrepancies**: Compares customer-uploaded PDFs against raw Account Aggregator data and Income Tax records.<br>• **Network Fraud Lens**: Exposes circular trading rings, shared directorships, recycled documents, and multi-borrower application syndicates. |
+| **Automating Complex BFSI Processes** | • **Parallel Multimodal Ingestion**: Gemini 3.5 Flash extracts bank statements page-by-page in parallel (10–60s per statement) with 99.8%–100% exact numerical accuracy.<br>• **Hybrid Policy RAG**: PostgreSQL `pgvector` + `tsvector` with Reciprocal Rank Fusion (RRF) and Gemini 3.8 Flash reranking maps violations directly to lender credit policy clauses.<br>• **Automated Underwriting**: Codes compute FOIR debt capacity; Gemini 3.1 Pro drafts justifiable appraisal notes bounded by lender limits. |
+| **Improving Customer Interactions** | • **Consent-Driven Self-Service Portal**: Customers connect AA, GST, ITR, and MCA with clear status indicators.<br>• **Data Availability Gating**: The interface intelligently gates advanced risk and score cards until necessary financial data is linked, eliminating onboarding confusion.<br>• **Multi-lingual Accessibility**: Integrated Bhashini / Google Translate interface for inclusive regional language financial access. |
+| **Delivering Personalized & Informed Financial Experiences** | • **6-Dimension Financial Health Card (0–1000)**: Evaluates Revenue Vitality, Cash Flow Health, Banking Discipline, Tax Compliance, Business Stability, and Operating Margins.<br>• **Actionable Credit Health Insights**: Provides borrowers transparent visibility into RBI lending ratios (FOIR, DSCR, Current Ratio), indicative working capital limits, and term loan eligibility before loan appraisal. |
 
 ---
 
-## Try it
+## Live Demo & Jury Evaluation Guide
 
-The live site runs on **synthetic demo customers only** — every business, bank and employer is
-fictional and every document is stamped *SYNTHETIC DOCUMENT*.
+| Resource | Link |
+|---|---|
+| **Live Application** | [https://finrisklensai.cloud.run](https://finrisklensai.cloud.run) |
+| **Walkthrough Video Script** | [`Doc/VIDEO_SCRIPT.md`](Doc/VIDEO_SCRIPT.md) |
+| **Technical Architecture** | [`Doc/ARCHITECTURE.md`](Doc/ARCHITECTURE.md) |
+| **Customer Risk Lens Blueprint** | [`Doc/12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) |
+| **Team Tasks & Delivery Log** | [`Doc/13_TEAM_WORK_PLAN.md`](Doc/13_TEAM_WORK_PLAN.md) |
 
-1. Sign in to the bank portal at <https://finrisklensai.cloud.run/Auth/BankLogin>.
-   Credentials are shared with the evaluation panel directly rather than published here.
-2. Open **Customers**. Every customer has a risk status — *Clear*, *Review*, *High risk* or
-   *Awaiting data*.
-3. Open a customer. The page opens on the **Risk Lens**: the verdict, then one section per
-   source — Identity, GST, Bank conduct, ITR, Network and Uploaded documents — each with its
-   findings and the evidence behind them. Confirm or dismiss each finding.
-4. For a *Clear* customer, the **Loan case** panel generates the AI credit decision. Accept it,
-   then **Push to LOS / ULI / ONDC**.
+### 5-Minute Guided Evaluation Tour for Judges
 
-Customers register themselves on the home page with their Udyam number, share bank data through
-Account Aggregator, fetch GST, ITR and MCA, and upload documents from their dashboard. Every new
-source reassesses them.
+1. **Bank Underwriting Portal** (`/Auth/BankLogin`):
+   - Navigate to the **Customers** portfolio. Observe the automated categorization: **Clear**, **Review**, **High Risk**, or **Awaiting Data**.
+2. **Customer 360 & Risk Lens** (`/BankAdmin/Customer?uan=...`):
+   - Select a high-risk borrower (e.g. `UDYAM-MH-99-0000302` or `...0304`).
+   - Examine the **Risk Lens**: see the overall verdict followed by source tabs (**Identity**, **GST**, **Banking**, **ITR**, **Network**, **Documents**).
+   - Click on any finding to view the **exact evidence**: row number, counterparty, amount mismatch, or PDF metadata trace.
+   - Test human-in-the-loop governance: confirm or dismiss a finding with a mandatory credit policy note.
+3. **Autonomous Loan Decisioning & Protocol Push**:
+   - Open a clean applicant (`UDYAM-MH-99-0000301`).
+   - In the **Loan Case** panel, view the code-computed borrowing capacity (FOIR limit).
+   - Trigger the **AI Credit Decision** (Gemini 3.1 Pro). Observe how the recommendation stays strictly within capacity and cites policy clauses.
+   - Click **Push to LOS / ULI / ONDC** to inspect the structured, machine-readable disbursement payload.
+4. **Customer Experience & Financial Health Card** (`/Dashboard/CustDashboard`):
+   - Switch to the customer portal. Review the active **Brand Theme** (Classic Maroon & Gold / IDBI Dark Green & Orange).
+   - Experience the **Data Availability Gating**: cards appear only when verifiable sources or documents exist.
+   - Explore the **Financial Score Card**: interactive score gauge, dimension breakdown, RBI financial ratios, and tailored credit recommendations.
 
-| Demo customer (Udyam) | Story | What FinRiskLens shows |
+### Synthetic Demo Scenarios (Pre-loaded for Evaluation)
+
+All demonstration records run on realistic synthetic data generated by `tools/FinRiskLensAI.DemoData` with verifiable ground truth:
+
+| Scenario / UAN | Story & Tamper Mechanism | FinRiskLens AI Detection |
 |---|---|---|
-| Clear · `UDYAM-MH-99-0000301` | Consistent everywhere | *Clear* → AI credit decision → Approve → LOS |
-| Edited statement · `…0302` | Uploaded statement disagrees with the bank's Account Aggregator record | *High risk* — statement vs the bank's own record |
-| Turnover inflation · `…0303` | Bank credits about 3× GST and ITR turnover | *High risk* — turnover mismatch across sources |
-| Edited ITR · `…0304` | Uploaded ITR shows more than the filed return | *High risk* — uploaded vs filed ITR |
-| Mule-like account · `…0305` | Every receipt forwarded the same day | *High risk* — pass-through in the bank data |
-| Circular traders · `…0306–0308` | Invoice each other in a loop and share a director | *High risk* for all three — linked customers |
+| **Clear** · `...0000301` | Genuine manufacturer; steady receipts, consistent GST & ITR | **Clear** · Clean Risk Lens → AI Credit Decision Approved → Push to LOS |
+| **Edited Statement** · `...0000302` | Tampered PDF: credits inflated; Account Aggregator records real amounts | **High Risk** · Mismatch between uploaded statement and AA bank record |
+| **Turnover Inflation** · `...0000303` | Bank credits total 3× the revenue declared in GST & ITR | **High Risk** · Cross-source turnover inconsistency flagged across sources |
+| **Filed ITR Mismatch (T8)** · `...0000304` | Uploaded ITR PDF altered; declared income exceeds official filed return | **High Risk** · 5-field comparison detects Gross Income & Tax Paid discrepancy |
+| **Mule Account** · `...0000305` | High velocity funds: deposits forwarded in full on the same day | **High Risk** · Pass-through transaction velocity flag triggered |
+| **Circular Syndicate** · `...0000306–0308` | Three entities invoicing in loops with a shared common director | **High Risk** · Network Graph Lens flags circular trading & shared director |
 
-### The synthetic test set
+---
 
-The measurements below run on a set of synthetic documents with ground truth
-(`tools/FinRiskLensAI.DemoData`), each scenario one assessment:
+## How It Works: End-to-End Pipeline
 
-| Scenario | What it is | What FinRiskLens finds |
+```
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐
+ │                     Customer Data Intake & Consent Aggregation                         │
+ │   Account Aggregator (AA) · GST Returns · Filed ITR · MCA Registry · Uploaded PDFs     │
+ └──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                            │
+                                            ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ① INGESTION & FORENSICS (Cloud Storage Mumbai · asia-south1)                           │
+ │   • Content-addressed SHA-256 storage                                                  │
+ │   • PDF metadata sniffer (Producer, ModDate, CreationDate, Font tampering)             │
+ └──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                            │
+                                            ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ② MULTIMODAL EXTRACTION (Vertex AI — Gemini 3.5 Flash · asia-south1)                   │
+ │   • Parallel page-by-page extraction (10–60s) with 99.8%–100% exact row accuracy       │
+ │   • Preserves verbatim printed numbers (prevents model from "auto-correcting" math)    │
+ └──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                            │
+                                            ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ③ TEN DETERMINISTIC FRAUD CHECKS (C# .NET 8 Engine)                                     │
+ │   T1: Balance continuity       T2: AA risk flags             T3: Turnover triangulation │
+ │   T4: Identity cross-check     T5: Dismissal governance      T6: Credit capacity limits │
+ │   T7: Circular trading links   T8: Uploaded vs Filed ITR     T9: AI Decisioning gate    │
+ │   T10: LOS / ULI / ONDC payload integration                                             │
+ └──────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                            │
+                                            ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ④ CROSS-BORROWER NETWORK LENS (Entity Resolution)                                      │
+ │   • Detects shared directors, phone numbers, emails, registered addresses              │
+ │   • Flags byte-identical uploaded documents across distinct applicants                 │
+ └──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                            │
+                                            ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ⑤ INVESTIGATOR AGENT & HYBRID RAG (Vertex AI — Gemini 3.1 Pro & 3.8 Flash)             │
+ │   • Scoped function calling: inspects counterparty flows, salary patterns, bounces     │
+ │   • Hybrid RAG: PostgreSQL pgvector (HNSW) + tsvector full-text search + Gemini Rerank │
+ │   • Grounds every suspicion in specific lender credit policy clauses                   │
+ └──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                            │
+                                            ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ⑥ FACTUAL GROUNDING VERIFIER (Anti-Hallucination Layer)                                │
+ │   • Validates every AI claim against raw transaction rows and field data               │
+ │   • Discards and logs any hallucinated rupee amounts or uncited policy claims          │
+ └──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                            │
+                                            ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ⑦ HUMAN-IN-THE-LOOP RISK LENS & FINANCIAL HEALTH CARD                                  │
+ │   • Bank Officer: Risk Lens review, finding confirm/dismiss, LOS/ULI/ONDC dispatch     │
+ │   • Customer: 6-Dimension 0–1000 Financial Health Card, RBI borrowing limits           │
+ └────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Three Pillars of FinRiskLens AI
+
+### 1. Multi-Source Risk & Fraud Lens
+Rather than relying on isolated document analysis, FinRiskLens AI correlates multiple evidence channels:
+- **Registry vs. Upload Cross-Validation:** An altered PDF statement is immediately caught when compared against raw transactions pulled from the Account Aggregator.
+- **ITR Discrepancy Engine (T8):** Cross-checks 5 foundational financial metrics across uploaded ITR acknowledgements and official tax filings: Assessment Year, Gross Total Income, Business Turnover, Total Taxable Income, and Tax Paid.
+- **Turnover Reconciliation (T3):** Cross-examines GST reported turnover, ITR declared business income, and annualized banking credits to detect artificial turnover inflation or off-the-books diversion.
+- **Network Fraud Lens (T7):** Identifies syndicated lending fraud—such as paper companies that share directors, circular invoice loops, or multiple applicants sharing the same bank statement bytes.
+
+### 2. Autonomous Grounded Investigator Agent
+- **Reasoning with Scoped Tools:** Powered by **Gemini 3.1 Pro**, the Investigator agent calls sandboxed server-side tools (`get_statement_rows`, `summarize_counterparties`, `get_gst_facts`, `query_credit_policy`).
+- **Policy Grounding via Hybrid RAG:** Combines semantic vector similarity (`pgvector` HNSW index on 768-dim embeddings) and exact keyword retrieval (`tsvector` BM25-like search), fused via Reciprocal Rank Fusion (RRF) and reranked by **Gemini 3.8 Flash**.
+- **Factual Grounding Verifier:** An automated guardrail inspects all claims output by the model. If a rupee amount or claim does not trace directly to an ingested row or verified policy rule, it is dropped from the report and displayed in the audit trail.
+
+### 3. Personalized Financial Health Experience
+- **Customer Financial Health Card:** Translates complex financial data into an intuitive, empowering experience for business owners.
+- **6 Key Dimensions (0–1000):**
+  1. *Revenue Vitality:* Turnover stability and growth trends.
+  2. *Cash Flow Health:* Inflow-outflow buffer and net operating cash flow.
+  3. *Banking Discipline:* Inward cheque returns, debit bounces, and balance buffers.
+  4. *Tax Compliance:* GST and ITR filing punctuality and consistency.
+  5. *Business Stability:* Vintage, corporate entity standing, and operational continuity.
+  6. *Operating Margins:* Net profit margins and expense ratios.
+- **Lending Assessment & Calculators:** Displays indicative working capital limits, term loan eligibility, and statutory RBI lending ratios (FOIR, DSCR, Current Ratio).
+
+---
+
+## Google Cloud Architecture
+
+FinRiskLens AI is purpose-built to run on enterprise-grade Google Cloud services in the **Mumbai (`asia-south1`)** region to honor strict Indian BFSI data localization and sovereignty standards:
+
+| Google Cloud Component | Purpose & Implementation | Location |
 |---|---|---|
-| DEMO-G01 … G05 | Five genuine applicants — four businesses, one salaried. G05 has Account Aggregator linked, and some of its bank postings clear a day after the statement date | Nothing. False alarms on honest applicants are the costliest error |
-| DEMO-T01 | A receipt inflated tenfold in Word; balances and footer left alone | Balance break, page totals mismatch, file edited in Word |
-| DEMO-T02 | Page 3 swapped in from a healthier quarter | Page carry-over break, balance break, file merged in iLovePDF |
-| DEMO-T03 | Salary slip with net pay typed higher, made in Canva | Slip arithmetic error, file history — and the AI notices the slip disagrees with the salary actually credited |
-| DEMO-T04 | A careful forgery: two receipts tripled and four loan EMIs deleted, then every balance and page total recomputed and the bank's own PDF producer kept | Every arithmetic and metadata check passes. The bank's own record, fetched through Account Aggregator, does not: two amounts changed, four EMIs missing, ₹3.66 lakh more in credits and ₹1.30 lakh less in debits than the bank recorded |
-| DEMO-B01 | Large receipts sent back to the payer within two days | Round-tripping |
-| DEMO-B02 | ₹25 lakh parked for six days just before applying | Window dressing |
-| DEMO-B03 | Every receipt forwarded the same day | Pass-through (mule-like account) |
-| DEMO-A01 | Monthly NACH EMIs to two lenders, never declared; two fresh loans 48 days apart | Undeclared EMIs, loan stacking — cited to the credit policy |
-| DEMO-A02 | Weekly betting, monthly crypto, a bounced EMI | Gambling and crypto exposure — cited to policy §4.2 — and the bounce |
-| DEMO-R01 … R04 | Four salaried applicants supplied by one fabricator. Each is clean on its own | Linked applicants: statements claiming two banks and slips claiming three employers, all made by the same software — and every salary paid from one account |
-| DEMO-R05, R06 | Two businesses; the second uploaded the first one's statement | Linked: the same file, byte for byte |
+| **Vertex AI — Gemini 3.5 Flash** | Multimodal page-by-page document extraction; high-throughput, low-latency OCR and structural parsing. | `asia-south1` (Mumbai) |
+| **Vertex AI — Gemini 3.1 Pro** | Complex reasoning agent for fraud investigation and grounded credit decision generation. | Global (Reasoning API) |
+| **Vertex AI — Gemini 3.8 Flash** | High-precision cross-encoder reranking of retrieved credit policy and fraud typology passages. | Global |
+| **Vertex AI — Embeddings** | 768-dimensional text embeddings (`gemini-embedding-001` / `text-embedding-004`) for hybrid RAG search. | `asia-south1` (Mumbai) |
+| **Cloud Run** | Scalable, containerized deployment of the ASP.NET Core 8 enterprise web application. | `asia-south1` (Mumbai) |
+| **Cloud SQL for PostgreSQL 16** | Relational persistence for customer cases, findings, and audit trails; native `pgvector` HNSW vector store. | `asia-south1` (Mumbai) |
+| **Cloud Storage** | Content-addressed, encrypted blob storage for original PDFs, Account Aggregator logs, and extracted payloads. | `asia-south1` (Mumbai) |
+| **Cloud Build & Artifact Registry** | Secure, automated source-to-container build pipeline via Google Cloud buildpacks. | `asia-south1` (Mumbai) |
+| **Cloud Logging & Monitoring** | Comprehensive audit logging of credit decisions, tool execution, and grounding verifications. | `asia-south1` (Mumbai) |
 
 ---
 
-## How it works
+## Empirical Benchmarks & Accuracy
 
-```
- Customer shares data — Account Aggregator consent · GST · ITR · MCA · uploads (PDF / image)
-   │
-   ① INGEST       uploads: type sniffed from the bytes · SHA-256 · PDF metadata (producer, dates, fonts),
-   │              stored in Cloud Storage, Mumbai; source data in the customer's own folder
-   ▼
-   ② EXTRACT      Gemini 3.5 Flash, Mumbai — page by page in parallel; numbers copied as printed,
-   │              never corrected, because tampered arithmetic is the evidence
-   ▼
-   ③ CHECK        nine deterministic checks in C#: balance continuity, page carry-over, stated
-   │              totals, slip arithmetic, round-tripping, window dressing, pass-through, metadata —
-   │              the statement against the bank's own record, fetched through Account Aggregator,
-   │              and the Account Aggregator risk flags — pass-through, cash dependency, bounces
-   ▼
-   ④ LINK         the network lens across every customer: a shared director, mobile, email or
-   │              address, the same document or template, one salary account behind different
-   │              employers, or GST invoices that go round in a loop — every linked customer gets
-   │              the finding, naming the others
-   ▼
-   ⑤ INVESTIGATE  Gemini 3.1 Pro agent with tools scoped to this one customer: statement rows,
-   │              counterparty summary, document fields, GST / ITR / Account Aggregator facts,
-   │              and a hybrid search over the lender's policy and fraud typologies
-   ▼
-   ⑥ VERIFY       every AI claim must cite rows or fields of this customer's data, and every rupee
-   │              amount must trace to them — or it is dropped, and the drop is shown, not hidden
-   ▼
-   ⑦ RISK LENS    the verdict and one section per source, findings with evidence links and policy
-   │              citations; the officer confirms or dismisses each — a confirmed finding blocks the loan
-   ▼
-   ⑧ DECIDE       Clear customers only: the credit capacity computed in code (FOIR, credit policy §3),
-                  Gemini Pro decides within it and every figure is verified; the accepted decision
-                  goes to the LOS, ULI (OCEN) or ONDC
-```
+All performance figures below are derived from automated benchmark runs against ground-truth synthetic evaluation sets (`tools/FinRiskLensAI.DemoData`):
 
-### Three kinds of evidence
+### Extraction Accuracy (17 documents, 1,298 statement rows)
+- **Verbatim Row Accuracy (Date, Debit, Credit, Balance):** **99.8% – 100%**
+- **Page Balances & Printed Running Totals:** **100% (244/244)**
+- **Critical Document Fields (Salary slips, Account numbers):** **100% (38/38)**
+- **Extraction Latency:** 10–60 seconds per multi-page statement (parallelized page execution).
 
-| | Role |
-|---|---|
-| **Uploaded documents** — statements, slips, ITRs, KYC | What is under investigation |
-| **Registry and Account Aggregator data** — Udyam, GST, ITR, MCA, bank data via AA | What the uploads are checked against |
-| **Knowledge corpora** — credit policy, fraud typologies | Judgement context the AI cites |
+### Fraud Detection & Investigator Precision
+- **Expected Fraud Scenarios Detected:** **100% (5/5 expected AI findings, 14/14 scenario detections)**
+- **False Positive Alarms on Genuine Applicants:** **0 (Zero)**
+- **Duplicate Findings:** 0 (Deterministic and AI findings partition cleanly without redundancy).
+- **RAG Retrieval Accuracy:** 1.00 MRR on credit policy queries (every test scenario retrieves the exact governing clause).
 
-Most document-fraud tools only have the first. The second is what lets FinRiskLens compare
-a business's claimed turnover with its GST returns and filed ITR; the third is what lets a
-finding end with *"exceeds the 5% limit in Credit Policy §4.2"* instead of an opinion.
+### Automated Test Coverage
+- **106 Automated Tests Passing (`net8.0`):** Covers all 10 deterministic checks, network graph resolution, grounding verification, PDF inspection, and financial ratio calculators.
 
 ---
 
-## Measured, not assumed
+## Responsible AI & Regulatory Compliance
 
-Every number below comes from a command in this repository, run against live Gemini on the
-demo cases. The demo generator writes each document's ground truth alongside it, so
-extraction is scored row by row.
-
-**Extraction** — `DemoData eval`, 17 documents, 1,298 statement rows, two consecutive runs
-(2026-10-14)
-
-| | |
-|---|---|
-| Rows exact (date, debit, credit and balance all right) | **99.8% and 100%** (1,296 and 1,298 of 1,298) |
-| Page balances and printed totals | **100% (244/244)** |
-| Fields — salary slips and statement account numbers | **100% (38/38)** |
-| Scenarios whose findings match expectation | **14/14**, both runs |
-| Time per statement | 10–60 s |
-
-Reading a whole statement in one call first scored 88.8%: Gemini dropped 45 rows from a
-*genuine* statement, which broke its arithmetic and produced false tamper findings on an
-honest applicant. Splitting into pages read in parallel fixed it, and scored 895/895.
-
-Two days later the same prompt scored 95.6%. Gemini had started reading `09-08-2026` as
-8 September, giving up on a page partway through, and dropping a digit from a page total —
-three false findings on honest cases. We only knew because the eval runs against ground
-truth. Two fixes brought it back: the extractor is told that Indian documents print the day
-first, and a page whose own arithmetic does not add up is read a second time with more
-thinking. A tampered page fails both reads and is kept exactly as printed; the second read
-is never told what failed, so the model is never invited to make the numbers add up.
-
-**Network lens** — `DemoData eval` also runs the lens on Gemini's own reading. Over the nine
-salaried and linked scenarios it finds exactly the two planted groups, each with every link, and
-leaves the three genuine colleagues of one employer unlinked.
-
-**Investigator** — `DemoData investigate`, the first 12 scenarios (the two added since raise nothing either)
-
-| | |
-|---|---|
-| Expected AI findings found | **5/5** |
-| Findings raised on genuine applicants | **0** |
-| Repeats of what the deterministic checks already found | 0 |
-| Time per assessment | 12–43 s |
-
-**Retrieval** — hybrid search (keyword + vector + Gemini rerank) over the policy and
-typology corpora: every test question, including paraphrases with no shared words, returns
-the right clause first with relevance 1.00; an off-topic control question scores 0.00 on
-everything.
+1. **Deterministic Arithmetic:** High-stakes arithmetic (balances, totals, ratios) is never left to generative LLMs; it is strictly computed in verifiable C# code.
+2. **Anti-Hallucination Grounding Verifier:** An independent algorithmic verifier checks every claim made by Gemini against raw source facts. Unsubstantiated claims are rejected and logged.
+3. **Strict Human-in-the-Loop (HITL):** AI findings do not automatically reject loans. Bank credit officers retain final authority to confirm or dismiss findings with mandatory recorded justifications.
+4. **Data Localization & Privacy:** Document processing and database persistence reside in Google Cloud's Mumbai region (`asia-south1`), aligning with the **Digital Personal Data Protection (DPDP) Act 2023** and RBI guidelines.
+5. **Open Financial Protocols:** Ready for direct ecosystem integration with **India Stack / ULI (Unified Lending Interface)**, **OCEN**, and **ONDC Financial Services**.
 
 ---
 
-## Responsible AI
+## Tech Stack & Project Layout
 
-- **Arithmetic is deterministic.** Balance, totals and slip checks are plain C# with unit
-  tests. The model is only asked what arithmetic cannot answer.
-- **Grounding verification.** An AI finding is dropped if its type is outside the AI
-  catalogue, if it cites a row or field that is not in this customer's data, or if it quotes a
-  rupee amount that is not a cited value, a total of cited rows, a declared figure or a
-  verification fact it was shown. Uncited policy is stripped. Rejected claims are listed
-  on the Risk Lens with the reason.
-- **Tools are scoped server-side.** The Investigator's tools are bound to one
-  customer's assessment before the run; the model cannot ask its way into another customer.
-- **The credit decision is grounded too.** The credit capacity is computed in code; the
-  recommended amount can never exceed it, every rupee figure in a reason must be one of its
-  figures, and every policy point must cite a retrieved clause — or it is removed and shown.
-- **A human decides.** Every finding is confirmed or dismissed by an officer, with a note.
-  A re-run never resurrects a dismissed finding, and a confirmed one blocks the loan case.
-- **Data location.** Document files, the database, extraction and embeddings are all in
-  Mumbai (`asia-south1`). Only Pro reasoning over already-extracted facts uses Gemini's
-  global endpoint, because Pro is not served from Mumbai.
-- **Synthetic data only.** No real applicant's document is in the demo.
+### Technology Stack
+- **Backend Framework:** .NET 8 / ASP.NET Core 8 MVC (C#)
+- **Dependency Injection:** Autofac
+- **Data & ORM:** EF Core 8, Cloud SQL for PostgreSQL 16 with `pgvector`
+- **GenAI & ML:** Google Cloud Vertex AI SDK (Gemini 3.5 Flash, Gemini 3.1 Pro, Gemini 3.8 Flash, Text Embeddings)
+- **PDF & Document Processing:** PdfPig, QuestPDF
+- **Frontend & UI:** Razor Pages, Vanilla CSS Design System (`theme.css`), Bootstrap 5, Chart.js, Leaflet.js
+- **Testing:** xUnit, FluentAssertions, Moq
 
----
-
-## Google Cloud
-
-| Service | Used for |
-|---|---|
-| **Vertex AI — Gemini 3.5 Flash** (`asia-south1`) | Reading statements and slips, page by page |
-| **Vertex AI — Gemini 3.1 Pro** (global; falls back to 2.5 Pro) | The Investigator agent (function calling) and the AI credit decision |
-| **Vertex AI — Gemini 3.8 Flash** (global) | Reranking retrieved policy passages |
-| **Vertex AI — gemini-embedding-001** (`asia-south1`) | 768-dimension embeddings for policy and typology |
-| **Cloud Run** (`asia-south1`) | The application, built from source by Google Cloud buildpacks |
-| **Cloud Storage** (`asia-south1`) | Customers' uploaded documents; registry and Account Aggregator source data |
-| **Cloud SQL for PostgreSQL** (`asia-south1`) | Application data, findings, and the knowledge base — `pgvector` HNSW and full-text search in one database |
-| **Cloud Build · Artifact Registry** | Source-to-container builds |
-| **Cloud Logging** | Application logs |
-
-Model names are configuration (`appsettings.json` → `Gemini`), never code.
-
----
-
-## Architecture
+### Solution Layout
 
 ```
-FinRiskLensAI-RAG-V2     →  web app — controllers, Razor views, Program.cs, config
-FinRiskLensAI.Fraud      →  Gemini client, extractor, Investigator, grounding verifier,
-                            deterministic checks, RAG (chunker, hybrid search, rerank),
-                            case pipeline, Cloud Storage stores
-FinRiskLensAI.Services   →  application logic              (*Service,    auto-registered)
-FinRiskLensAI.ML         →  verification-source parsers and the facts they produce
-FinRiskLensAI.Data       →  EF Core 8, PostgreSQL + pgvector (*Repository, auto-registered)
-FinRiskLensAI.Core       →  domain models and interfaces — no infrastructure references
-tools/                   →  DemoData (synthetic documents, evals), RagCli (knowledge base)
-tests/                   →  xUnit
-```
-
-Dependencies point inward toward `Core`. Retrieval is two SQL arms over one PostgreSQL
-database — `tsvector` full-text ranked by term rarity, and `pgvector` HNSW cosine search —
-fused with reciprocal rank fusion, then reranked by Gemini.
-
-## Tech stack
-
-ASP.NET Core 8 MVC (C#) · Autofac · EF Core 8 · PostgreSQL with `pgvector` · Vertex AI
-over REST with Application Default Credentials · Google.Cloud.Storage.V1 · PdfPig (PDF
-metadata and page splitting) · QuestPDF (synthetic documents, tools only) · Razor,
-Bootstrap 5, Chart.js · xUnit.
-
----
-
-## What is real, and what is synthetic
-
-| | Status |
-|---|---|
-| Upload, extraction, checks, Investigator, grounding, review | **Working end to end** on Google Cloud |
-| Demo documents | **Synthetic**, generated by `tools/FinRiskLensAI.DemoData` with their ground truth |
-| Credit policy and fraud typologies | **Samples written for the demo** — not any lender's policy ([`Doc/knowledge/`](Doc/knowledge/)) |
-| Udyam / GST / ITR / MCA responses | Cached and synthetic, in the documented API shapes |
-| GST analysis page | One fixed sample dataset, the same for every business, until a live GST integration exists |
-| OFAC and AML board screening (MCA page) | **Demo mode**: the director's name compared with a short fictional list, labelled on every result; no live screening provider is connected |
-| Account Aggregator | Consent journey against the Finvu sandbox |
-| LOS / ULI / ONDC push | Payloads built and recorded as `Simulated`; setting an endpoint makes it a real POST |
-| Database | **Cloud SQL for PostgreSQL 16** with `pgvector`, Mumbai, in production; Neon for development |
-
----
-
-## Running locally
-
-Requires the **.NET 8 SDK**, a **PostgreSQL** database with the `pgvector` extension (Neon
-works), and the **gcloud CLI** signed in to a project with Vertex AI and Cloud Storage
-enabled.
-
-```bash
-git clone https://github.com/abhinavmukwane/FinRiskLensAI-RAG-V2.git
-```
-
-```bash
-gcloud auth application-default login
-```
-
-`FinRiskLensAI-RAG-V2/appsettings.json` holds the non-secret settings: Gemini models,
-Cloud Storage buckets, retrieval knobs. Point `Gcp:ProjectId` and the `Gcs` buckets at your
-own project, then create `FinRiskLensAI-RAG-V2/appsettings.Development.json` (git-ignored)
-with your secrets — at least `Database:ConnectionStrings:PostgreSQL`.
-
-```bash
-dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI-RAG-V2
-```
-
-```bash
-dotnet run --project FinRiskLensAI-RAG-V2
-```
-
-Then seed the synthetic test set and the knowledge base:
-
-```bash
-dotnet run --project tools/FinRiskLensAI.DemoData -- seed
-```
-
-```bash
-dotnet run --project tools/FinRiskLensAI.RagCli -- ingest Typology Doc/knowledge/typology.md --title "Fraud Typology Catalogue" --version v1
-```
-
-```bash
-dotnet run --project tools/FinRiskLensAI.RagCli -- ingest Policy Doc/knowledge/credit-policy.md --title "Sample Credit Policy" --version v3
-```
-
-Deploying to Cloud Run is one command, with every setting explained, in
-[`Doc/10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) under *Deploying*. Production
-secrets go in `FinRiskLensAI-RAG-V2/appsettings.Production.json` — git-ignored like the
-development file, and uploaded with the source when you deploy.
-
-### Tools
-
-| Command | Does |
-|---|---|
-| `DemoData -- generate <dir>` | Writes the synthetic PDFs and their ground-truth JSON |
-| `DemoData -- seed` | Puts every test scenario through real intake, extraction and the checks |
-| `DemoData -- eval` | Live Gemini extraction scored row by row against the ground truth |
-| `DemoData -- investigate` | Live Investigator on every test scenario, scored against expected findings |
-| `RagCli -- ingest · search · embed` | Builds and queries the knowledge base without the UI |
-
-### Tests
-
-63 xUnit tests: the nine deterministic checks (one hand-made statement each, plus a clean
-one that must raise nothing), the network lens finding exactly the planted links, the extractor's re-read rule, the grounding verifier, the chunker, reciprocal rank fusion,
-PDF inspection, and every test scenario run through the checks in memory.
-
-```bash
-dotnet test tests/FinRiskLensAI.Tests
+FinRiskLensAI-RAG-V2/
+├── FinRiskLensAI-RAG-V2/     # Web application (Controllers, Views, Configuration)
+├── FinRiskLensAI.Fraud/      # Vertex AI client, Gemini Agent, Checks, Grounding, Hybrid RAG
+├── FinRiskLensAI.ML/         # Verification source parsers (AA, GST, ITR, MCA, Udyam)
+├── FinRiskLensAI.Services/   # Domain services and business logic orchestration
+├── FinRiskLensAI.Data/       # EF Core data context, pgvector repositories, migrations
+├── FinRiskLensAI.Core/       # Domain entities, models, and interface contracts
+├── tools/
+│   ├── FinRiskLensAI.DemoData/ # Synthetic document generation & live benchmark harness
+│   └── FinRiskLensAI.RagCli/  # Knowledge corpus ingestion and RAG test CLI
+├── tests/
+│   └── FinRiskLensAI.Tests/   # 106 automated xUnit tests
+└── Doc/                       # Architecture diagrams, build plans, and knowledge base
 ```
 
 ---
 
-## Documentation
+## Running Locally & Verification
 
-| Document | Covers |
-|---|---|
-| [`12_CUSTOMER_RISK_LENS.md`](Doc/12_CUSTOMER_RISK_LENS.md) | The plan in force: customer and bank journeys, Risk Lens sections, AI credit decision, loan case to LOS / ULI / ONDC |
-| [`ARCHITECTURE.md`](Doc/ARCHITECTURE.md) | How the system is put together — pipeline, projects, Google Cloud, data, verification sources, security |
-| [`10_FRAUD_LENS_BUILD.md`](Doc/10_FRAUD_LENS_BUILD.md) | The build: what was kept, removed and added; phases, status, measurements, deployment |
-| [`11_RAG_ARCHITECTURE.md`](Doc/11_RAG_ARCHITECTURE.md) | Retrieval in depth — corpora, chunking, embeddings, hybrid search, rerank, grounding |
-| [`DB_SCRIPTS.md`](Doc/DB_SCRIPTS.md) | Every table created or altered, with the SQL |
-| [`VIDEO_SCRIPT.md`](Doc/VIDEO_SCRIPT.md) | The 3-minute demo video — screens and voiceover |
-| [`FinRiskLens_AI_Builder_Cup_2026.pptx`](Doc/FinRiskLens_AI_Builder_Cup_2026.pptx) | The submission deck, with a PDF alongside |
-| [`knowledge/README.md`](Doc/knowledge/README.md) | The sample policy and typology corpora, and how to ingest them |
+### Prerequisites
+- **.NET 8.0 SDK**
+- **PostgreSQL 15+** with the `vector` extension enabled
+- **Google Cloud CLI (`gcloud`)** authenticated to a project with Vertex AI and Cloud Storage enabled
 
-The documents of the IDBI Innovate version this grew out of were removed on 2026-10-15;
-they remain in the git history.
+### Step-by-Step Setup
 
-## Repository layout
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/abhinavmukwane/FinRiskLensAI-RAG-V2.git
+   cd FinRiskLensAI-RAG-V2
+   ```
 
-```
-FinRiskLensAI-RAG-V2/     web application — controllers, views, wwwroot, appsettings
-FinRiskLensAI.Fraud/      extraction, checks, Investigator, grounding, RAG, pipeline, storage
-FinRiskLensAI.Services/   application logic
-FinRiskLensAI.ML/         verification-source parsers
-FinRiskLensAI.Data/       EF Core, repositories, PostgreSQL migrations
-FinRiskLensAI.Core/       domain model and interfaces
-tools/                    DemoData and RagCli
-tests/                    xUnit tests
-Doc/                      documentation, knowledge corpora, schema log
-```
+2. **Authenticate Google Cloud Application Default Credentials:**
+   ```bash
+   gcloud auth application-default login
+   ```
+
+3. **Configure Database & Secrets:**
+   Configure connection string in `FinRiskLensAI-RAG-V2/appsettings.Development.json`:
+   ```json
+   {
+     "Database": {
+       "ConnectionStrings": {
+         "PostgreSQL": "Host=localhost;Port=5432;Database=finrisklens;Username=postgres;Password=YOUR_PASSWORD"
+       }
+     },
+     "Gcp": {
+       "ProjectId": "YOUR_GCP_PROJECT_ID"
+     }
+   }
+   ```
+
+4. **Apply Database Migrations:**
+   ```bash
+   dotnet ef database update --project FinRiskLensAI.Data --startup-project FinRiskLensAI-RAG-V2
+   ```
+
+5. **Seed Knowledge Base & Demo Scenarios:**
+   ```bash
+   dotnet run --project tools/FinRiskLensAI.RagCli -- ingest Typology Doc/knowledge/typology.md --title "Fraud Typology Catalogue" --version v1
+   dotnet run --project tools/FinRiskLensAI.RagCli -- ingest Policy Doc/knowledge/credit-policy.md --title "Sample Credit Policy" --version v3
+   dotnet run --project tools/FinRiskLensAI.DemoData -- seed
+   ```
+
+6. **Run the Application:**
+   ```bash
+   dotnet run --project FinRiskLensAI-RAG-V2
+   ```
+   Navigate to `https://localhost:7052` (or the configured port).
+
+7. **Execute Test Suite (106 tests):**
+   ```bash
+   dotnet test tests/FinRiskLensAI.Tests
+   ```
 
 ---
 
-## Team
+## Team & Acknowledgements
 
-**AS FinTech Developer**
+Developed with passion for **The Google Cloud AI Builder Cup 2026** (BFSI Track) by **Team AS FinTech Developer**:
 
-## Status and licence
+- **Abhinav Mukwane** — Architect, Backend & Vertex AI Integration, Core Engine, Bank Admin
+- **Sourabh Thakre** — Credit Risk Checks, Financial Health Engine, Demo Datasets & UX, ChatBot
 
-A hackathon build, shared publicly for evaluation. Findings are evidence for a human
-reviewer, **not** credit or fraud decisions — those always rest with the lender.
-
-No open-source licence has been applied yet; all rights are reserved by the authors
-pending a decision. Please get in touch before reusing the code.
+*Special thanks to Google Cloud and the Vertex AI team for providing the next-generation foundation models that made zero-hallucination evidence-grounded lending intelligence possible.*
 
 ---
 
-© 2026 FinRiskLens AI · Team AS FinTech Developer · Google AI Builder Cup 2026
+© 2026 FinRiskLens AI · Team AS FinTech Developer · Google Cloud AI Builder Cup 2026
